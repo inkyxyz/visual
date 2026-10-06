@@ -17,6 +17,7 @@ public class CardRenderHelper {
 
     public static boolean globalCardGlow = false;
     public static ColorRGBA globalGlowColor = null;
+    public static final Identifier BLOOM_TEXTURE = RockstarClient.id("textures/bloom.png");
 
     // 4 ACES
     public static final Identifier ACE_SPADES = RockstarClient.id("textures/cards/ace_spades.png");
@@ -214,36 +215,79 @@ public class CardRenderHelper {
         boolean isFrontFacing = !doubleSided || dot >= 0.0F;
         Identifier tex = isFrontFacing ? effectiveFront : effectiveBack;
 
-        // 1. Render vibrant 3D playing card glow aura if enabled
+        // 1. Backlight Illumination: Smooth Radial Gradient Bloom & Edge Falloff (no harsh outlines)
         if (glow || globalCardGlow) {
             ColorRGBA gCol = glowColor != null ? glowColor : (globalGlowColor != null ? globalGlowColor : IiiiiIIIi_Class242.I_method_7df8e08e());
-            int gAlpha = (int)(Math.min(1.0F, Math.max(0.0F, alpha)) * 255.0F);
-            if (gAlpha > 0) {
+            float gAlpha = Math.min(1.0F, Math.max(0.0F, alpha));
+            if (gAlpha > 0.01F) {
                 RenderSystem.enableBlend();
                 RenderSystem.blendFunc(GlStateManager.SrcFactor.SRC_ALPHA, GlStateManager.DstFactor.ONE);
                 RenderSystem.depthMask(false);
                 RenderSystem.disableCull();
 
+                // 1A. True Radial Gradient Light Bloom behind the card (smooth light puff)
+                RenderSystem.setShader(ShaderProgramKeys.POSITION_TEX_COLOR);
+                RenderSystem.setShaderTexture(0, BLOOM_TEXTURE);
+
+                float bloomW1 = width * 1.65F;
+                float bloomH1 = height * 1.65F;
+                int bloomCol1 = gCol.withAlpha((int)(gAlpha * 160.0F)).getRGB();
+
+                BufferBuilder bloomBb = RenderSystem.renderThreadTesselator().begin(DrawMode.QUADS, VertexFormats.POSITION_TEXTURE_COLOR);
+                // Core bright radial light
+                bloomBb.vertex(mat, -bloomW1 * 0.5F, -bloomH1 * 0.5F, -0.002F).texture(0.0F, 0.0F).color(bloomCol1);
+                bloomBb.vertex(mat, bloomW1 * 0.5F, -bloomH1 * 0.5F, -0.002F).texture(1.0F, 0.0F).color(bloomCol1);
+                bloomBb.vertex(mat, bloomW1 * 0.5F, bloomH1 * 0.5F, -0.002F).texture(1.0F, 1.0F).color(bloomCol1);
+                bloomBb.vertex(mat, -bloomW1 * 0.5F, bloomH1 * 0.5F, -0.002F).texture(0.0F, 1.0F).color(bloomCol1);
+
+                // Wide soft ambient aura
+                float bloomW2 = width * 2.45F;
+                float bloomH2 = height * 2.45F;
+                int bloomCol2 = gCol.withAlpha((int)(gAlpha * 85.0F)).getRGB();
+                bloomBb.vertex(mat, -bloomW2 * 0.5F, -bloomH2 * 0.5F, -0.004F).texture(0.0F, 0.0F).color(bloomCol2);
+                bloomBb.vertex(mat, bloomW2 * 0.5F, -bloomH2 * 0.5F, -0.004F).texture(1.0F, 0.0F).color(bloomCol2);
+                bloomBb.vertex(mat, bloomW2 * 0.5F, bloomH2 * 0.5F, -0.004F).texture(1.0F, 1.0F).color(bloomCol2);
+                bloomBb.vertex(mat, -bloomW2 * 0.5F, bloomH2 * 0.5F, -0.004F).texture(0.0F, 1.0F).color(bloomCol2);
+
+                BuiltBuffer builtBloom = bloomBb.endNullable();
+                if (builtBloom != null) {
+                    BufferRenderer.drawWithGlobalProgram(builtBloom);
+                }
+
+                // 1B. 4-Sided Gradient Light Falloff radiating outward from card edges
                 RenderSystem.setShader(ShaderProgramKeys.POSITION_COLOR);
-                float spread1 = Math.max(width, height) * 0.12F;
-                int innerCol = gCol.withAlpha((int)(gAlpha * 0.55F)).getRGB();
+                float spread = Math.max(width, height) * 0.22F;
+                int edgeInner = gCol.withAlpha((int)(gAlpha * 140.0F)).getRGB();
+                int edgeOuter = gCol.withAlpha(0).getRGB();
 
-                BufferBuilder glowBb = RenderSystem.renderThreadTesselator().begin(DrawMode.QUADS, VertexFormats.POSITION_COLOR);
-                glowBb.vertex(mat, -hw - spread1, -hh - spread1, 0.001F).color(innerCol);
-                glowBb.vertex(mat, hw + spread1, -hh - spread1, 0.001F).color(innerCol);
-                glowBb.vertex(mat, hw + spread1, hh + spread1, 0.001F).color(innerCol);
-                glowBb.vertex(mat, -hw - spread1, hh + spread1, 0.001F).color(innerCol);
+                BufferBuilder gradBb = RenderSystem.renderThreadTesselator().begin(DrawMode.QUADS, VertexFormats.POSITION_COLOR);
+                // Top gradient light strip
+                gradBb.vertex(mat, -hw, hh, -0.001F).color(edgeInner);
+                gradBb.vertex(mat, hw, hh, -0.001F).color(edgeInner);
+                gradBb.vertex(mat, hw + spread * 0.7F, hh + spread, -0.001F).color(edgeOuter);
+                gradBb.vertex(mat, -hw - spread * 0.7F, hh + spread, -0.001F).color(edgeOuter);
 
-                float spread2 = Math.max(width, height) * 0.28F;
-                int outerCol = gCol.withAlpha((int)(gAlpha * 0.25F)).getRGB();
-                glowBb.vertex(mat, -hw - spread2, -hh - spread2, 0.0005F).color(outerCol);
-                glowBb.vertex(mat, hw + spread2, -hh - spread2, 0.0005F).color(outerCol);
-                glowBb.vertex(mat, hw + spread2, hh + spread2, 0.0005F).color(outerCol);
-                glowBb.vertex(mat, -hw - spread2, hh + spread2, 0.0005F).color(outerCol);
+                // Bottom gradient light strip
+                gradBb.vertex(mat, -hw - spread * 0.7F, -hh - spread, -0.001F).color(edgeOuter);
+                gradBb.vertex(mat, hw + spread * 0.7F, -hh - spread, -0.001F).color(edgeOuter);
+                gradBb.vertex(mat, hw, -hh, -0.001F).color(edgeInner);
+                gradBb.vertex(mat, -hw, -hh, -0.001F).color(edgeInner);
 
-                BuiltBuffer glowBuilt = glowBb.endNullable();
-                if (glowBuilt != null) {
-                    BufferRenderer.drawWithGlobalProgram(glowBuilt);
+                // Left gradient light strip
+                gradBb.vertex(mat, -hw - spread, -hh - spread * 0.7F, -0.001F).color(edgeOuter);
+                gradBb.vertex(mat, -hw, -hh, -0.001F).color(edgeInner);
+                gradBb.vertex(mat, -hw, hh, -0.001F).color(edgeInner);
+                gradBb.vertex(mat, -hw - spread, hh + spread * 0.7F, -0.001F).color(edgeOuter);
+
+                // Right gradient light strip
+                gradBb.vertex(mat, hw, -hh, -0.001F).color(edgeInner);
+                gradBb.vertex(mat, hw + spread, -hh - spread * 0.7F, -0.001F).color(edgeOuter);
+                gradBb.vertex(mat, hw + spread, hh + spread * 0.7F, -0.001F).color(edgeOuter);
+                gradBb.vertex(mat, hw, hh, -0.001F).color(edgeInner);
+
+                BuiltBuffer builtGrad = gradBb.endNullable();
+                if (builtGrad != null) {
+                    BufferRenderer.drawWithGlobalProgram(builtGrad);
                 }
 
                 RenderSystem.defaultBlendFunc();
@@ -275,6 +319,31 @@ public class CardRenderHelper {
         BuiltBuffer built = bb.endNullable();
         if (built != null) {
             BufferRenderer.drawWithGlobalProgram(built);
+        }
+
+        // 3. Card Surface Gradient Backlight Illumination (подсветка самой карты)
+        if ((glow || globalCardGlow) && alpha > 0.01F) {
+            ColorRGBA gCol = glowColor != null ? glowColor : (globalGlowColor != null ? globalGlowColor : IiiiiIIIi_Class242.I_method_7df8e08e());
+            RenderSystem.enableBlend();
+            RenderSystem.blendFunc(GlStateManager.SrcFactor.SRC_ALPHA, GlStateManager.DstFactor.ONE);
+            RenderSystem.depthMask(false);
+            RenderSystem.setShader(ShaderProgramKeys.POSITION_COLOR);
+
+            int topTint = gCol.withAlpha((int)(alpha * 65.0F)).getRGB();
+            int botTint = gCol.withAlpha((int)(alpha * 15.0F)).getRGB();
+
+            BufferBuilder tintBb = RenderSystem.renderThreadTesselator().begin(DrawMode.QUADS, VertexFormats.POSITION_COLOR);
+            tintBb.vertex(mat, -hw, -hh, 0.001F).color(botTint);
+            tintBb.vertex(mat, hw, -hh, 0.001F).color(botTint);
+            tintBb.vertex(mat, hw, hh, 0.001F).color(topTint);
+            tintBb.vertex(mat, -hw, hh, 0.001F).color(topTint);
+            BuiltBuffer tintBuilt = tintBb.endNullable();
+            if (tintBuilt != null) {
+                BufferRenderer.drawWithGlobalProgram(tintBuilt);
+            }
+
+            RenderSystem.defaultBlendFunc();
+            RenderSystem.depthMask(true);
         }
 
         RenderSystem.enableCull();
