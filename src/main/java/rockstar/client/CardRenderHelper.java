@@ -225,65 +225,148 @@ public class CardRenderHelper {
                 RenderSystem.depthMask(false);
                 RenderSystem.disableCull();
 
-                // 1A. True Radial Gradient Light Bloom behind the card (smooth light puff)
+                // 1A. Dual-Lobe Radial Light Bloom behind the card (smooth, undistorted light clouds)
                 RenderSystem.setShader(ShaderProgramKeys.POSITION_TEX_COLOR);
                 RenderSystem.setShaderTexture(0, BLOOM_TEXTURE);
 
-                float bloomW1 = width * 1.65F;
-                float bloomH1 = height * 1.65F;
-                int bloomCol1 = gCol.withAlpha((int)(gAlpha * 160.0F)).getRGB();
+                float maxDim = Math.max(width, height);
+                float lobeSize = maxDim * 1.35F;
+                float lobeHalf = lobeSize * 0.5F;
+                float lobeOffsetY = height * 0.16F;
+                int bloomColLobe = gCol.withAlpha((int)(gAlpha * 125.0F)).getRGB();
 
                 BufferBuilder bloomBb = RenderSystem.renderThreadTesselator().begin(DrawMode.QUADS, VertexFormats.POSITION_TEXTURE_COLOR);
-                // Core bright radial light
-                bloomBb.vertex(mat, -bloomW1 * 0.5F, -bloomH1 * 0.5F, -0.002F).texture(0.0F, 0.0F).color(bloomCol1);
-                bloomBb.vertex(mat, bloomW1 * 0.5F, -bloomH1 * 0.5F, -0.002F).texture(1.0F, 0.0F).color(bloomCol1);
-                bloomBb.vertex(mat, bloomW1 * 0.5F, bloomH1 * 0.5F, -0.002F).texture(1.0F, 1.0F).color(bloomCol1);
-                bloomBb.vertex(mat, -bloomW1 * 0.5F, bloomH1 * 0.5F, -0.002F).texture(0.0F, 1.0F).color(bloomCol1);
+                // Top lobe light
+                bloomBb.vertex(mat, -lobeHalf, lobeOffsetY - lobeHalf, -0.003F).texture(0.0F, 0.0F).color(bloomColLobe);
+                bloomBb.vertex(mat, lobeHalf, lobeOffsetY - lobeHalf, -0.003F).texture(1.0F, 0.0F).color(bloomColLobe);
+                bloomBb.vertex(mat, lobeHalf, lobeOffsetY + lobeHalf, -0.003F).texture(1.0F, 1.0F).color(bloomColLobe);
+                bloomBb.vertex(mat, -lobeHalf, lobeOffsetY + lobeHalf, -0.003F).texture(0.0F, 1.0F).color(bloomColLobe);
 
-                // Wide soft ambient aura
-                float bloomW2 = width * 2.45F;
-                float bloomH2 = height * 2.45F;
-                int bloomCol2 = gCol.withAlpha((int)(gAlpha * 85.0F)).getRGB();
-                bloomBb.vertex(mat, -bloomW2 * 0.5F, -bloomH2 * 0.5F, -0.004F).texture(0.0F, 0.0F).color(bloomCol2);
-                bloomBb.vertex(mat, bloomW2 * 0.5F, -bloomH2 * 0.5F, -0.004F).texture(1.0F, 0.0F).color(bloomCol2);
-                bloomBb.vertex(mat, bloomW2 * 0.5F, bloomH2 * 0.5F, -0.004F).texture(1.0F, 1.0F).color(bloomCol2);
-                bloomBb.vertex(mat, -bloomW2 * 0.5F, bloomH2 * 0.5F, -0.004F).texture(0.0F, 1.0F).color(bloomCol2);
+                // Bottom lobe light
+                bloomBb.vertex(mat, -lobeHalf, -lobeOffsetY - lobeHalf, -0.003F).texture(0.0F, 0.0F).color(bloomColLobe);
+                bloomBb.vertex(mat, lobeHalf, -lobeOffsetY - lobeHalf, -0.003F).texture(1.0F, 0.0F).color(bloomColLobe);
+                bloomBb.vertex(mat, lobeHalf, -lobeOffsetY + lobeHalf, -0.003F).texture(1.0F, 1.0F).color(bloomColLobe);
+                bloomBb.vertex(mat, -lobeHalf, -lobeOffsetY + lobeHalf, -0.003F).texture(0.0F, 1.0F).color(bloomColLobe);
+
+                // Wide soft ambient aura centered behind card
+                float auraSize = maxDim * 2.2F;
+                float auraHalf = auraSize * 0.5F;
+                int bloomColAura = gCol.withAlpha((int)(gAlpha * 65.0F)).getRGB();
+                bloomBb.vertex(mat, -auraHalf, -auraHalf, -0.004F).texture(0.0F, 0.0F).color(bloomColAura);
+                bloomBb.vertex(mat, auraHalf, -auraHalf, -0.004F).texture(1.0F, 0.0F).color(bloomColAura);
+                bloomBb.vertex(mat, auraHalf, auraHalf, -0.004F).texture(1.0F, 1.0F).color(bloomColAura);
+                bloomBb.vertex(mat, -auraHalf, auraHalf, -0.004F).texture(0.0F, 1.0F).color(bloomColAura);
 
                 BuiltBuffer builtBloom = bloomBb.endNullable();
                 if (builtBloom != null) {
                     BufferRenderer.drawWithGlobalProgram(builtBloom);
                 }
 
-                // 1B. 4-Sided Gradient Light Falloff radiating outward from card edges
+                // 1B. Seamless 9-Slice Rounded Corner Glow (4 edge quads + 4 radial corner fans)
                 RenderSystem.setShader(ShaderProgramKeys.POSITION_COLOR);
-                float spread = Math.max(width, height) * 0.22F;
+                float spread = maxDim * 0.25F;
                 int edgeInner = gCol.withAlpha((int)(gAlpha * 140.0F)).getRGB();
                 int edgeOuter = gCol.withAlpha(0).getRGB();
+                float glowZ = -0.001F;
 
-                BufferBuilder gradBb = RenderSystem.renderThreadTesselator().begin(DrawMode.QUADS, VertexFormats.POSITION_COLOR);
-                // Top gradient light strip
-                gradBb.vertex(mat, -hw, hh, -0.001F).color(edgeInner);
-                gradBb.vertex(mat, hw, hh, -0.001F).color(edgeInner);
-                gradBb.vertex(mat, hw + spread * 0.7F, hh + spread, -0.001F).color(edgeOuter);
-                gradBb.vertex(mat, -hw - spread * 0.7F, hh + spread, -0.001F).color(edgeOuter);
+                BufferBuilder gradBb = RenderSystem.renderThreadTesselator().begin(DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR);
 
-                // Bottom gradient light strip
-                gradBb.vertex(mat, -hw - spread * 0.7F, -hh - spread, -0.001F).color(edgeOuter);
-                gradBb.vertex(mat, hw + spread * 0.7F, -hh - spread, -0.001F).color(edgeOuter);
-                gradBb.vertex(mat, hw, -hh, -0.001F).color(edgeInner);
-                gradBb.vertex(mat, -hw, -hh, -0.001F).color(edgeInner);
+                // --- 4 Straight Edge Strips ---
+                // Top edge strip
+                gradBb.vertex(mat, -hw, hh, glowZ).color(edgeInner);
+                gradBb.vertex(mat, hw, hh, glowZ).color(edgeInner);
+                gradBb.vertex(mat, hw, hh + spread, glowZ).color(edgeOuter);
 
-                // Left gradient light strip
-                gradBb.vertex(mat, -hw - spread, -hh - spread * 0.7F, -0.001F).color(edgeOuter);
-                gradBb.vertex(mat, -hw, -hh, -0.001F).color(edgeInner);
-                gradBb.vertex(mat, -hw, hh, -0.001F).color(edgeInner);
-                gradBb.vertex(mat, -hw - spread, hh + spread * 0.7F, -0.001F).color(edgeOuter);
+                gradBb.vertex(mat, -hw, hh, glowZ).color(edgeInner);
+                gradBb.vertex(mat, hw, hh + spread, glowZ).color(edgeOuter);
+                gradBb.vertex(mat, -hw, hh + spread, glowZ).color(edgeOuter);
 
-                // Right gradient light strip
-                gradBb.vertex(mat, hw, -hh, -0.001F).color(edgeInner);
-                gradBb.vertex(mat, hw + spread, -hh - spread * 0.7F, -0.001F).color(edgeOuter);
-                gradBb.vertex(mat, hw + spread, hh + spread * 0.7F, -0.001F).color(edgeOuter);
-                gradBb.vertex(mat, hw, hh, -0.001F).color(edgeInner);
+                // Bottom edge strip
+                gradBb.vertex(mat, -hw, -hh, glowZ).color(edgeInner);
+                gradBb.vertex(mat, -hw, -hh - spread, glowZ).color(edgeOuter);
+                gradBb.vertex(mat, hw, -hh - spread, glowZ).color(edgeOuter);
+
+                gradBb.vertex(mat, -hw, -hh, glowZ).color(edgeInner);
+                gradBb.vertex(mat, hw, -hh - spread, glowZ).color(edgeOuter);
+                gradBb.vertex(mat, hw, -hh, glowZ).color(edgeInner);
+
+                // Left edge strip
+                gradBb.vertex(mat, -hw, -hh, glowZ).color(edgeInner);
+                gradBb.vertex(mat, -hw, hh, glowZ).color(edgeInner);
+                gradBb.vertex(mat, -hw - spread, hh, glowZ).color(edgeOuter);
+
+                gradBb.vertex(mat, -hw, -hh, glowZ).color(edgeInner);
+                gradBb.vertex(mat, -hw - spread, hh, glowZ).color(edgeOuter);
+                gradBb.vertex(mat, -hw - spread, -hh, glowZ).color(edgeOuter);
+
+                // Right edge strip
+                gradBb.vertex(mat, hw, -hh, glowZ).color(edgeInner);
+                gradBb.vertex(mat, hw + spread, -hh, glowZ).color(edgeOuter);
+                gradBb.vertex(mat, hw + spread, hh, glowZ).color(edgeOuter);
+
+                gradBb.vertex(mat, hw, -hh, glowZ).color(edgeInner);
+                gradBb.vertex(mat, hw + spread, hh, glowZ).color(edgeOuter);
+                gradBb.vertex(mat, hw, hh, glowZ).color(edgeInner);
+
+                // --- 4 Smooth Radial Corner Fans ---
+                final int CORNER_STEPS = 10;
+                final float HALF_PI = (float)(Math.PI / 2.0);
+
+                // Top-Right corner fan: origin (hw, hh), arc 0 -> PI/2
+                for (int s = 0; s < CORNER_STEPS; s++) {
+                    float a1 = s * HALF_PI / CORNER_STEPS;
+                    float a2 = (s + 1) * HALF_PI / CORNER_STEPS;
+                    float x1 = hw + spread * (float)Math.cos(a1);
+                    float y1 = hh + spread * (float)Math.sin(a1);
+                    float x2 = hw + spread * (float)Math.cos(a2);
+                    float y2 = hh + spread * (float)Math.sin(a2);
+
+                    gradBb.vertex(mat, hw, hh, glowZ).color(edgeInner);
+                    gradBb.vertex(mat, x1, y1, glowZ).color(edgeOuter);
+                    gradBb.vertex(mat, x2, y2, glowZ).color(edgeOuter);
+                }
+
+                // Top-Left corner fan: origin (-hw, hh), arc PI/2 -> PI
+                for (int s = 0; s < CORNER_STEPS; s++) {
+                    float a1 = HALF_PI + s * HALF_PI / CORNER_STEPS;
+                    float a2 = HALF_PI + (s + 1) * HALF_PI / CORNER_STEPS;
+                    float x1 = -hw + spread * (float)Math.cos(a1);
+                    float y1 = hh + spread * (float)Math.sin(a1);
+                    float x2 = -hw + spread * (float)Math.cos(a2);
+                    float y2 = hh + spread * (float)Math.sin(a2);
+
+                    gradBb.vertex(mat, -hw, hh, glowZ).color(edgeInner);
+                    gradBb.vertex(mat, x1, y1, glowZ).color(edgeOuter);
+                    gradBb.vertex(mat, x2, y2, glowZ).color(edgeOuter);
+                }
+
+                // Bottom-Left corner fan: origin (-hw, -hh), arc PI -> 3*PI/2
+                for (int s = 0; s < CORNER_STEPS; s++) {
+                    float a1 = (float)Math.PI + s * HALF_PI / CORNER_STEPS;
+                    float a2 = (float)Math.PI + (s + 1) * HALF_PI / CORNER_STEPS;
+                    float x1 = -hw + spread * (float)Math.cos(a1);
+                    float y1 = -hh + spread * (float)Math.sin(a1);
+                    float x2 = -hw + spread * (float)Math.cos(a2);
+                    float y2 = -hh + spread * (float)Math.sin(a2);
+
+                    gradBb.vertex(mat, -hw, -hh, glowZ).color(edgeInner);
+                    gradBb.vertex(mat, x1, y1, glowZ).color(edgeOuter);
+                    gradBb.vertex(mat, x2, y2, glowZ).color(edgeOuter);
+                }
+
+                // Bottom-Right corner fan: origin (hw, -hh), arc 3*PI/2 -> 2*PI
+                for (int s = 0; s < CORNER_STEPS; s++) {
+                    float a1 = 3.0F * HALF_PI + s * HALF_PI / CORNER_STEPS;
+                    float a2 = 3.0F * HALF_PI + (s + 1) * HALF_PI / CORNER_STEPS;
+                    float x1 = hw + spread * (float)Math.cos(a1);
+                    float y1 = -hh + spread * (float)Math.sin(a1);
+                    float x2 = hw + spread * (float)Math.cos(a2);
+                    float y2 = -hh + spread * (float)Math.sin(a2);
+
+                    gradBb.vertex(mat, hw, -hh, glowZ).color(edgeInner);
+                    gradBb.vertex(mat, x1, y1, glowZ).color(edgeOuter);
+                    gradBb.vertex(mat, x2, y2, glowZ).color(edgeOuter);
+                }
 
                 BuiltBuffer builtGrad = gradBb.endNullable();
                 if (builtGrad != null) {
