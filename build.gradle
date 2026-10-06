@@ -1,0 +1,79 @@
+plugins {
+    id 'fabric-loom' version '1.10.5'
+    id 'maven-publish'
+}
+
+version = project.mod_version
+group = project.maven_group
+
+base {
+    archivesName = project.archives_base_name
+}
+
+repositories {
+    mavenCentral()
+    maven { url = 'https://maven.fabricmc.net/' }
+}
+
+dependencies {
+    minecraft "com.mojang:minecraft:${project.minecraft_version}"
+    mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
+    modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+    modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+
+    compileOnly 'org.projectlombok:lombok:1.18.38'
+    annotationProcessor 'org.projectlombok:lombok:1.18.38'
+    compileOnly 'com.google.code.findbugs:jsr305:3.0.2'
+    compileOnly 'javax.validation:validation-api:2.0.1.Final'
+    implementation include('com.google.zxing:core:3.5.3')
+    implementation include('com.google.zxing:javase:3.5.3')
+    implementation include('com.github.kevinsawicki:http-request:6.0')
+    implementation include('net.coobird:thumbnailator:0.4.20')
+    implementation include('org.nanohttpd:nanohttpd:2.3.1')
+    compileOnly 'io.netty:netty-codec-http:4.1.115.Final'
+    implementation include('io.projectreactor.netty:reactor-netty-http:1.1.25')
+    implementation include('com.squareup.okhttp3:okhttp:4.12.0')
+    implementation include('com.squareup.okio:okio:3.6.0')
+    implementation include('com.squareup.okio:okio-jvm:3.6.0')
+    implementation include('org.jetbrains.kotlin:kotlin-stdlib:1.9.10')
+    implementation include('org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.9.10')
+    implementation include('org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.9.10')
+    implementation include('org.openjfx:javafx-base:21.0.2:win')
+    implementation include('org.openjfx:javafx-graphics:21.0.2:win')
+    implementation include('org.openjfx:javafx-controls:21.0.2:win')
+    implementation include('org.openjfx:javafx-swing:21.0.2:win')
+    implementation include('org.openjfx:javafx-web:21.0.2:win')
+
+    // Also expose the original jar-in-jar libraries to Loom's development runtime.
+    // They remain embedded verbatim through fabric.mod.json in production.
+    implementation fileTree(dir: 'src/main/resources/META-INF/jars', include: ['*.jar'])
+}
+
+loom {
+    accessWidenerPath = file('src/main/resources/rockstar.accesswidener')
+    mixin {
+        defaultRefmapName = 'rockstar-refmap.json'
+    }
+}
+
+processResources {
+    inputs.property 'version', project.version
+    // Loom's Mixin annotation processor regenerates this file into the compiled
+    // classes output. Exclude the archived copy to avoid two identical jar entries.
+    exclude 'rockstar-refmap.json'
+    filesMatching('fabric.mod.json') {
+        expand(version: project.version)
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.release = 21
+    options.warnings = false
+    options.compilerArgs += ['-Xlint:none', '-nowarn', '-Xmaxerrs', '5000']
+}
+
+java {
+    toolchain.languageVersion = JavaLanguageVersion.of(21)
+    withSourcesJar()
+}
