@@ -418,8 +418,8 @@ public class AltManagerScreen extends ii_Class4 {
 
             MatrixStack m = var1.getMatrices();
             m.push();
-            m.translate(posX, carouselCY + 35.0F, 120.0F - absRel * 40.0F);
-            m.scale(mScale, -mScale, mScale);
+            m.translate(posX, carouselCY - 16.0F, 120.0F - absRel * 40.0F);
+            m.scale(mScale, mScale, mScale);
             // 180° ensures front face and eyes point straight at the camera
             m.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(180.0F + yawDeg));
 
@@ -594,12 +594,12 @@ public class AltManagerScreen extends ii_Class4 {
                     var1.drawRoundedRect(menuX + 4.0F, rowY, menuW - 8.0F, rowH, IIiii_Class8.I_method_893b2757(5.0F), isCurrent ? themeAccent.withAlpha(70.0F * screenAlpha) : new ColorRGBA(255.0F, 255.0F, 255.0F, 18.0F * screenAlpha));
                 }
 
-                // Upright mini preview for each pose
+                // Mini preview for each pose
                 applySmoothPose(p, true, 0.0F);
                 MatrixStack mm = var1.getMatrices();
                 mm.push();
-                mm.translate(menuX + 15.0F, rowY + 16.0F, 260.0F);
-                mm.scale(8.0F, -8.0F, 8.0F);
+                mm.translate(menuX + 15.0F, rowY + 3.0F, 260.0F);
+                mm.scale(8.0F, 8.0F, 8.0F);
                 mm.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(180.0F));
 
                 try {

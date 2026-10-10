@@ -118,7 +118,7 @@ extends Screen {
         rockstar.client.IIiIIi_Class10 badgeFont = rockstar.client.IIiIiI_Class11.i_field_857c0621.I_method_3a2d5e3(7.0F);
 
         // Center Stage Carousel
-        float carouselCY = (this.height - 75.0F) / 2.0F + 8.0F;
+        float carouselCY = (this.height - 75.0F) / 2.0F + 14.0F;
         float cardW = 144.0F;
         float cardH = 168.0F;
         float spacing = 164.0F;
@@ -141,14 +141,40 @@ extends Screen {
             return;
         }
 
+        // Section Navigation Pill Bar at Top
+        float topSecY = carouselCY - cardH / 2.0F - 32.0F;
+        boolean selectedIsPinned = this.rockstar$isPinnedServerSelected();
+        float secBarW = 224.0F;
+        float secBarH = 22.0F;
+        float secBarX = cx - secBarW / 2.0F;
+        rockstar.client.IIiii_Class8 radSec = rockstar.client.IIiii_Class8.I_method_893b2757(secBarH / 2.0F);
+
+        custom.drawBlurredRect(secBarX, topSecY, secBarW, secBarH, 12.0F, 2.5F, radSec, new pyrock.utility.render.ColorRGBA(255.0F, 255.0F, 255.0F, 20.0F));
+        custom.drawRoundedRect(secBarX, topSecY, secBarW, secBarH, radSec, new pyrock.utility.render.ColorRGBA(12.0F, 14.0F, 22.0F, 190.0F));
+        custom.drawRoundedBorder(secBarX, topSecY, secBarW, secBarH, 1.0F, radSec, new pyrock.utility.render.ColorRGBA(255.0F, 255.0F, 255.0F, 35.0F));
+
+        float tabW = secBarW / 2.0F;
+        // Active section indicator pill
+        float activeTabX = selectedIsPinned ? secBarX : secBarX + tabW;
+        custom.drawRoundedRect(activeTabX + 2.0F, topSecY + 2.0F, tabW - 4.0F, secBarH - 4.0F, rockstar.client.IIiii_Class8.I_method_893b2757((secBarH - 4.0F) / 2.0F), new pyrock.utility.render.ColorRGBA(255.0F, 255.0F, 255.0F, 36.0F));
+        custom.drawRoundedBorder(activeTabX + 2.0F, topSecY + 2.0F, tabW - 4.0F, secBarH - 4.0F, 0.8F, rockstar.client.IIiii_Class8.I_method_893b2757((secBarH - 4.0F) / 2.0F), new pyrock.utility.render.ColorRGBA(255.0F, 255.0F, 255.0F, 90.0F));
+
+        String tab1 = "★ ЗАКРЕПЛЕННЫЕ";
+        String tab2 = "≡ ВСЕ СЕРВЕРЫ";
+        float t1W = badgeFont.I_method_2c375926(tab1);
+        float t2W = badgeFont.I_method_2c375926(tab2);
+        custom.drawText(badgeFont, tab1, secBarX + (tabW - t1W) / 2.0F, topSecY + 7.0F, selectedIsPinned ? pyrock.utility.render.ColorRGBA.WHITE : new pyrock.utility.render.ColorRGBA(160.0F, 170.0F, 190.0F, 160.0F));
+        custom.drawText(badgeFont, tab2, secBarX + tabW + (tabW - t2W) / 2.0F, topSecY + 7.0F, !selectedIsPinned ? pyrock.utility.render.ColorRGBA.WHITE : new pyrock.utility.render.ColorRGBA(160.0F, 170.0F, 190.0F, 160.0F));
+
         net.minecraft.util.Identifier unknownIcon = net.minecraft.util.Identifier.ofVanilla("textures/misc/unknown_server.png");
 
-        // Render Carousel Cards (Screenshot 2 Design: Name top, Square avatar, Play/Edit bottom buttons)
+        // Render Carousel Cards (Matte & Glass design, Square avatar, Monochrome sleek buttons)
         for (int i = 0; i < count; i++) {
             float rel = (float) i - this.rockstar$carouselScroll;
             if (Math.abs(rel) > 2.8F) continue;
 
             ServerInfo info = serverList.get(i);
+            boolean isPinned = rockstar.client.iIIIiiIiI_Class283.I_method_8f9b3f84(info);
             float cardCX = cx + rel * spacing;
             float distFromCenter = Math.abs(rel);
             boolean isCenter = (i == this.rockstar$selectedIndex);
@@ -190,6 +216,13 @@ extends Screen {
             float nameY = cardY + 10.0F * cardScale;
             custom.drawText(titleFont, sName, cardCX - snW / 2.0F, nameY, pyrock.utility.render.ColorRGBA.WHITE.withAlpha(255.0F * alpha));
 
+            // Pinned Section Badge on Card
+            if (isPinned) {
+                String pinText = "★";
+                float pW = badgeFont.I_method_2c375926(pinText);
+                custom.drawText(badgeFont, pinText, cardX + curW - pW - 8.0F, nameY, new pyrock.utility.render.ColorRGBA(255.0F, 255.0F, 255.0F, 220.0F * alpha));
+            }
+
             // 2. Large Square Server Avatar with Rounded Corners
             float avatarSize = 92.0F * cardScale;
             float avatarX = cardCX - avatarSize / 2.0F;
@@ -200,36 +233,38 @@ extends Screen {
             custom.drawTexture(unknownIcon, avatarX + 4.0F, avatarY + 4.0F, avatarSize - 8.0F, avatarSize - 8.0F, pyrock.utility.render.ColorRGBA.WHITE.withAlpha(255.0F * alpha));
             custom.drawRoundedBorder(avatarX, avatarY, avatarSize, avatarSize, 1.0F, radAvatar, new pyrock.utility.render.ColorRGBA(255.0F, 255.0F, 255.0F, (isCenter ? 140.0F : 50.0F) * alpha));
 
-            // 3. Two Side-by-Side Action Buttons at Bottom (Play & Edit)
+            // 3. Monochromatic Frosted Action Buttons at Bottom (Play & Edit) - No garish colors!
             float btnBarY = avatarY + avatarSize + 8.0F;
             float btnGap = 8.0F;
             float btnW = (curW - 20.0F - btnGap) / 2.0F;
             float btnH = 30.0F;
             rockstar.client.IIiii_Class8 radBtn = rockstar.client.IIiii_Class8.I_method_893b2757(6.0F);
 
-            // Left Pod: Play Button (Blue Circle + Play Icon)
+            // Left Pod: Play Button (Monochrome Frosted Glass)
             float playX = cardX + 10.0F;
             boolean playHov = isCenter && (mouseX >= playX && mouseX <= playX + btnW && mouseY >= btnBarY && mouseY <= btnBarY + btnH);
-            custom.drawRoundedRect(playX, btnBarY, btnW, btnH, radBtn, new pyrock.utility.render.ColorRGBA(255.0F, 255.0F, 255.0F, (playHov ? 25.0F : 12.0F) * alpha));
-            custom.drawRoundedBorder(playX, btnBarY, btnW, btnH, 0.9F, radBtn, playHov ? new pyrock.utility.render.ColorRGBA(59.0F, 130.0F, 246.0F, 220.0F * alpha) : new pyrock.utility.render.ColorRGBA(255.0F, 255.0F, 255.0F, 35.0F * alpha));
+            custom.drawRoundedRect(playX, btnBarY, btnW, btnH, radBtn, new pyrock.utility.render.ColorRGBA(255.0F, 255.0F, 255.0F, (playHov ? 35.0F : 14.0F) * alpha));
+            custom.drawRoundedBorder(playX, btnBarY, btnW, btnH, 0.9F, radBtn, new pyrock.utility.render.ColorRGBA(255.0F, 255.0F, 255.0F, (playHov ? 180.0F : 40.0F) * alpha));
 
             float circleSize = 22.0F;
             float circleX = playX + (btnW - circleSize) / 2.0F;
             float circleY = btnBarY + (btnH - circleSize) / 2.0F;
             rockstar.client.IIiii_Class8 radCircle = rockstar.client.IIiii_Class8.I_method_893b2757(circleSize / 2.0F);
-            custom.drawRoundedRect(circleX, circleY, circleSize, circleSize, radCircle, new pyrock.utility.render.ColorRGBA(59.0F, 130.0F, 246.0F, 255.0F * alpha));
-            custom.drawIcon("play", circleX + 5.0F, circleY + 5.0F, 12.0F, pyrock.utility.render.ColorRGBA.WHITE);
+            custom.drawRoundedRect(circleX, circleY, circleSize, circleSize, radCircle, new pyrock.utility.render.ColorRGBA(255.0F, 255.0F, 255.0F, (playHov ? 50.0F : 22.0F) * alpha));
+            custom.drawRoundedBorder(circleX, circleY, circleSize, circleSize, 0.8F, radCircle, new pyrock.utility.render.ColorRGBA(255.0F, 255.0F, 255.0F, (playHov ? 210.0F : 70.0F) * alpha));
+            custom.drawIcon("play", circleX + 5.0F, circleY + 5.0F, 12.0F, pyrock.utility.render.ColorRGBA.WHITE.withAlpha(255.0F * alpha));
 
-            // Right Pod: Edit Button (Yellow Circle + Pencil Icon)
+            // Right Pod: Edit Button (Monochrome Frosted Glass)
             float editX = playX + btnW + btnGap;
             boolean editHov = isCenter && (mouseX >= editX && mouseX <= editX + btnW && mouseY >= btnBarY && mouseY <= btnBarY + btnH);
-            custom.drawRoundedRect(editX, btnBarY, btnW, btnH, radBtn, new pyrock.utility.render.ColorRGBA(255.0F, 255.0F, 255.0F, (editHov ? 25.0F : 12.0F) * alpha));
-            custom.drawRoundedBorder(editX, btnBarY, btnW, btnH, 0.9F, radBtn, editHov ? new pyrock.utility.render.ColorRGBA(245.0F, 158.0F, 11.0F, 220.0F * alpha) : new pyrock.utility.render.ColorRGBA(255.0F, 255.0F, 255.0F, 35.0F * alpha));
+            custom.drawRoundedRect(editX, btnBarY, btnW, btnH, radBtn, new pyrock.utility.render.ColorRGBA(255.0F, 255.0F, 255.0F, (editHov ? 35.0F : 14.0F) * alpha));
+            custom.drawRoundedBorder(editX, btnBarY, btnW, btnH, 0.9F, radBtn, new pyrock.utility.render.ColorRGBA(255.0F, 255.0F, 255.0F, (editHov ? 180.0F : 40.0F) * alpha));
 
             float eCircleX = editX + (btnW - circleSize) / 2.0F;
             float eCircleY = btnBarY + (btnH - circleSize) / 2.0F;
-            custom.drawRoundedRect(eCircleX, eCircleY, circleSize, circleSize, radCircle, new pyrock.utility.render.ColorRGBA(245.0F, 158.0F, 11.0F, 255.0F * alpha));
-            custom.drawIcon("setting", eCircleX + 4.5F, eCircleY + 4.5F, 13.0F, pyrock.utility.render.ColorRGBA.BLACK);
+            custom.drawRoundedRect(eCircleX, eCircleY, circleSize, circleSize, radCircle, new pyrock.utility.render.ColorRGBA(255.0F, 255.0F, 255.0F, (editHov ? 50.0F : 22.0F) * alpha));
+            custom.drawRoundedBorder(eCircleX, eCircleY, circleSize, circleSize, 0.8F, radCircle, new pyrock.utility.render.ColorRGBA(255.0F, 255.0F, 255.0F, (editHov ? 210.0F : 70.0F) * alpha));
+            custom.drawIcon("setting", eCircleX + 4.5F, eCircleY + 4.5F, 13.0F, pyrock.utility.render.ColorRGBA.WHITE.withAlpha(240.0F * alpha));
         }
     }
 

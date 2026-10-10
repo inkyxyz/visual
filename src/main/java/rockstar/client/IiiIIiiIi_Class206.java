@@ -36,13 +36,10 @@ implements iIIiIIiIi_Class294 {
         "image/mainmenu/wallpaper8",
         "image/mainmenu/wallpaper9",
         "image/mainmenu/wallpaper10",
-        "image/mainmenu/wallpaper11",
-        "image/mainmenu/wallpaper12",
         "image/mainmenu/wallpaper13",
         "image/mainmenu/wallpaper14",
         "image/mainmenu/wallpaper15",
         "image/mainmenu/wallpaper16",
-        "image/mainmenu/wallpaper17",
         "image/mainmenu/wallpaper18",
         "image/mainmenu/wallpaper19",
         "image/mainmenu/wallpaper20"
@@ -58,13 +55,10 @@ implements iIIiIIiIi_Class294 {
         "Lush Caves",
         "Snowy Taiga",
         "Sunset Campfire",
-        "Celestial Nebula",
-        "Solar Citadel",
         "Emerald Deep",
         "Crimson Forest",
         "End Void Islands",
         "Glacial Highlands",
-        "Cyberpunk Metropolis",
         "Autumn Sanctuary",
         "Abyssal Trench",
         "Starlight Blossom"
@@ -87,15 +81,15 @@ implements iIIiIIiIi_Class294 {
     private int iI_field_49;
 
     public static int I_method_2d8cb612() {
-        return I_field_6dccaaa5.length;
+        return i_field_6dccaaa5.length;
     }
 
     public static int i_method_2d9b41f2() {
-        return I_field_6dccaaa5.length;
+        return i_field_6dccaaa5.length;
     }
 
     public IiiIIiiIi_Class206(int n) {
-        this.I_field_49 = MathHelper.clamp((int)n, (int)0, (int)(I_field_6dccaaa5.length - 1));
+        this.I_field_49 = MathHelper.clamp((int)n, (int)0, (int)(i_field_6dccaaa5.length - 1));
         this.i_field_46 = this.I_field_49;
         this.i_field_49 = this.I_field_49;
     }
@@ -112,16 +106,13 @@ implements iIIiIIiIi_Class294 {
             case 7 -> new ColorRGBA(100.0F, 230.0F, 110.0F, 255.0F); // Lush Caves Green
             case 8 -> new ColorRGBA(120.0F, 210.0F, 255.0F, 255.0F); // Snowy Taiga Aurora Teal
             case 9 -> new ColorRGBA(255.0F, 150.0F, 50.0F, 255.0F);  // Sunset Campfire Warm Orange
-            case 10 -> new ColorRGBA(190.0F, 90.0F, 255.0F, 255.0F);  // Celestial Nebula Cosmic Violet
-            case 11 -> new ColorRGBA(255.0F, 200.0F, 60.0F, 255.0F);  // Solar Citadel Radiant Gold
-            case 12 -> new ColorRGBA(0.0F, 245.0F, 180.0F, 255.0F);   // Emerald Deep Neon Mint
-            case 13 -> new ColorRGBA(255.0F, 50.0F, 80.0F, 255.0F);   // Crimson Forest Nether Crimson
-            case 14 -> new ColorRGBA(210.0F, 130.0F, 255.0F, 255.0F); // End Void Islands Ender Purple
-            case 15 -> new ColorRGBA(140.0F, 225.0F, 255.0F, 255.0F); // Glacial Highlands Frost Sky Blue
-            case 16 -> new ColorRGBA(0.0F, 235.0F, 255.0F, 255.0F);   // Cyberpunk Metropolis Electric Cyan
-            case 17 -> new ColorRGBA(255.0F, 130.0F, 40.0F, 255.0F);  // Autumn Sanctuary Golden Amber
-            case 18 -> new ColorRGBA(30.0F, 180.0F, 255.0F, 255.0F);  // Abyssal Trench Bioluminescent Deep Blue
-            case 19 -> new ColorRGBA(255.0F, 105.0F, 180.0F, 255.0F); // Starlight Blossom Sakura Rose
+            case 10 -> new ColorRGBA(0.0F, 245.0F, 180.0F, 255.0F);   // Emerald Deep Neon Mint
+            case 11 -> new ColorRGBA(255.0F, 50.0F, 80.0F, 255.0F);   // Crimson Forest Nether Crimson
+            case 12 -> new ColorRGBA(210.0F, 130.0F, 255.0F, 255.0F); // End Void Islands Ender Purple
+            case 13 -> new ColorRGBA(140.0F, 225.0F, 255.0F, 255.0F); // Glacial Highlands Frost Sky Blue
+            case 14 -> new ColorRGBA(255.0F, 130.0F, 40.0F, 255.0F);  // Autumn Sanctuary Golden Amber
+            case 15 -> new ColorRGBA(30.0F, 180.0F, 255.0F, 255.0F);  // Abyssal Trench Bioluminescent Deep Blue
+            case 16 -> new ColorRGBA(255.0F, 105.0F, 180.0F, 255.0F); // Starlight Blossom Sakura Rose
             default -> new ColorRGBA(140.0F, 220.0F, 255.0F, 255.0F);
         };
     }

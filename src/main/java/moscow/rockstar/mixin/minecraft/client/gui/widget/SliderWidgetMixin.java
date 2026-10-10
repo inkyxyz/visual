@@ -46,12 +46,16 @@ public abstract class SliderWidgetMixin extends ClickableWidget {
 
         CustomDrawContext custom = (context instanceof CustomDrawContext cdc) ? cdc : new CustomDrawContext(context);
 
+        if (this.height < 25) {
+            this.setHeight(25);
+        }
+
         float bx = (float) this.getX();
         float by = (float) this.getY();
         float bw = (float) this.getWidth();
         float bh = (float) this.getHeight();
 
-        float rad = Math.min(bh / 2.0F, 8.0F);
+        float rad = Math.min(bh / 2.0F, 9.0F);
         IIiii_Class8 radObj = IIiii_Class8.I_method_893b2757(rad);
         ColorRGBA themeAccent = IiiiiIIIi_Class242.I_method_7df8e08e();
         float widgetAlpha = this.alpha;
@@ -78,10 +82,10 @@ public abstract class SliderWidgetMixin extends ClickableWidget {
             new ColorRGBA(255.0F, 255.0F, 255.0F, 12.0F * widgetAlpha);
         custom.drawRoundedBorder(bx, by, bw, bh, 1.0F, radObj, borderCol);
 
-        // 5. Slim Track Bar & Thumb at the bottom
+        // 5. Slim Track Bar & Thumb at the bottom (clearly separated from text line)
         float clampedVal = (float) Math.max(0.0, Math.min(1.0, this.value));
         float trackX = bx + 8.0F;
-        float trackH = 3.5F;
+        float trackH = 3.0F;
         float trackY = by + bh - trackH - 3.5F;
         float trackW = bw - 16.0F;
         IIiii_Class8 trackRad = IIiii_Class8.I_method_893b2757(trackH / 2.0F);
@@ -97,7 +101,7 @@ public abstract class SliderWidgetMixin extends ClickableWidget {
         }
 
         // Circular Thumb Knob sliding along track
-        float thumbR = 4.0F;
+        float thumbR = 3.8F;
         float thumbCx = trackX + trackW * clampedVal;
         float thumbCy = trackY + trackH / 2.0F;
         IIiii_Class8 thumbRad = IIiii_Class8.I_method_893b2757(thumbR);

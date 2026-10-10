@@ -50,7 +50,30 @@ implements iIIiIIiIi_Class294 {
     private ButtonWidget field_40792;
 
     @Unique private static float rockstar$flashAlpha = 0.0F;
-    @Unique private static boolean rockstar$isPlaying = false;
+    @Unique private static boolean rockstar$isPlaying = true;
+
+    // Interactive Media Player State
+    @Unique private static final String[] rockstar$playlistTitles = new String[]{
+        "Midnight Drive",
+        "Aria Math (Cyber Mix)",
+        "Pigstep (Lo-Fi)",
+        "Neon Dreams",
+        "Subwoofer Lullaby"
+    };
+    @Unique private static final String[] rockstar$playlistArtists = new String[]{
+        "Rockstar Sound Team",
+        "C418 & SynthLab",
+        "Lena Raine (Chillwave)",
+        "Antigravity Studio",
+        "Daniel Rosenfeld"
+    };
+    @Unique private static final int[] rockstar$playlistDurations = new int[]{
+        214, 310, 148, 195, 208
+    };
+    @Unique private static int rockstar$currentTrack = 0;
+    @Unique private static float rockstar$trackElapsedSec = 42.0F;
+    @Unique private static boolean rockstar$isScrubbing = false;
+    @Unique private static float[] rockstar$eqFrequencies = new float[]{0.45F, 0.72F, 0.90F, 0.55F, 0.82F, 0.38F};
 
     // Interactive iOS Calculator State
     @Unique private static String rockstar$calcDisplay = "0";
@@ -61,7 +84,7 @@ implements iIIiIIiIi_Class294 {
     // Volume Drag State
     @Unique private static boolean rockstar$isDraggingVolume = false;
 
-    // Tile Reordering State (Drag on Hold)
+    // Tile Reordering State (Intentional Long Press Hold required: ~480ms)
     @Unique private static int[] rockstar$tileSlots = new int[]{0, 1, 2, 3, 4, 5};
     @Unique private static int rockstar$draggedSlot = -1;
     @Unique private static long rockstar$pressStartTime = 0L;
@@ -89,50 +112,76 @@ implements iIIiIIiIi_Class294 {
         III custom = III.I_method_5728d20f(drawContext, mouseX, mouseY, delta);
         float cx = this.width / 2.0F;
         float cy = this.height / 2.0F;
+        long now = System.currentTimeMillis();
 
         // Dark frosted backdrop
-        custom.drawRect(0.0F, 0.0F, (float)this.width, (float)this.height, new ColorRGBA(0.0F, 0.0F, 0.0F, 115.0F));
+        custom.drawRect(0.0F, 0.0F, (float)this.width, (float)this.height, new ColorRGBA(0.0F, 0.0F, 0.0F, 125.0F));
 
         IIiIIi_Class10 font = null;
         IIiIIi_Class10 boldFont = null;
         IIiIIi_Class10 subFont = null;
+        IIiIIi_Class10 tinyFont = null;
         try {
             if (IIiIiI_Class11.i_field_857c0621 != null) {
                 boldFont = IIiIiI_Class11.i_field_857c0621.I_method_3a2d5e3(13.0F);
                 font = IIiIiI_Class11.i_field_857c0621.I_method_3a2d5e3(9.5F);
                 subFont = IIiIiI_Class11.II_field_857c0621.I_method_3a2d5e3(7.5F);
+                tinyFont = IIiIiI_Class11.II_field_857c0621.I_method_3a2d5e3(6.5F);
             }
         } catch (Throwable ignored) {}
 
-        // 6 Blueprint Slot Base Layout Coordinates
-        // Slot 0: Media Player Card (110 x 70)
-        // Slot 1: Camera Tile (50 x 50)
-        // Slot 2: Calc Launcher Tile (50 x 50)
+        // Advance music playback track time and animate equalizer
+        if (rockstar$isPlaying && !rockstar$isScrubbing) {
+            rockstar$trackElapsedSec += delta * 0.05F;
+            int maxDur = rockstar$playlistDurations[rockstar$currentTrack % rockstar$playlistDurations.length];
+            if (rockstar$trackElapsedSec >= maxDur) {
+                rockstar$trackElapsedSec = 0.0F;
+                rockstar$currentTrack = (rockstar$currentTrack + 1) % rockstar$playlistTitles.length;
+            }
+        }
+
+        // Animate Equalizer bars
+        float timeF = (float)(now % 1000000L) / 1000.0F;
+        for (int i = 0; i < rockstar$eqFrequencies.length; i++) {
+            if (rockstar$isPlaying) {
+                float target = (float)(Math.sin(timeF * 8.0F + i * 1.5F) * 0.35F + 0.55F);
+                rockstar$eqFrequencies[i] += (target - rockstar$eqFrequencies[i]) * 0.22F;
+            } else {
+                rockstar$eqFrequencies[i] += (0.15F - rockstar$eqFrequencies[i]) * 0.15F;
+            }
+        }
+
+        // 6 Blueprint Slot Base Layout Coordinates (Uniform iOS Grid)
+        // Slot 0: Media Player Card (112 x 70)
+        // Slot 1: Camera Tile (52 x 50)
+        // Slot 2: Fullscreen Quick Tile (52 x 50)
         // Slot 3: Master Volume Slider Pill (52 x 108)
         // Slot 4: Large Interactive Calculator (148 x 186)
         // Slot 5: Right 3-Circle Column (48 x 186)
         float[][] defaultBounds = new float[][]{
-            { cx - 175.0F, cy - 93.0F, 110.0F, 70.0F },  // 0: Media Player
-            { cx - 175.0F, cy - 15.0F, 50.0F, 50.0F },   // 1: Camera
-            { cx - 175.0F, cy + 43.0F, 50.0F, 50.0F },   // 2: Calc Icon
-            { cx - 117.0F, cy - 15.0F, 52.0F, 108.0F },  // 3: Volume Pill
-            { cx - 57.0F, cy - 93.0F, 148.0F, 186.0F },  // 4: Calculator Card
-            { cx + 99.0F, cy - 93.0F, 48.0F, 186.0F }    // 5: Right Circles
+            { cx - 175.0F, cy - 93.0F, 112.0F, 70.0F },  // 0: Media Player
+            { cx - 175.0F, cy - 15.0F, 52.0F, 50.0F },   // 1: Camera
+            { cx - 175.0F, cy + 43.0F, 52.0F, 50.0F },   // 2: Fullscreen
+            { cx - 115.0F, cy - 15.0F, 52.0F, 108.0F },  // 3: Volume Pill
+            { cx - 55.0F, cy - 93.0F, 148.0F, 186.0F },  // 4: Calculator Card
+            { cx + 101.0F, cy - 93.0F, 48.0F, 186.0F }   // 5: Right Circles
         };
 
-        // Long-press detection to initiate tile drag
-        long now = System.currentTimeMillis();
-        if (rockstar$pressedCandidateSlot >= 0 && rockstar$draggedSlot < 0 && (now - rockstar$pressStartTime) > 280L) {
+        // Long-press detection: user MUST hold down for >480ms to enter edit mode!
+        boolean inEditMode = rockstar$draggedSlot >= 0;
+        if (rockstar$pressedCandidateSlot >= 0 && rockstar$draggedSlot < 0 && (now - rockstar$pressStartTime) > 480L) {
             rockstar$draggedSlot = rockstar$pressedCandidateSlot;
             rockstar$pressedCandidateSlot = -1;
+            inEditMode = true;
+            UISoundManager.playButtonClick();
         }
 
-        // Draw Slot Blueprint outlines when dragging
-        if (rockstar$draggedSlot >= 0) {
+        // Draw Slot Blueprint outlines with soft glowing highlight when dragging
+        if (inEditMode) {
             for (int s = 0; s < 6; s++) {
                 float[] b = defaultBounds[s];
-                IIiii_Class8 slotRad = IIiii_Class8.I_method_893b2757(12.0F);
-                custom.drawRoundedBorder(b[0], b[1], b[2], b[3], 1.2F, slotRad, new ColorRGBA(255.0F, 255.0F, 255.0F, 50.0F));
+                IIiii_Class8 slotRad = IIiii_Class8.I_method_893b2757(14.0F);
+                custom.drawRoundedBorder(b[0], b[1], b[2], b[3], 1.2F, slotRad, new ColorRGBA(255.0F, 255.0F, 255.0F, 55.0F));
             }
         }
 
@@ -143,58 +192,118 @@ implements iIIiIIiIi_Class294 {
             float drawX = b[0];
             float drawY = b[1];
 
-            if (rockstar$draggedSlot == slotIdx) {
+            boolean isBeingDragged = (rockstar$draggedSlot == slotIdx);
+            if (isBeingDragged) {
                 drawX = (float)(mouseX - rockstar$dragOffsetX);
                 drawY = (float)(mouseY - rockstar$dragOffsetY);
             }
 
+            // Apple iOS Jiggle wiggle animation when in edit mode
+            float wiggleAngle = 0.0F;
+            if (inEditMode && !isBeingDragged) {
+                wiggleAngle = (float) Math.sin((now + slotIdx * 135L) * 0.018) * 1.6F;
+            }
+
+            drawContext.getMatrices().push();
+            if (Math.abs(wiggleAngle) > 0.01F) {
+                float midX = drawX + b[2] / 2.0F;
+                float midY = drawY + b[3] / 2.0F;
+                drawContext.getMatrices().translate(midX, midY, 0.0F);
+                drawContext.getMatrices().multiply(net.minecraft.util.math.RotationAxis.POSITIVE_Z.rotationDegrees(wiggleAngle));
+                drawContext.getMatrices().translate(-midX, -midY, 0.0F);
+            }
+
             switch (moduleType) {
-                case 0 -> rockstar$renderMediaCard(custom, drawX, drawY, b[2], b[3], font, subFont, mouseX, mouseY);
+                case 0 -> rockstar$renderMediaCard(custom, drawX, drawY, b[2], b[3], font, subFont, tinyFont, mouseX, mouseY);
                 case 1 -> rockstar$renderCameraTile(custom, drawX, drawY, b[2], b[3], mouseX, mouseY);
-                case 2 -> rockstar$renderCalcTile(custom, drawX, drawY, b[2], b[3], mouseX, mouseY);
-                case 3 -> rockstar$renderVolumePill(custom, drawX, drawY, b[2], b[3], mouseX, mouseY);
+                case 2 -> rockstar$renderFullscreenTile(custom, drawX, drawY, b[2], b[3], mouseX, mouseY);
+                case 3 -> rockstar$renderVolumePill(custom, drawX, drawY, b[2], b[3], subFont, mouseX, mouseY);
                 case 4 -> rockstar$renderCalculatorCard(custom, drawX, drawY, b[2], b[3], boldFont, font, mouseX, mouseY);
                 case 5 -> rockstar$renderActionCircles(custom, drawX, drawY, b[2], b[3], mouseX, mouseY);
             }
+
+            drawContext.getMatrices().pop();
         }
 
-        // Fullscreen Shutter Flash
+        // Fullscreen Shutter Flash on Screenshot
         if (rockstar$flashAlpha > 0.001F) {
             custom.drawRect(0.0F, 0.0F, (float)this.width, (float)this.height, new ColorRGBA(255.0F, 255.0F, 255.0F, 255.0F * rockstar$flashAlpha));
-            rockstar$flashAlpha = Math.max(0.0F, rockstar$flashAlpha - delta * 0.14F);
+            rockstar$flashAlpha = Math.max(0.0F, rockstar$flashAlpha - delta * 0.16F);
         }
     }
 
-    // Module 0: Media Player Card
+    // Module 0: Functional Media Player Card with Interactive Scrubber & Animated Equalizer
     @Unique
-    private void rockstar$renderMediaCard(III custom, float x, float y, float w, float h, IIiIIi_Class10 font, IIiIIi_Class10 subFont, int mx, int my) {
+    private void rockstar$renderMediaCard(III custom, float x, float y, float w, float h, IIiIIi_Class10 font, IIiIIi_Class10 subFont, IIiIIi_Class10 tinyFont, int mx, int my) {
         IIiii_Class8 rad = IIiii_Class8.I_method_893b2757(14.0F);
         custom.drawShadow(x, y, w, h, 14.0F, rad, new ColorRGBA(0.0F, 0.0F, 0.0F, 90.0F));
         custom.drawBlurredRect(x, y, w, h, 16.0F, 3.0F, rad, new ColorRGBA(255.0F, 255.0F, 255.0F, 24.0F));
-        custom.drawRoundedRect(x, y, w, h, rad, new ColorRGBA(25.0F, 28.0F, 38.0F, 190.0F));
+        custom.drawRoundedRect(x, y, w, h, rad, new ColorRGBA(25.0F, 28.0F, 38.0F, 195.0F));
         custom.drawRoundedBorder(x, y, w, h, 1.0F, rad, new ColorRGBA(255.0F, 255.0F, 255.0F, 38.0F));
 
-        // Album placeholder pod
-        float thumbSz = 26.0F;
-        custom.drawRoundedRect(x + 10.0F, y + 10.0F, thumbSz, thumbSz, IIiii_Class8.I_method_893b2757(6.0F), new ColorRGBA(255.0F, 255.0F, 255.0F, 28.0F));
-        custom.drawIcon("music", x + 16.0F, y + 16.0F, 14.0F, ColorRGBA.WHITE.withAlpha(210.0F));
+        int curIdx = rockstar$currentTrack % rockstar$playlistTitles.length;
+        String trackTitle = rockstar$playlistTitles[curIdx];
+        String artistName = rockstar$playlistArtists[curIdx];
+        int totalSec = rockstar$playlistDurations[curIdx];
 
-        // AirPlay icon in top right
-        custom.drawIcon("wifi", x + w - 20.0F, y + 10.0F, 12.0F, new ColorRGBA(255.0F, 255.0F, 255.0F, 180.0F));
+        // Album artwork thumbnail
+        float thumbSz = 24.0F;
+        custom.drawRoundedRect(x + 8.0F, y + 8.0F, thumbSz, thumbSz, IIiii_Class8.I_method_893b2757(6.0F), new ColorRGBA(255.0F, 255.0F, 255.0F, 28.0F));
+        custom.drawIcon("music", x + 13.0F, y + 13.0F, 14.0F, ColorRGBA.WHITE.withAlpha(220.0F));
 
-        // Not Playing text
-        if (font != null) {
-            custom.drawText(font, rockstar$isPlaying ? "Rockstar Audio" : "Not Playing", x + 10.0F, y + 40.0F, ColorRGBA.WHITE);
+        // Animated Equalizer Visualizer Bars next to album art
+        float eqStartX = x + 36.0F;
+        float eqBaseY = y + 26.0F;
+        float barW = 2.0F;
+        float barGap = 2.0F;
+        for (int b = 0; b < rockstar$eqFrequencies.length; b++) {
+            float bH = Math.max(3.0F, rockstar$eqFrequencies[b] * 16.0F);
+            float bx = eqStartX + b * (barW + barGap);
+            custom.drawRoundedRect(bx, eqBaseY - bH, barW, bH, IIiii_Class8.I_method_893b2757(1.0F), new ColorRGBA(255.0F, 255.0F, 255.0F, rockstar$isPlaying ? 230.0F : 90.0F));
         }
 
-        // Media controls row (prev, play/pause, next)
-        float ctrlY = y + 54.0F;
-        custom.drawText(subFont, "⏮", x + 16.0F, ctrlY, ColorRGBA.WHITE.withAlpha(190.0F));
-        custom.drawText(subFont, rockstar$isPlaying ? "⏸" : "▶", x + w / 2.0F - 4.0F, ctrlY, ColorRGBA.WHITE);
-        custom.drawText(subFont, "⏭", x + w - 28.0F, ctrlY, ColorRGBA.WHITE.withAlpha(190.0F));
+        // AirPlay / WiFi indicator icon in top right
+        custom.drawIcon("wifi", x + w - 18.0F, y + 9.0F, 11.0F, new ColorRGBA(255.0F, 255.0F, 255.0F, 160.0F));
+
+        // Track title & Artist
+        if (font != null) {
+            String shortTitle = trackTitle;
+            if (shortTitle.length() > 16) shortTitle = shortTitle.substring(0, 15) + "…";
+            custom.drawText(font, shortTitle, x + 8.0F, y + 36.0F, ColorRGBA.WHITE);
+        }
+
+        // Interactive Progress Scrubber Bar
+        float scrubY = y + 49.0F;
+        float scrubW = w - 16.0F;
+        float scrubH = 3.0F;
+        float scrubX = x + 8.0F;
+        float progRatio = MathHelper.clamp(rockstar$trackElapsedSec / (float)totalSec, 0.0F, 1.0F);
+
+        custom.drawRoundedRect(scrubX, scrubY, scrubW, scrubH, IIiii_Class8.I_method_893b2757(1.5F), new ColorRGBA(255.0F, 255.0F, 255.0F, 40.0F));
+        if (progRatio > 0.01F) {
+            custom.drawRoundedRect(scrubX, scrubY, scrubW * progRatio, scrubH, IIiii_Class8.I_method_893b2757(1.5F), ColorRGBA.WHITE);
+            custom.drawRoundedRect(scrubX + scrubW * progRatio - 2.5F, scrubY - 1.5F, 5.0F, 6.0F, IIiii_Class8.I_method_893b2757(2.5F), ColorRGBA.WHITE);
+        }
+
+        // Media controls row (Previous ⏮, Play/Pause ▶/⏸, Next ⏭)
+        float ctrlY = y + 55.0F;
+        if (subFont != null) {
+            // Previous Button
+            boolean prevHov = mx >= x + 12.0F && mx <= x + 28.0F && my >= ctrlY - 2.0F && my <= ctrlY + 12.0F;
+            custom.drawText(subFont, "⏮", x + 14.0F, ctrlY, prevHov ? ColorRGBA.WHITE : new ColorRGBA(255.0F, 255.0F, 255.0F, 180.0F));
+
+            // Play / Pause Button
+            boolean playHov = mx >= x + w / 2.0F - 10.0F && mx <= x + w / 2.0F + 10.0F && my >= ctrlY - 2.0F && my <= ctrlY + 12.0F;
+            String playSym = rockstar$isPlaying ? "⏸" : "▶";
+            custom.drawText(subFont, playSym, x + w / 2.0F - 4.0F, ctrlY, playHov ? ColorRGBA.WHITE : new ColorRGBA(255.0F, 255.0F, 255.0F, 230.0F));
+
+            // Next Button
+            boolean nextHov = mx >= x + w - 28.0F && mx <= x + w - 12.0F && my >= ctrlY - 2.0F && my <= ctrlY + 12.0F;
+            custom.drawText(subFont, "⏭", x + w - 26.0F, ctrlY, nextHov ? ColorRGBA.WHITE : new ColorRGBA(255.0F, 255.0F, 255.0F, 180.0F));
+        }
     }
 
-    // Module 1: Camera Tile
+    // Module 1: Camera Tile (Screenshot with Shutter Flash)
     @Unique
     private void rockstar$renderCameraTile(III custom, float x, float y, float w, float h, int mx, int my) {
         IIiii_Class8 rad = IIiii_Class8.I_method_893b2757(14.0F);
@@ -204,38 +313,42 @@ implements iIIiIIiIi_Class294 {
         custom.drawRoundedRect(x, y, w, h, rad, new ColorRGBA(25.0F, 28.0F, 38.0F, 190.0F));
         custom.drawRoundedBorder(x, y, w, h, 1.0F, rad, hov ? new ColorRGBA(0.0F, 122.0F, 255.0F, 220.0F) : new ColorRGBA(255.0F, 255.0F, 255.0F, 35.0F));
 
-        // Blue circle center
+        // Circular center pod
         float cirSz = 34.0F;
         float cx = x + (w - cirSz) / 2.0F;
         float cy = y + (h - cirSz) / 2.0F;
         IIiii_Class8 cRad = IIiii_Class8.I_method_893b2757(cirSz / 2.0F);
         custom.drawRoundedRect(cx, cy, cirSz, cirSz, cRad, new ColorRGBA(0.0F, 122.0F, 255.0F, hov ? 255.0F : 210.0F));
-        // Camera icon inside
         custom.drawIcon("hud/target", cx + 9.0F, cy + 9.0F, 16.0F, ColorRGBA.WHITE);
     }
 
-    // Module 2: Calculator Icon Tile
+    // Module 2: Fullscreen Quick Tile
     @Unique
-    private void rockstar$renderCalcTile(III custom, float x, float y, float w, float h, int mx, int my) {
+    private void rockstar$renderFullscreenTile(III custom, float x, float y, float w, float h, int mx, int my) {
         IIiii_Class8 rad = IIiii_Class8.I_method_893b2757(14.0F);
         boolean hov = mx >= x && mx <= x + w && my >= y && my <= y + h;
+        boolean isFs = (MinecraftClient.getInstance() != null && MinecraftClient.getInstance().getWindow().isFullscreen());
+
         custom.drawShadow(x, y, w, h, 12.0F, rad, new ColorRGBA(0.0F, 0.0F, 0.0F, 80.0F));
         custom.drawBlurredRect(x, y, w, h, 14.0F, 3.0F, rad, new ColorRGBA(255.0F, 255.0F, 255.0F, 24.0F));
         custom.drawRoundedRect(x, y, w, h, rad, new ColorRGBA(25.0F, 28.0F, 38.0F, 190.0F));
-        custom.drawRoundedBorder(x, y, w, h, 1.0F, rad, hov ? new ColorRGBA(255.0F, 159.0F, 10.0F, 220.0F) : new ColorRGBA(255.0F, 255.0F, 255.0F, 35.0F));
+        custom.drawRoundedBorder(x, y, w, h, 1.0F, rad, hov ? new ColorRGBA(52.0F, 199.0F, 89.0F, 220.0F) : new ColorRGBA(255.0F, 255.0F, 255.0F, 35.0F));
 
-        // Calculator icon in center
-        custom.drawIcon("keyboard", x + (w - 22.0F) / 2.0F, y + (h - 22.0F) / 2.0F, 22.0F, ColorRGBA.WHITE.withAlpha(220.0F));
+        float cirSz = 34.0F;
+        float cx = x + (w - cirSz) / 2.0F;
+        float cy = y + (h - cirSz) / 2.0F;
+        IIiii_Class8 cRad = IIiii_Class8.I_method_893b2757(cirSz / 2.0F);
+        custom.drawRoundedRect(cx, cy, cirSz, cirSz, cRad, isFs ? new ColorRGBA(52.0F, 199.0F, 89.0F, hov ? 255.0F : 220.0F) : new ColorRGBA(255.0F, 255.0F, 255.0F, hov ? 40.0F : 20.0F));
+        custom.drawIcon("keyboard", cx + 7.0F, cy + 7.0F, 20.0F, ColorRGBA.WHITE);
     }
 
     // Module 3: Master Volume Vertical Slider Pill
     @Unique
-    private void rockstar$renderVolumePill(III custom, float x, float y, float w, float h, int mx, int my) {
+    private void rockstar$renderVolumePill(III custom, float x, float y, float w, float h, IIiIIi_Class10 subFont, int mx, int my) {
         IIiii_Class8 rad = IIiii_Class8.I_method_893b2757(w / 2.0F);
         float currentVol = (float)MinecraftClient.getInstance().options.getSoundVolume(SoundCategory.MASTER);
 
         custom.drawShadow(x, y, w, h, 14.0F, rad, new ColorRGBA(0.0F, 0.0F, 0.0F, 90.0F));
-        // Base dark translucent pill
         custom.drawBlurredRect(x, y, w, h, 16.0F, 3.0F, rad, new ColorRGBA(255.0F, 255.0F, 255.0F, 24.0F));
         custom.drawRoundedRect(x, y, w, h, rad, new ColorRGBA(25.0F, 28.0F, 38.0F, 190.0F));
 
@@ -251,6 +364,13 @@ implements iIIiIIiIi_Class294 {
         // Speaker icon at bottom of pill
         ColorRGBA iconCol = (currentVol > 0.25F) ? new ColorRGBA(0.0F, 122.0F, 255.0F, 255.0F) : ColorRGBA.WHITE;
         custom.drawIcon("music", x + (w - 18.0F) / 2.0F, y + h - 26.0F, 18.0F, iconCol);
+
+        // Volume percentage readout at top of pill
+        if (subFont != null) {
+            String pct = (int)(currentVol * 100.0F) + "%";
+            float pw = subFont.I_method_2c375926(pct);
+            custom.drawText(subFont, pct, x + (w - pw) / 2.0F, y + 10.0F, (currentVol > 0.85F) ? new ColorRGBA(30.0F, 30.0F, 36.0F, 240.0F) : ColorRGBA.WHITE);
+        }
     }
 
     // Module 4: Interactive iOS Calculator
@@ -294,7 +414,6 @@ implements iIIiIIiIi_Class294 {
                 float bX = x + 10.0F + (c == 0 ? 0.0F : (r == 4 ? (btnSz * 2.0F + gap + gap + (c - 1) * (btnSz + gap)) : (c * (btnSz + gap))));
                 boolean bHov = mx >= bX && mx <= bX + bW && my >= rowY && my <= rowY + btnSz;
 
-                // Color themes: Function row = Light Gray, Ops = Orange, Digits = Dark Gray
                 ColorRGBA bg;
                 ColorRGBA fg = ColorRGBA.WHITE;
                 if (r == 0 && c < 3) {
@@ -317,7 +436,7 @@ implements iIIiIIiIi_Class294 {
         }
     }
 
-    // Module 5: Right Column 3 Action Circles
+    // Module 5: Right Column 3 Action Circles (Resume, Settings, Disconnect)
     @Unique
     private void rockstar$renderActionCircles(III custom, float x, float y, float w, float h, int mx, int my) {
         float circleSz = 40.0F;
@@ -355,15 +474,15 @@ implements iIIiIIiIi_Class294 {
         float cy = this.height / 2.0F;
 
         float[][] defaultBounds = new float[][]{
-            { cx - 175.0F, cy - 93.0F, 110.0F, 70.0F },  // 0: Media
-            { cx - 175.0F, cy - 15.0F, 50.0F, 50.0F },   // 1: Camera
-            { cx - 175.0F, cy + 43.0F, 50.0F, 50.0F },   // 2: Calc Icon
-            { cx - 117.0F, cy - 15.0F, 52.0F, 108.0F },  // 3: Volume Pill
-            { cx - 57.0F, cy - 93.0F, 148.0F, 186.0F },  // 4: Calculator
-            { cx + 99.0F, cy - 93.0F, 48.0F, 186.0F }    // 5: Right Circles
+            { cx - 175.0F, cy - 93.0F, 112.0F, 70.0F },  // 0: Media
+            { cx - 175.0F, cy - 15.0F, 52.0F, 50.0F },   // 1: Camera
+            { cx - 175.0F, cy + 43.0F, 52.0F, 50.0F },   // 2: Fullscreen
+            { cx - 115.0F, cy - 15.0F, 52.0F, 108.0F },  // 3: Volume Pill
+            { cx - 55.0F, cy - 93.0F, 148.0F, 186.0F },  // 4: Calculator
+            { cx + 101.0F, cy - 93.0F, 48.0F, 186.0F }   // 5: Right Circles
         };
 
-        // Check which slot was clicked for hold-drag
+        // Check which slot was clicked for intentional long-press drag
         for (int s = 0; s < 6; s++) {
             float[] b = defaultBounds[s];
             if (mouseX >= b[0] && mouseX <= b[0] + b[2] && mouseY >= b[1] && mouseY <= b[1] + b[3]) {
@@ -380,11 +499,64 @@ implements iIIiIIiIi_Class294 {
             int moduleType = rockstar$tileSlots[slotIdx];
             float[] b = defaultBounds[slotIdx];
 
-            // 1. Camera Click
+            // 0. Media Player Controls & Scrubber Click
+            if (moduleType == 0 && mouseX >= b[0] && mouseX <= b[0] + b[2] && mouseY >= b[1] && mouseY <= b[1] + b[3]) {
+                float scrubY = b[1] + 47.0F;
+                float scrubH = 10.0F;
+                float scrubX = b[0] + 8.0F;
+                float scrubW = b[2] - 16.0F;
+
+                // Scrub Bar Click
+                if (mouseY >= scrubY - 3.0F && mouseY <= scrubY + scrubH && mouseX >= scrubX && mouseX <= scrubX + scrubW) {
+                    float rel = MathHelper.clamp((float)((mouseX - scrubX) / scrubW), 0.0F, 1.0F);
+                    int maxDur = rockstar$playlistDurations[rockstar$currentTrack % rockstar$playlistDurations.length];
+                    rockstar$trackElapsedSec = rel * maxDur;
+                    rockstar$isScrubbing = true;
+                    UISoundManager.playButtonClick();
+                    rockstar$pressedCandidateSlot = -1;
+                    return true;
+                }
+
+                // Previous Button Click
+                float ctrlY = b[1] + 53.0F;
+                if (mouseY >= ctrlY && mouseY <= b[1] + b[3]) {
+                    if (mouseX >= b[0] + 10.0F && mouseX <= b[0] + 32.0F) {
+                        rockstar$currentTrack = (rockstar$currentTrack - 1 + rockstar$playlistTitles.length) % rockstar$playlistTitles.length;
+                        rockstar$trackElapsedSec = 0.0F;
+                        UISoundManager.playButtonClick();
+                        rockstar$pressedCandidateSlot = -1;
+                        return true;
+                    }
+                    // Play/Pause Button Click
+                    if (mouseX >= b[0] + b[2] / 2.0F - 16.0F && mouseX <= b[0] + b[2] / 2.0F + 16.0F) {
+                        rockstar$isPlaying = !rockstar$isPlaying;
+                        UISoundManager.playButtonClick();
+                        rockstar$pressedCandidateSlot = -1;
+                        return true;
+                    }
+                    // Next Button Click
+                    if (mouseX >= b[0] + b[2] - 32.0F && mouseX <= b[0] + b[2] - 10.0F) {
+                        rockstar$currentTrack = (rockstar$currentTrack + 1) % rockstar$playlistTitles.length;
+                        rockstar$trackElapsedSec = 0.0F;
+                        UISoundManager.playButtonClick();
+                        rockstar$pressedCandidateSlot = -1;
+                        return true;
+                    }
+                }
+
+                // General card click toggles play/pause
+                rockstar$isPlaying = !rockstar$isPlaying;
+                UISoundManager.playButtonClick();
+                rockstar$pressedCandidateSlot = -1;
+                return true;
+            }
+
+            // 1. Camera / Screenshot Click
             if (moduleType == 1 && mouseX >= b[0] && mouseX <= b[0] + b[2] && mouseY >= b[1] && mouseY <= b[1] + b[3]) {
                 rockstar$flashAlpha = 1.0F;
                 UISoundManager.playButtonClick();
-                if (this.client != null) {
+                rockstar$pressedCandidateSlot = -1;
+                if (this.client != null && this.client.getFramebuffer() != null) {
                     ScreenshotRecorder.saveScreenshot(this.client.runDirectory, this.client.getFramebuffer(), msg -> {
                         if (this.client != null) this.client.execute(() -> this.client.inGameHud.getChatHud().addMessage(msg));
                     });
@@ -392,9 +564,20 @@ implements iIIiIIiIi_Class294 {
                 return true;
             }
 
+            // 2. Fullscreen Quick Tile Click
+            if (moduleType == 2 && mouseX >= b[0] && mouseX <= b[0] + b[2] && mouseY >= b[1] && mouseY <= b[1] + b[3]) {
+                UISoundManager.playButtonClick();
+                rockstar$pressedCandidateSlot = -1;
+                if (this.client != null) {
+                    this.client.getWindow().toggleFullscreen();
+                }
+                return true;
+            }
+
             // 3. Volume Pill Drag
             if (moduleType == 3 && mouseX >= b[0] && mouseX <= b[0] + b[2] && mouseY >= b[1] && mouseY <= b[1] + b[3]) {
                 rockstar$isDraggingVolume = true;
+                rockstar$pressedCandidateSlot = -1;
                 rockstar$updateVolume(mouseY, b[1], b[3]);
                 return true;
             }
@@ -402,45 +585,41 @@ implements iIIiIIiIi_Class294 {
             // 4. Calculator Click
             if (moduleType == 4 && mouseX >= b[0] && mouseX <= b[0] + b[2] && mouseY >= b[1] && mouseY <= b[1] + b[3]) {
                 if (rockstar$handleCalcClick(mouseX, mouseY, b[0], b[1], b[2], b[3])) {
+                    rockstar$pressedCandidateSlot = -1;
                     return true;
                 }
             }
 
-            // 5. Right Action Circles Click
-            if (moduleType == 5 && mouseX >= b[0] && mouseX <= b[0] + b[2]) {
+            // 5. Right Action Circles Click (Resume, Settings, Disconnect / Leave)
+            if (moduleType == 5 && mouseX >= b[0] - 4.0F && mouseX <= b[0] + b[2] + 4.0F) {
                 float circleSz = 40.0F;
-                float cirX = b[0] + (b[2] - circleSz) / 2.0F;
                 float y1 = b[1] + 16.0F;
                 float y2 = b[1] + b[3] / 2.0F - circleSz / 2.0F;
                 float y3 = b[1] + b[3] - circleSz - 16.0F;
 
-                // Resume
-                if (mouseY >= y1 && mouseY <= y1 + circleSz) {
+                // Resume Game
+                if (mouseY >= b[1] && mouseY <= y1 + circleSz + 8.0F) {
                     UISoundManager.playButtonClick();
+                    rockstar$pressedCandidateSlot = -1;
                     this.close();
                     return true;
                 }
-                // Options
-                if (mouseY >= y2 && mouseY <= y2 + circleSz) {
+                // Options / Settings
+                if (mouseY >= y2 - 8.0F && mouseY <= y2 + circleSz + 8.0F) {
                     UISoundManager.playButtonClick();
+                    rockstar$pressedCandidateSlot = -1;
                     if (this.client != null) {
                         this.client.setScreen(new OptionsScreen(this, this.client.options));
                     }
                     return true;
                 }
-                // Disconnect
-                if (mouseY >= y3 && mouseY <= y3 + circleSz) {
+                // Disconnect / Leave (Clean Singleplayer + Multiplayer support)
+                if (mouseY >= y3 - 8.0F && mouseY <= b[1] + b[3] + 8.0F) {
                     UISoundManager.playButtonClick();
+                    rockstar$pressedCandidateSlot = -1;
                     this.disconnect();
                     return true;
                 }
-            }
-
-            // 0. Media Player Toggle
-            if (moduleType == 0 && mouseX >= b[0] && mouseX <= b[0] + b[2] && mouseY >= b[1] && mouseY <= b[1] + b[3]) {
-                rockstar$isPlaying = !rockstar$isPlaying;
-                UISoundManager.playButtonClick();
-                return true;
             }
         }
 
@@ -455,24 +634,37 @@ implements iIIiIIiIi_Class294 {
             rockstar$updateVolume(mouseY, volY, 108.0F);
             return true;
         }
+
+        if (rockstar$isScrubbing) {
+            float cx = this.width / 2.0F;
+            float cy = this.height / 2.0F;
+            float mediaX = cx - 175.0F + 8.0F;
+            float scrubW = 112.0F - 16.0F;
+            float rel = MathHelper.clamp((float)((mouseX - mediaX) / scrubW), 0.0F, 1.0F);
+            int maxDur = rockstar$playlistDurations[rockstar$currentTrack % rockstar$playlistDurations.length];
+            rockstar$trackElapsedSec = rel * maxDur;
+            return true;
+        }
+
         return super.mouseDragged(mouseX, mouseY, button, deltaX, deltaY);
     }
 
     @Override
     public boolean mouseReleased(double mouseX, double mouseY, int button) {
         rockstar$isDraggingVolume = false;
+        rockstar$isScrubbing = false;
         rockstar$pressedCandidateSlot = -1;
 
         if (rockstar$draggedSlot >= 0) {
             float cx = this.width / 2.0F;
             float cy = this.height / 2.0F;
             float[][] defaultBounds = new float[][]{
-                { cx - 175.0F, cy - 93.0F, 110.0F, 70.0F },
-                { cx - 175.0F, cy - 15.0F, 50.0F, 50.0F },
-                { cx - 175.0F, cy + 43.0F, 50.0F, 50.0F },
-                { cx - 117.0F, cy - 15.0F, 52.0F, 108.0F },
-                { cx - 57.0F, cy - 93.0F, 148.0F, 186.0F },
-                { cx + 99.0F, cy - 93.0F, 48.0F, 186.0F }
+                { cx - 175.0F, cy - 93.0F, 112.0F, 70.0F },
+                { cx - 175.0F, cy - 15.0F, 52.0F, 50.0F },
+                { cx - 175.0F, cy + 43.0F, 52.0F, 50.0F },
+                { cx - 115.0F, cy - 15.0F, 52.0F, 108.0F },
+                { cx - 55.0F, cy - 93.0F, 148.0F, 186.0F },
+                { cx + 101.0F, cy - 93.0F, 48.0F, 186.0F }
             };
 
             // Find closest slot
@@ -628,17 +820,22 @@ implements iIIiIIiIi_Class294 {
         }).start();
     }
 
+    // Clean, reliable Disconnect supporting singleplayer integrated server & multiplayer realms/servers
     @Unique
     private void disconnect() {
-        ServerInfo serverInfo = I_field_3a9bda27.getCurrentServerEntry();
-        GameMenuScreenMixin.I_field_3a9bda27.world.disconnect();
-        I_field_3a9bda27.disconnect();
+        if (this.client == null) return;
+        boolean singleplayer = this.client.isInSingleplayer();
+        ServerInfo serverInfo = this.client.getCurrentServerEntry();
         IiiIIiIii_Class204.triggerReturnAnimation = true;
-        TitleScreen titleScreen = new TitleScreen();
-        if (serverInfo != null && serverInfo.isRealm()) {
-            I_field_3a9bda27.setScreen((Screen)new RealmsMainScreen((Screen)titleScreen));
+        if (this.client.world != null) {
+            this.client.world.disconnect();
+        }
+        if (singleplayer) {
+            this.client.disconnect(new IiiIIiIii_Class204());
+        } else if (serverInfo != null && serverInfo.isRealm()) {
+            this.client.disconnect(new RealmsMainScreen(new TitleScreen()));
         } else {
-            I_field_3a9bda27.setScreen((Screen)new IiiIIiIii_Class204());
+            this.client.disconnect(new IiiIIiIii_Class204());
         }
     }
 }
