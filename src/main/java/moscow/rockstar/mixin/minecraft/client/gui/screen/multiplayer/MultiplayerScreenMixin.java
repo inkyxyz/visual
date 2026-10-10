@@ -117,24 +117,11 @@ extends Screen {
         rockstar.client.IIiIIi_Class10 subFont = rockstar.client.IIiIiI_Class11.II_field_857c0621.I_method_3a2d5e3(6.5F);
         rockstar.client.IIiIIi_Class10 badgeFont = rockstar.client.IIiIiI_Class11.i_field_857c0621.I_method_3a2d5e3(7.0F);
 
-        // Minimalist Top Bar (PlayStation style header)
-        float topY = 16.0F;
-        float leftX = 24.0F;
-        custom.drawRoundedRect(leftX, topY, 4.0F, 14.0F, rockstar.client.IIiii_Class8.I_method_893b2757(2.0F), theme);
-        custom.drawText(headerFont, "СЕТЕВАЯ ИГРА", leftX + 10.0F, topY + 1.0F, pyrock.utility.render.ColorRGBA.WHITE);
-
-        String countPill = count + " СЕРВЕРОВ • PLAYSTATION UI";
-        float cpW = subFont.I_method_2c375926(countPill);
-        float cpX = leftX + 10.0F + headerFont.I_method_2c375926("СЕТЕВАЯ ИГРА") + 12.0F;
-        custom.drawRoundedRect(cpX, topY + 1.0F, cpW + 10.0F, 12.0F, rockstar.client.IIiii_Class8.I_method_893b2757(6.0F), theme.withAlpha(45.0F));
-        custom.drawRoundedBorder(cpX, topY + 1.0F, cpW + 10.0F, 12.0F, 0.8F, rockstar.client.IIiii_Class8.I_method_893b2757(6.0F), theme.withAlpha(140.0F));
-        custom.drawText(subFont, countPill, cpX + 5.0F, topY + 3.5F, theme);
-
         // Center Stage Carousel
         float carouselCY = (this.height - 75.0F) / 2.0F + 8.0F;
-        float cardW = 148.0F;
-        float cardH = 188.0F;
-        float spacing = 168.0F;
+        float cardW = 144.0F;
+        float cardH = 168.0F;
+        float spacing = 164.0F;
         float cx = this.width / 2.0F;
 
         if (count == 0) {
@@ -154,7 +141,9 @@ extends Screen {
             return;
         }
 
-        // Render Carousel Cards
+        net.minecraft.util.Identifier unknownIcon = net.minecraft.util.Identifier.ofVanilla("textures/misc/unknown_server.png");
+
+        // Render Carousel Cards (Screenshot 2 Design: Name top, Square avatar, Play/Edit bottom buttons)
         for (int i = 0; i < count; i++) {
             float rel = (float) i - this.rockstar$carouselScroll;
             if (Math.abs(rel) > 2.8F) continue;
@@ -163,7 +152,7 @@ extends Screen {
             float cardCX = cx + rel * spacing;
             float distFromCenter = Math.abs(rel);
             boolean isCenter = (i == this.rockstar$selectedIndex);
-            float cardScale = isCenter ? 1.06F : Math.max(0.90F, 1.0F - distFromCenter * 0.08F);
+            float cardScale = isCenter ? 1.05F : Math.max(0.90F, 1.0F - distFromCenter * 0.08F);
             float alpha = Math.max(0.40F, 1.0F - distFromCenter * 0.30F);
 
             float curW = cardW * cardScale;
@@ -171,37 +160,24 @@ extends Screen {
             float cardX = cardCX - curW / 2.0F;
             float cardY = carouselCY - curH / 2.0F;
 
-            rockstar.client.IIiii_Class8 radCard = rockstar.client.IIiii_Class8.I_method_893b2757(10.0F);
+            rockstar.client.IIiii_Class8 radCard = rockstar.client.IIiii_Class8.I_method_893b2757(12.0F);
 
             custom.drawShadow(cardX, cardY, curW, curH, 18.0F, radCard, pyrock.utility.render.ColorRGBA.BLACK.withAlpha(140.0F * alpha));
             if (isCenter) {
-                custom.drawBlurredRect(cardX, cardY, curW, curH, 20.0F, 4.0F, radCard, theme.withAlpha(120.0F));
+                custom.drawBlurredRect(cardX, cardY, curW, curH, 16.0F, 4.0F, radCard, new pyrock.utility.render.ColorRGBA(255.0F, 255.0F, 255.0F, 30.0F));
             }
             pyrock.utility.render.ColorRGBA cardBg = isCenter
-                ? new pyrock.utility.render.ColorRGBA(14.0F, 18.0F, 30.0F, 235.0F)
+                ? new pyrock.utility.render.ColorRGBA(12.0F, 16.0F, 26.0F, 240.0F)
                 : new pyrock.utility.render.ColorRGBA(10.0F, 12.0F, 20.0F, 200.0F * alpha);
             custom.drawRoundedRect(cardX, cardY, curW, curH, radCard, cardBg);
 
+            // Clean white border theme
             pyrock.utility.render.ColorRGBA cardBorder = isCenter
-                ? theme.withAlpha(240.0F)
+                ? new pyrock.utility.render.ColorRGBA(255.0F, 255.0F, 255.0F, 220.0F)
                 : new pyrock.utility.render.ColorRGBA(255.0F, 255.0F, 255.0F, 35.0F * alpha);
-            custom.drawRoundedBorder(cardX, cardY, curW, curH, isCenter ? 1.5F : 0.8F, radCard, cardBorder);
+            custom.drawRoundedBorder(cardX, cardY, curW, curH, isCenter ? 1.4F : 0.8F, radCard, cardBorder);
 
-            // Server Index Badge
-            String idxBadge = "#" + (i + 1);
-            custom.drawRoundedRect(cardX + 8.0F, cardY + 8.0F, 22.0F, 11.0F, rockstar.client.IIiii_Class8.I_method_893b2757(4.0F), theme.withAlpha(isCenter ? 180.0F : 70.0F * alpha));
-            custom.drawText(badgeFont, idxBadge, cardX + 11.0F, cardY + 9.5F, pyrock.utility.render.ColorRGBA.WHITE.withAlpha(255.0F * alpha));
-
-            // Server Icon Pod (Center top)
-            float iconPodSize = 42.0F;
-            float iconPodX = cardCX - iconPodSize / 2.0F;
-            float iconPodY = cardY + 24.0F;
-            rockstar.client.IIiii_Class8 radIcon = rockstar.client.IIiii_Class8.I_method_893b2757(8.0F);
-            custom.drawRoundedRect(iconPodX, iconPodY, iconPodSize, iconPodSize, radIcon, theme.withAlpha(35.0F * alpha));
-            custom.drawRoundedBorder(iconPodX, iconPodY, iconPodSize, iconPodSize, 0.8F, radIcon, theme.withAlpha(120.0F * alpha));
-            custom.drawIcon("planet", iconPodX + 11.0F, iconPodY + 11.0F, 20.0F, isCenter ? theme : pyrock.utility.render.ColorRGBA.WHITE.withAlpha(200.0F * alpha));
-
-            // Server Name
+            // 1. Server Name at TOP
             String sName = info.name != null ? info.name : "Minecraft Server";
             float snW = titleFont.I_method_2c375926(sName);
             if (snW > curW - 16.0F) {
@@ -211,56 +187,68 @@ extends Screen {
                 sName = sName + "...";
                 snW = titleFont.I_method_2c375926(sName);
             }
-            custom.drawText(titleFont, sName, cardCX - snW / 2.0F, iconPodY + iconPodSize + 10.0F, pyrock.utility.render.ColorRGBA.WHITE.withAlpha(255.0F * alpha));
+            float nameY = cardY + 10.0F * cardScale;
+            custom.drawText(titleFont, sName, cardCX - snW / 2.0F, nameY, pyrock.utility.render.ColorRGBA.WHITE.withAlpha(255.0F * alpha));
 
-            // Server Address Pill
-            String sAddr = info.address != null ? info.address : "";
-            float saW = subFont.I_method_2c375926(sAddr);
-            if (saW > curW - 20.0F) {
-                while (sAddr.length() > 3 && subFont.I_method_2c375926(sAddr + "...") > curW - 20.0F) {
-                    sAddr = sAddr.substring(0, sAddr.length() - 1);
-                }
-                sAddr = sAddr + "...";
-                saW = subFont.I_method_2c375926(sAddr);
-            }
-            float pillW = saW + 12.0F;
-            float pillH = 12.0F;
-            custom.drawRoundedRect(cardCX - pillW / 2.0F, iconPodY + iconPodSize + 25.0F, pillW, pillH, rockstar.client.IIiii_Class8.I_method_893b2757(6.0F), new pyrock.utility.render.ColorRGBA(255.0F, 255.0F, 255.0F, 15.0F * alpha));
-            custom.drawText(subFont, sAddr, cardCX - saW / 2.0F, iconPodY + iconPodSize + 27.5F, new pyrock.utility.render.ColorRGBA(200.0F, 210.0F, 230.0F, 210.0F * alpha));
+            // 2. Large Square Server Avatar with Rounded Corners
+            float avatarSize = 92.0F * cardScale;
+            float avatarX = cardCX - avatarSize / 2.0F;
+            float avatarY = cardY + 26.0F * cardScale;
+            rockstar.client.IIiii_Class8 radAvatar = rockstar.client.IIiii_Class8.I_method_893b2757(10.0F);
 
-            // Bottom Badges: Ping
-            float badgeY = cardY + curH - 22.0F;
-            String pingTxt = info.ping > 0 ? (info.ping + " ms") : "Пинг...";
-            float pW = subFont.I_method_2c375926(pingTxt);
-            pyrock.utility.render.ColorRGBA pingCol = info.ping <= 80 ? new pyrock.utility.render.ColorRGBA(52.0F, 199.0F, 89.0F, 255.0F * alpha) : (info.ping <= 180 ? new pyrock.utility.render.ColorRGBA(255.0F, 204.0F, 0.0F, 255.0F * alpha) : new pyrock.utility.render.ColorRGBA(255.0F, 69.0F, 58.0F, 255.0F * alpha));
+            custom.drawRoundedRect(avatarX, avatarY, avatarSize, avatarSize, radAvatar, new pyrock.utility.render.ColorRGBA(18.0F, 22.0F, 34.0F, 210.0F * alpha));
+            custom.drawTexture(unknownIcon, avatarX + 4.0F, avatarY + 4.0F, avatarSize - 8.0F, avatarSize - 8.0F, pyrock.utility.render.ColorRGBA.WHITE.withAlpha(255.0F * alpha));
+            custom.drawRoundedBorder(avatarX, avatarY, avatarSize, avatarSize, 1.0F, radAvatar, new pyrock.utility.render.ColorRGBA(255.0F, 255.0F, 255.0F, (isCenter ? 140.0F : 50.0F) * alpha));
 
-            custom.drawRoundedRect(cardX + 8.0F, badgeY, pW + 12.0F, 14.0F, rockstar.client.IIiii_Class8.I_method_893b2757(7.0F), pingCol.withAlpha(35.0F * alpha));
-            custom.drawRoundedBorder(cardX + 8.0F, badgeY, pW + 12.0F, 14.0F, 0.7F, rockstar.client.IIiii_Class8.I_method_893b2757(7.0F), pingCol.withAlpha(160.0F * alpha));
-            custom.drawText(subFont, pingTxt, cardX + 14.0F, badgeY + 3.5F, pingCol);
+            // 3. Two Side-by-Side Action Buttons at Bottom (Play & Edit)
+            float btnBarY = avatarY + avatarSize + 8.0F;
+            float btnGap = 8.0F;
+            float btnW = (curW - 20.0F - btnGap) / 2.0F;
+            float btnH = 30.0F;
+            rockstar.client.IIiii_Class8 radBtn = rockstar.client.IIiii_Class8.I_method_893b2757(6.0F);
 
-            if (isCenter) {
-                String joinPrompt = "[ Enter для входа ]";
-                float jw = subFont.I_method_2c375926(joinPrompt);
-                custom.drawText(subFont, joinPrompt, cardCX - jw / 2.0F, cardY + curH + 6.0F, theme);
-            }
+            // Left Pod: Play Button (Blue Circle + Play Icon)
+            float playX = cardX + 10.0F;
+            boolean playHov = isCenter && (mouseX >= playX && mouseX <= playX + btnW && mouseY >= btnBarY && mouseY <= btnBarY + btnH);
+            custom.drawRoundedRect(playX, btnBarY, btnW, btnH, radBtn, new pyrock.utility.render.ColorRGBA(255.0F, 255.0F, 255.0F, (playHov ? 25.0F : 12.0F) * alpha));
+            custom.drawRoundedBorder(playX, btnBarY, btnW, btnH, 0.9F, radBtn, playHov ? new pyrock.utility.render.ColorRGBA(59.0F, 130.0F, 246.0F, 220.0F * alpha) : new pyrock.utility.render.ColorRGBA(255.0F, 255.0F, 255.0F, 35.0F * alpha));
+
+            float circleSize = 22.0F;
+            float circleX = playX + (btnW - circleSize) / 2.0F;
+            float circleY = btnBarY + (btnH - circleSize) / 2.0F;
+            rockstar.client.IIiii_Class8 radCircle = rockstar.client.IIiii_Class8.I_method_893b2757(circleSize / 2.0F);
+            custom.drawRoundedRect(circleX, circleY, circleSize, circleSize, radCircle, new pyrock.utility.render.ColorRGBA(59.0F, 130.0F, 246.0F, 255.0F * alpha));
+            custom.drawIcon("play", circleX + 5.0F, circleY + 5.0F, 12.0F, pyrock.utility.render.ColorRGBA.WHITE);
+
+            // Right Pod: Edit Button (Yellow Circle + Pencil Icon)
+            float editX = playX + btnW + btnGap;
+            boolean editHov = isCenter && (mouseX >= editX && mouseX <= editX + btnW && mouseY >= btnBarY && mouseY <= btnBarY + btnH);
+            custom.drawRoundedRect(editX, btnBarY, btnW, btnH, radBtn, new pyrock.utility.render.ColorRGBA(255.0F, 255.0F, 255.0F, (editHov ? 25.0F : 12.0F) * alpha));
+            custom.drawRoundedBorder(editX, btnBarY, btnW, btnH, 0.9F, radBtn, editHov ? new pyrock.utility.render.ColorRGBA(245.0F, 158.0F, 11.0F, 220.0F * alpha) : new pyrock.utility.render.ColorRGBA(255.0F, 255.0F, 255.0F, 35.0F * alpha));
+
+            float eCircleX = editX + (btnW - circleSize) / 2.0F;
+            float eCircleY = btnBarY + (btnH - circleSize) / 2.0F;
+            custom.drawRoundedRect(eCircleX, eCircleY, circleSize, circleSize, radCircle, new pyrock.utility.render.ColorRGBA(245.0F, 158.0F, 11.0F, 255.0F * alpha));
+            custom.drawIcon("setting", eCircleX + 4.5F, eCircleY + 4.5F, 13.0F, pyrock.utility.render.ColorRGBA.BLACK);
         }
     }
 
-    @Inject(method={"mouseScrolled"}, at={@At(value="HEAD")}, cancellable=true)
-    private void rockstar$onMouseScrolled(double mouseX, double mouseY, double horizontalAmount, double verticalAmount, org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable<Boolean> cir) {
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmount, double verticalAmount) {
         ServerList serverList = this.method_2529();
         int count = serverList != null ? serverList.size() : 0;
         if (count > 0) {
             if (verticalAmount > 0) {
                 this.rockstar$selectedIndex = Math.max(0, this.rockstar$selectedIndex - 1);
                 this.rockstar$syncSelectedToVanilla();
-                cir.setReturnValue(true);
+                return true;
             } else if (verticalAmount < 0) {
                 this.rockstar$selectedIndex = Math.min(count - 1, this.rockstar$selectedIndex + 1);
                 this.rockstar$syncSelectedToVanilla();
-                cir.setReturnValue(true);
+                return true;
             }
         }
+        return super.mouseScrolled(mouseX, mouseY, horizontalAmount, verticalAmount);
     }
 
     @Inject(method={"keyPressed"}, at={@At(value="HEAD")}, cancellable=true)
@@ -285,26 +273,55 @@ extends Screen {
         }
     }
 
-    @Inject(method={"mouseClicked"}, at={@At(value="HEAD")}, cancellable=true)
-    private void rockstar$onMouseClicked(double mouseX, double mouseY, int button, org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable<Boolean> cir) {
+    @Override
+    public boolean mouseClicked(double mouseX, double mouseY, int button) {
         ServerList serverList = this.method_2529();
         int count = serverList != null ? serverList.size() : 0;
         float carouselCY = (this.height - 75.0F) / 2.0F + 8.0F;
-        float cardW = 148.0F;
-        float cardH = 188.0F;
-        float spacing = 168.0F;
+        float cardW = 144.0F;
+        float cardH = 168.0F;
+        float spacing = 164.0F;
         float cx = this.width / 2.0F;
 
         for (int i = 0; i < count; i++) {
             float rel = (float) i - this.rockstar$carouselScroll;
             if (Math.abs(rel) > 2.8F) continue;
             float cardCX = cx + rel * spacing;
-            float curW = cardW;
-            float curH = cardH;
+            boolean isCenter = (i == this.rockstar$selectedIndex);
+            float cardScale = isCenter ? 1.05F : 1.0F;
+            float curW = cardW * cardScale;
+            float curH = cardH * cardScale;
             float cardX = cardCX - curW / 2.0F;
             float cardY = carouselCY - curH / 2.0F;
 
             if (mouseX >= cardX && mouseX <= cardX + curW && mouseY >= cardY && mouseY <= cardY + curH) {
+                if (isCenter) {
+                    float avatarSize = 92.0F * cardScale;
+                    float avatarY = cardY + 26.0F * cardScale;
+                    float btnBarY = avatarY + avatarSize + 8.0F;
+                    float btnGap = 8.0F;
+                    float btnW = (curW - 20.0F - btnGap) / 2.0F;
+                    float btnH = 30.0F;
+                    float playX = cardX + 10.0F;
+                    float editX = playX + btnW + btnGap;
+
+                    // Play Button Click
+                    if (mouseX >= playX && mouseX <= playX + btnW && mouseY >= btnBarY && mouseY <= btnBarY + btnH) {
+                        if (this.field_3041 != null && this.field_3041.active) {
+                            this.field_3041.onPress();
+                            return true;
+                        }
+                    }
+
+                    // Edit Button Click
+                    if (mouseX >= editX && mouseX <= editX + btnW && mouseY >= btnBarY && mouseY <= btnBarY + btnH) {
+                        if (this.field_3047 != null && this.field_3047.active) {
+                            this.field_3047.onPress();
+                            return true;
+                        }
+                    }
+                }
+
                 long now = System.currentTimeMillis();
                 boolean isDouble = (this.rockstar$lastClickedIndex == i && (now - this.rockstar$lastClickTime) < 350L);
                 this.rockstar$lastClickTime = now;
@@ -315,10 +332,10 @@ extends Screen {
                 if (isDouble && this.field_3041 != null && this.field_3041.active) {
                     this.field_3041.onPress();
                 }
-                cir.setReturnValue(true);
-                return;
+                return true;
             }
         }
+        return super.mouseClicked(mouseX, mouseY, button);
     }
 
     @Unique

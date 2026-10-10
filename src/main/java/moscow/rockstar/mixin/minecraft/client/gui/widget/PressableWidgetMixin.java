@@ -112,7 +112,7 @@ public abstract class PressableWidgetMixin extends ClickableWidget {
         boolean showBadge = !isCenteredAction && bw >= 90.0F && bh >= 18.0F;
 
         // Decoupled icon pod position and main button body bounds
-        float podSize = Math.max(16.0F, Math.min(bh - 4.0F, 22.0F));
+        float podSize = Math.max(20.0F, Math.min(bh - 2.0F, 24.0F));
         float podX = bx + 2.0F;
         float podY = animY + (bh - podSize) / 2.0F;
 
@@ -144,7 +144,7 @@ public abstract class PressableWidgetMixin extends ClickableWidget {
             custom.drawRoundedBorder(podX, podY, podSize, podSize, 1.0F, podRad, podBorder);
 
             // Inner Gradient Glyph Icon
-            float glyphSz = Math.max(7.0F, podSize - 7.0F);
+            float glyphSz = Math.max(12.0F, podSize - 4.0F);
             float glyphX = podX + (podSize - glyphSz) / 2.0F;
             float glyphY = podY + (podSize - glyphSz) / 2.0F;
             custom.drawIcon(badge.icon, glyphX, glyphY, glyphSz, this.active ? (this.rockstar$hoverAnim > 0.01F ? ColorRGBA.WHITE : new ColorRGBA(235.0F, 240.0F, 252.0F, 235.0F * btnAlpha)) : new ColorRGBA(140.0F, 145.0F, 155.0F, 140.0F * btnAlpha));

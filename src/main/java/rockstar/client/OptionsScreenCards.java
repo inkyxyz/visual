@@ -42,23 +42,5 @@ public class OptionsScreenCards {
             custom.drawRoundedRect(cx, cy, cw, ch, cardRad, cardBg);
             custom.drawRoundedBorder(cx, cy, cw, ch, 1.0F, cardRad, cardBorder);
         }
-
-        // Section Headers
-        IIiIIi_Class10 font = null;
-        try {
-            if (IIiIiI_Class11.i_field_857c0621 != null) {
-                font = IIiIiI_Class11.i_field_857c0621.I_method_3a2d5e3(8.5F);
-            }
-        } catch (Throwable ignored) {}
-
-        if (font != null) {
-            ColorRGBA headerCol = new ColorRGBA(160.0F, 175.0F, 205.0F, 210.0F);
-            if (cardLeftH > 0) {
-                custom.drawText(font, "\u041d\u0410\u0421\u0422\u0420\u041e\u0419\u041a\u0418 \u0418\u0413\u0420\u042b", cardLeftX, cardTopY - 15.0F, headerCol);
-            }
-            if (cardRightH > 0) {
-                custom.drawText(font, "\u041e\u0421\u041d\u041e\u0412\u041d\u042b\u0415 \u041d\u0410\u0421\u0422\u0420\u041e\u0419\u041a\u0418", cardRightX, cardTopY - 15.0F, headerCol);
-            }
-        }
     }
 }

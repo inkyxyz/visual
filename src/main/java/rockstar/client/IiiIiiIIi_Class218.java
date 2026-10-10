@@ -27,7 +27,8 @@ public final class IiiIiiIIi_Class218 {
         if (iii_Class82 == null) {
             return new IiiIiiIII_Class217(iIiiiIIII_Class113);
         }
-        return iii_Class82.III_method_9dc17555().I_method_5152d135(0.0f, 9.0f);
+        float padY = (iIiiiIIII_Class113 instanceof SliderSetting || iIiiiIIII_Class113 instanceof RangeSetting) ? 14.0f : 9.0f;
+        return iii_Class82.III_method_9dc17555().I_method_5152d135(0.0f, padY);
     }
 }
 

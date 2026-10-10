@@ -63,7 +63,14 @@ public class AnimationWheelModule extends Module {
     private final SliderSetting animSpeed = new SliderSetting(this, "Скорость")
         .I_method_c8c9a7d7(0.5F).i_method_65e2aff7(2.5F).II_method_b0f56334(0.1F).Ii_method_4e0e6b54(1.0F);
 
-    private final ModeSetting emoteSelect = new ModeSetting(this, "Выбор эмоции");
+    private final ModeSetting walkingAnim = new ModeSetting(this, "Анимация ходьбы");
+    private final ModeSetting.Nested1_42765c60 walkDefault;
+    private final ModeSetting.Nested1_42765c60 walkSkating;
+    private final ModeSetting.Nested1_42765c60 walkSprint;
+    private final ModeSetting.Nested1_42765c60 walkMarch;
+    private final ModeSetting.Nested1_42765c60 walkSwagger;
+    private final ModeSetting.Nested1_42765c60 walkZombie;
+    private final ModeSetting.Nested1_42765c60 walkLevitation;
 
     private static AnimationWheelModule INSTANCE;
     private static CustomAnimation activeAnimation = CustomAnimation.NONE;
@@ -82,12 +89,13 @@ public class AnimationWheelModule extends Module {
 
     public AnimationWheelModule() {
         INSTANCE = this;
-        for (CustomAnimation anim : CustomAnimation.values()) {
-            ModeSetting.Nested1_42765c60 opt = new ModeSetting.Nested1_42765c60(this.emoteSelect, anim.getTitle());
-            if (anim == CustomAnimation.FLOSS) {
-                opt.select();
-            }
-        }
+        this.walkDefault = new ModeSetting.Nested1_42765c60(this.walkingAnim, "Обычная").select();
+        this.walkSkating = new ModeSetting.Nested1_42765c60(this.walkingAnim, "Коньки");
+        this.walkSprint = new ModeSetting.Nested1_42765c60(this.walkingAnim, "Спринт");
+        this.walkMarch = new ModeSetting.Nested1_42765c60(this.walkingAnim, "Марш");
+        this.walkSwagger = new ModeSetting.Nested1_42765c60(this.walkingAnim, "Вразвалку");
+        this.walkZombie = new ModeSetting.Nested1_42765c60(this.walkingAnim, "Зомби");
+        this.walkLevitation = new ModeSetting.Nested1_42765c60(this.walkingAnim, "Левитация");
     }
 
     public static AnimationWheelModule getInstance() {
@@ -125,14 +133,75 @@ public class AnimationWheelModule extends Module {
         activeAnimation = CustomAnimation.NONE;
     }
 
-    public static void applyTransforms(PlayerEntity player, BipedEntityModelAccessor accessor, float tickDelta) {
-        if (activeAnimation == null || activeAnimation == CustomAnimation.NONE) return;
+    private static void applyWalkingTransforms(PlayerEntity player, BipedEntityModelAccessor accessor, float tickDelta) {
+        if (INSTANCE == null || !INSTANCE.isEnabled()) return;
+        boolean isMoving = player.getVelocity().horizontalLengthSquared() > 0.001;
+        if (!isMoving) return;
 
-        // Auto-stop if player starts moving (WASD/Jump)
-        if (player.getVelocity().horizontalLengthSquared() > 0.002 || Math.abs(player.getVelocity().y) > 0.22) {
-            stopAnimation();
-            return;
+        float timeSec = (player.age + tickDelta) * 0.22F;
+
+        if (INSTANCE.walkSkating.isSelected()) {
+            // Коньки (Skating) - wide graceful leg kicks, body roll tilt
+            float sway = (float) Math.sin(timeSec * 2.2F);
+            accessor.rockstar$getBody().roll = sway * 0.16F;
+            accessor.rockstar$getBody().pitch = 0.22F;
+            accessor.rockstar$getLeftLeg().roll = Math.max(0.0F, -sway) * 0.32F;
+            accessor.rockstar$getRightLeg().roll = Math.max(0.0F, sway) * 0.32F;
+            accessor.rockstar$getLeftLeg().yaw = -sway * 0.25F;
+            accessor.rockstar$getRightLeg().yaw = -sway * 0.25F;
+            accessor.rockstar$getLeftArm().pitch = 0.35F + sway * 0.35F;
+            accessor.rockstar$getRightArm().pitch = 0.35F - sway * 0.35F;
+            accessor.rockstar$getLeftArm().roll = -0.15F;
+            accessor.rockstar$getRightArm().roll = 0.15F;
+        } else if (INSTANCE.walkSprint.isSelected()) {
+            // Спринт (Ninja Sprint) - deep forward lean, arms trailing back
+            accessor.rockstar$getBody().pitch = 0.52F;
+            accessor.rockstar$getHead().pitch = -0.45F;
+            accessor.rockstar$getLeftArm().pitch = 1.35F;
+            accessor.rockstar$getRightArm().pitch = 1.35F;
+            accessor.rockstar$getLeftArm().roll = -0.18F;
+            accessor.rockstar$getRightArm().roll = 0.18F;
+        } else if (INSTANCE.walkMarch.isSelected()) {
+            // Марш (March) - high knee lift, sharp swinging arms
+            float marchArm = (float) Math.sin(timeSec * 3.5F) * 1.15F;
+            accessor.rockstar$getLeftArm().pitch = marchArm;
+            accessor.rockstar$getRightArm().pitch = -marchArm;
+            accessor.rockstar$getBody().pitch = -0.06F;
+            accessor.rockstar$getHead().pitch = 0.04F;
+        } else if (INSTANCE.walkSwagger.isSelected()) {
+            // Вразвалку (Swagger) - exaggerated hip & shoulder roll sway
+            float swagger = (float) Math.sin(timeSec * 2.0F);
+            accessor.rockstar$getBody().roll = swagger * 0.22F;
+            accessor.rockstar$getHead().roll = -swagger * 0.15F;
+            accessor.rockstar$getLeftArm().roll = -0.35F - swagger * 0.18F;
+            accessor.rockstar$getRightArm().roll = 0.35F - swagger * 0.18F;
+        } else if (INSTANCE.walkZombie.isSelected()) {
+            // Зомби (Zombie) - arms extended forward with subtle sway
+            float sway = (float) Math.sin(timeSec * 2.5F) * 0.08F;
+            accessor.rockstar$getLeftArm().pitch = -1.55F + sway;
+            accessor.rockstar$getRightArm().pitch = -1.55F - sway;
+            accessor.rockstar$getLeftArm().roll = -0.08F;
+            accessor.rockstar$getRightArm().roll = 0.08F;
+            accessor.rockstar$getHead().pitch = 0.12F;
+            accessor.rockstar$getHead().roll = sway * 1.5F;
+        } else if (INSTANCE.walkLevitation.isSelected()) {
+            // Левитация (Hover / Gliding) - gentle floating hover
+            float floatBob = (float) Math.sin(timeSec * 2.8F) * 0.06F;
+            accessor.rockstar$getLeftLeg().pitch = 0.12F + floatBob;
+            accessor.rockstar$getRightLeg().pitch = 0.16F - floatBob;
+            accessor.rockstar$getLeftLeg().roll = -0.08F;
+            accessor.rockstar$getRightLeg().roll = 0.08F;
+            accessor.rockstar$getLeftArm().pitch = 0.10F;
+            accessor.rockstar$getRightArm().pitch = 0.10F;
+            accessor.rockstar$getLeftArm().roll = -0.28F - floatBob;
+            accessor.rockstar$getRightArm().roll = 0.28F + floatBob;
         }
+    }
+
+    public static void applyTransforms(PlayerEntity player, BipedEntityModelAccessor accessor, float tickDelta) {
+        applyWalkingTransforms(player, accessor, tickDelta);
+
+        if (activeAnimation == null || activeAnimation == CustomAnimation.NONE) return;
 
         float elapsedSec = (System.currentTimeMillis() - animationStartTime) * 0.001F;
         float speed = INSTANCE != null ? INSTANCE.animSpeed.Ii_method_a20abcd2() : 1.0F;

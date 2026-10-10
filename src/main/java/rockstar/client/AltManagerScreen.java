@@ -78,6 +78,9 @@ public class AltManagerScreen extends ii_Class4 {
     // Smooth hover animations
     private float leftArrowHover = 0.0F;
     private float rightArrowHover = 0.0F;
+    private boolean poseMenuOpen = false;
+    private float poseMenuAnim = 0.0F;
+    private float poseBtnHover = 0.0F;
     private float pasteHover = 0.0F;
     private float rndHover = 0.0F;
     private float delHover = 0.0F;
@@ -328,6 +331,17 @@ public class AltManagerScreen extends ii_Class4 {
         var1.drawLine(new Vec2f(closeX + pad, closeY + pad), new Vec2f(closeX + closeSize - pad, closeY + closeSize - pad), crossCol);
         var1.drawLine(new Vec2f(closeX + closeSize - pad, closeY + pad), new Vec2f(closeX + pad, closeY + closeSize - pad), crossCol);
 
+        // Pose Switcher Icon Button (Top right, next to close button)
+        float poseBtnSize = 18.0F;
+        float poseBtnX = closeX - poseBtnSize - 6.0F;
+        float poseBtnY = cardY + 9.0F;
+        boolean poseBtnHov = iIIiIIIiI_Class291.I_method_c3f86263(poseBtnX, poseBtnY, poseBtnSize, poseBtnSize, mx, my);
+        this.poseBtnHover += (poseBtnHov ? 1.0F - this.poseBtnHover : -this.poseBtnHover) * 0.25F;
+        IIiii_Class8 radPoseBtn = IIiii_Class8.I_method_893b2757(poseBtnSize / 2.0F);
+        var1.drawRoundedRect(poseBtnX, poseBtnY, poseBtnSize, poseBtnSize, radPoseBtn, this.poseMenuOpen ? themeAccent.withAlpha(120.0F * screenAlpha) : (poseBtnHov ? themeAccent.withAlpha(70.0F * screenAlpha) : new ColorRGBA(255.0F, 255.0F, 255.0F, 14.0F * screenAlpha)));
+        var1.drawRoundedBorder(poseBtnX, poseBtnY, poseBtnSize, poseBtnSize, 0.8F, radPoseBtn, this.poseMenuOpen ? themeAccent.withAlpha(220.0F * screenAlpha) : (poseBtnHov ? themeAccent.withAlpha(180.0F * screenAlpha) : new ColorRGBA(255.0F, 255.0F, 255.0F, 25.0F * screenAlpha)));
+        var1.drawIcon("hud/player", poseBtnX + 3.0F, poseBtnY + 3.0F, 12.0F, ColorRGBA.WHITE.withAlpha((poseBtnHov || this.poseMenuOpen) ? 255.0F * screenAlpha : 190.0F * screenAlpha));
+
         // Clamp selectedIndex & smoothly animate carousel
         if (ACCOUNTS.isEmpty()) {
             ACCOUNTS.add("Steve");
@@ -404,8 +418,8 @@ public class AltManagerScreen extends ii_Class4 {
 
             MatrixStack m = var1.getMatrices();
             m.push();
-            m.translate(posX, carouselCY - 16.0F, 120.0F - absRel * 40.0F);
-            m.scale(mScale, mScale, mScale);
+            m.translate(posX, carouselCY + 35.0F, 120.0F - absRel * 40.0F);
+            m.scale(mScale, -mScale, mScale);
             // 180° ensures front face and eyes point straight at the camera
             m.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(180.0F + yawDeg));
 
@@ -484,17 +498,7 @@ public class AltManagerScreen extends ii_Class4 {
 
 
 
-        // Pose Switcher Glass Button
-        float dotsY = cardY + cardH - 62.0F;
-        float poseW = 120.0F, poseH = 17.0F;
-        float poseX = carouselCX - poseW / 2.0F;
-        float poseY = dotsY - 22.0F;
-        boolean poseHov = iIIiIIIiI_Class291.I_method_c3f86263(poseX, poseY, poseW, poseH, mx, my);
-        IIiii_Class8 poseRad = IIiii_Class8.I_method_893b2757(poseH / 2.0F);
-        var1.drawRoundedRect(poseX, poseY, poseW, poseH, poseRad, poseHov ? themeAccent.withAlpha(70.0F * screenAlpha) : new ColorRGBA(255.0F, 255.0F, 255.0F, 14.0F * screenAlpha));
-        var1.drawRoundedBorder(poseX, poseY, poseW, poseH, 0.8F, poseRad, poseHov ? themeAccent.withAlpha(180.0F * screenAlpha) : new ColorRGBA(255.0F, 255.0F, 255.0F, 25.0F * screenAlpha));
-        String poseText = "Поза: " + POSE_NAMES[currentPoseIndex % POSE_NAMES.length];
-        var1.drawCenteredText(smallFont, poseText, carouselCX, poseY + 4.0F, ColorRGBA.WHITE.withAlpha(poseHov ? 255.0F * screenAlpha : 210.0F * screenAlpha));
+        float dotsY = cardY + cardH - 58.0F;
 
         // Carousel Dots Indicator (below model)
         int dotCount = Math.min(10, ACCOUNTS.size());
@@ -556,6 +560,76 @@ public class AltManagerScreen extends ii_Class4 {
         boolean delHov = iIIiIIIiI_Class291.I_method_c3f86263(delX, inBarY, delBtnW, 22.0F, mx, my);
         this.delHover += (delHov ? 1.0F - this.delHover : -this.delHover) * 0.25F;
         renderFrostedGlassDeleteButton(var1, delX, inBarY, delBtnW, 22.0F, delHov, this.delHover, screenAlpha);
+
+        // ==========================================
+        // FLOATING POSE DROPDOWN MENU OVERLAY
+        // ==========================================
+        if (this.poseMenuOpen) {
+            float menuW = 152.0F;
+            float rowH = 20.0F;
+            float menuH = POSE_NAMES.length * rowH + 8.0F;
+            float menuX = poseBtnX + poseBtnSize - menuW;
+            float menuY = poseBtnY + poseBtnSize + 6.0F;
+            IIiii_Class8 radMenu = IIiii_Class8.I_method_893b2757(8.0F);
+
+            var1.drawShadow(menuX, menuY, menuW, menuH, 16.0F, radMenu, new ColorRGBA(0.0F, 0.0F, 0.0F, 180.0F * screenAlpha));
+            var1.drawBlurredRect(menuX, menuY, menuW, menuH, 16.0F, 3.0F, radMenu, new ColorRGBA(20.0F, 24.0F, 36.0F, 200.0F * screenAlpha));
+            var1.drawRoundedRect(menuX, menuY, menuW, menuH, radMenu, new ColorRGBA(12.0F, 15.0F, 24.0F, 245.0F * screenAlpha));
+            var1.drawRoundedBorder(menuX, menuY, menuW, menuH, 1.0F, radMenu, new ColorRGBA(255.0F, 255.0F, 255.0F, 40.0F * screenAlpha));
+
+            String currentNick = (!ACCOUNTS.isEmpty() && this.selectedIndex < ACCOUNTS.size()) ? ACCOUNTS.get(this.selectedIndex) : "Steve";
+            SkinTextures previewSkin = getSkinTextures(currentNick);
+
+            var1.draw(); // Flush 2D batch
+            RenderSystem.enableDepthTest();
+            RenderSystem.depthMask(true);
+            RenderSystem.disableCull();
+
+            float rowY = menuY + 4.0F;
+            for (int p = 0; p < POSE_NAMES.length; p++) {
+                boolean rowHov = mx >= menuX + 4.0F && mx <= menuX + menuW - 4.0F && my >= rowY && my <= rowY + rowH;
+                boolean isCurrent = (p == currentPoseIndex % POSE_NAMES.length);
+
+                if (rowHov || isCurrent) {
+                    var1.drawRoundedRect(menuX + 4.0F, rowY, menuW - 8.0F, rowH, IIiii_Class8.I_method_893b2757(5.0F), isCurrent ? themeAccent.withAlpha(70.0F * screenAlpha) : new ColorRGBA(255.0F, 255.0F, 255.0F, 18.0F * screenAlpha));
+                }
+
+                // Upright mini preview for each pose
+                applySmoothPose(p, true, 0.0F);
+                MatrixStack mm = var1.getMatrices();
+                mm.push();
+                mm.translate(menuX + 15.0F, rowY + 16.0F, 260.0F);
+                mm.scale(8.0F, -8.0F, 8.0F);
+                mm.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(180.0F));
+
+                try {
+                    VertexConsumer vc = vertexConsumers.getBuffer(RenderLayer.getEntityTranslucent(previewSkin.texture()));
+                    PLAYER_MODEL.render(mm, vc, 15728880, OverlayTexture.DEFAULT_UV, 0xFFFFFFFF);
+                } catch (Throwable ignored) {}
+                mm.pop();
+
+                rowY += rowH;
+            }
+
+            vertexConsumers.draw();
+            RenderSystem.enableCull();
+            RenderSystem.disableDepthTest();
+
+            // Restore center model pose
+            applySmoothPose(this.selectedIndex, true, timeSec);
+
+            // Draw pose names over rows
+            rowY = menuY + 4.0F;
+            for (int p = 0; p < POSE_NAMES.length; p++) {
+                boolean isCurrent = (p == currentPoseIndex % POSE_NAMES.length);
+                ColorRGBA textColor = isCurrent ? themeAccent : ColorRGBA.WHITE.withAlpha(220.0F * screenAlpha);
+                var1.drawText(smallFont, POSE_NAMES[p], menuX + 30.0F, rowY + 5.5F, textColor);
+                if (isCurrent) {
+                    var1.drawText(smallFont, "✓", menuX + menuW - 16.0F, rowY + 5.5F, themeAccent);
+                }
+                rowY += rowH;
+            }
+        }
 
         matrices.pop();
     }
@@ -779,6 +853,42 @@ public class AltManagerScreen extends ii_Class4 {
             return;
         }
 
+        // Pose Switcher Icon Button (Top right, next to close button)
+        float poseBtnSize = 18.0F;
+        float poseBtnX = closeX - poseBtnSize - 6.0F;
+        float poseBtnY = cardY + 9.0F;
+        if (iIIiIIIiI_Class291.I_method_c3f86263(poseBtnX, poseBtnY, poseBtnSize, poseBtnSize, mouseX, mouseY)) {
+            this.poseMenuOpen = !this.poseMenuOpen;
+            UISoundManager.playButtonClick();
+            return;
+        }
+
+        // Handle Pose Dropdown Selection if open
+        if (this.poseMenuOpen) {
+            float menuW = 152.0F;
+            float rowH = 20.0F;
+            float menuH = POSE_NAMES.length * rowH + 8.0F;
+            float menuX = poseBtnX + poseBtnSize - menuW;
+            float menuY = poseBtnY + poseBtnSize + 6.0F;
+
+            if (mouseX >= menuX && mouseX <= menuX + menuW && mouseY >= menuY && mouseY <= menuY + menuH) {
+                float rowY = menuY + 4.0F;
+                for (int p = 0; p < POSE_NAMES.length; p++) {
+                    if (mouseY >= rowY && mouseY <= rowY + rowH) {
+                        currentPoseIndex = p;
+                        this.poseMenuOpen = false;
+                        UISoundManager.playButtonClick();
+                        return;
+                    }
+                    rowY += rowH;
+                }
+                return;
+            } else {
+                this.poseMenuOpen = false;
+                return;
+            }
+        }
+
         // Navigation Arrows [<] and [>]
         float carouselCY = cardY + 128.0F;
         float arrowW = 22.0F;
@@ -826,17 +936,6 @@ public class AltManagerScreen extends ii_Class4 {
                 }
                 return;
             }
-        }
-
-        // Pose Switcher Button Click
-        float dotsY = cardY + cardH - 62.0F;
-        float poseW = 120.0F, poseH = 17.0F;
-        float poseX = carouselCX - poseW / 2.0F;
-        float poseY = dotsY - 22.0F;
-        if (iIIiIIIiI_Class291.I_method_c3f86263(poseX, poseY, poseW, poseH, mouseX, mouseY)) {
-            currentPoseIndex = (currentPoseIndex + 1) % POSE_NAMES.length;
-            UISoundManager.playButtonClick();
-            return;
         }
 
         // Centered Bottom Controls

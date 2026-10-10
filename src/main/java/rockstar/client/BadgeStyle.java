@@ -20,6 +20,9 @@ public class BadgeStyle {
         if (lower.contains("add") || lower.contains("\u0434\u043e\u0431\u0430\u0432") || lower.contains("create") || lower.contains("\u0441\u043e\u0437\u0434\u0430\u0442") || lower.contains("\u043d\u043e\u0432") || lower.contains("new")) {
             return new BadgeStyle("plus", new ColorRGBA(0.0F, 122.0F, 255.0F, 255.0F), new ColorRGBA(90.0F, 200.0F, 250.0F, 255.0F));
         }
+        if (lower.contains("contrast") || lower.contains("\u043a\u043e\u043d\u0442\u0440\u0430\u0441\u0442") || lower.contains("accessib") || lower.contains("\u0434\u043e\u0441\u0442\u0443\u043f\u043d") || lower.contains("vision") || lower.contains("\u0437\u0440\u0435\u043d")) {
+            return new BadgeStyle("category/visuals", new ColorRGBA(0.0F, 122.0F, 255.0F, 255.0F), new ColorRGBA(88.0F, 86.0F, 214.0F, 255.0F));
+        }
         if (lower.contains("video") || lower.contains("\u0433\u0440\u0430\u0444\u0438\u043a") || lower.contains("\u0432\u0438\u0434\u0435\u043e") || lower.contains("render") || lower.contains("view")) {
             return new BadgeStyle("category/visuals", new ColorRGBA(52.0F, 199.0F, 89.0F, 255.0F), new ColorRGBA(40.0F, 170.0F, 70.0F, 255.0F));
         }
