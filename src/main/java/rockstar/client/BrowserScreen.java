@@ -1,319 +1,453 @@
 package rockstar.client;
 
-import java.net.URI;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Cursor;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
+import javafx.application.Platform;
+import javafx.embed.swing.JFXPanel;
+import javafx.scene.Scene;
+import javafx.scene.web.WebEngine;
+import javafx.scene.web.WebView;
+import javax.swing.BorderFactory;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
+import javax.swing.JButton;
+import javax.swing.JDialog;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JProgressBar;
+import javax.swing.JTextField;
+import javax.swing.SwingUtilities;
+import javax.swing.border.EmptyBorder;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.util.Util;
 import org.lwjgl.glfw.GLFW;
 import pyrock.utility.render.ColorRGBA;
 
 public class BrowserScreen extends ii_Class4 {
     private final Screen parentScreen;
-    private String currentUrl;
-    private String searchQuery;
-    private boolean isEditingUrl = false;
+    private final String initialQuery;
 
-    private static class WebResult {
-        String title;
-        String url;
-        String snippet;
+    private static JDialog browserDialog;
+    private static JFXPanel jfxPanel;
+    private static WebView webView;
+    private static WebEngine webEngine;
+    private static JTextField urlField;
+    private static JLabel titleLabel;
+    private static JProgressBar progressBar;
+    private static boolean jfxInitialized = false;
 
-        WebResult(String title, String url, String snippet) {
-            this.title = title;
-            this.url = url;
-            this.snippet = snippet;
-        }
-    }
-    private final List<WebResult> results = new ArrayList<>();
+    private static int lastWinX = -1, lastWinY = -1, lastWinW = -1, lastWinH = -1;
 
     public BrowserScreen(Screen parentScreen, String query) {
         this.parentScreen = parentScreen;
-        this.searchQuery = (query != null && !query.trim().isEmpty()) ? query.trim() : "";
-        if (!this.searchQuery.isEmpty()) {
-            this.currentUrl = "https://www.google.com/search?q=" + URLEncoder.encode(this.searchQuery, StandardCharsets.UTF_8);
-        } else {
-            this.currentUrl = "https://www.google.com";
-        }
-        buildResults();
+        this.initialQuery = query != null ? query.trim() : "";
     }
 
-    private void buildResults() {
-        this.results.clear();
-        String q = this.searchQuery.toLowerCase();
-
-        if (q.isEmpty()) {
-            this.results.add(new WebResult("YouTube: Home", "https://youtube.com", "Смотрите любимые видео, слушайте музыку и делитесь контентом со всем миром."));
-            this.results.add(new WebResult("Minecraft Wiki: Официальная база знаний", "https://minecraft.wiki", "Полное руководство по предметам, крафтам, мобам и механикам Minecraft 1.21."));
-            this.results.add(new WebResult("Agravity Client: Документация и обновления", "https://agravity.dev", "Новое поколение кастомных визуалов, анимаций Roblox и оптимизации."));
-            this.results.add(new WebResult("FunTime: Анархия и Гриферские сервера", "https://funtime.su", "Популярный анархо-сервер с уникальными ивентами, кланами и аукционами."));
-            this.results.add(new WebResult("GitHub: Платформа разработчиков", "https://github.com", "Миллионы проектов с открытым исходным кодом, репозитории и инструменты."));
-        } else {
-            this.results.add(new WebResult(searchQuery + " — Поиск в Google", this.currentUrl, "Результаты поиска Google по запросу \"" + searchQuery + "\". Нажмите, чтобы открыть в браузере."));
-            this.results.add(new WebResult(searchQuery + " | Minecraft Wiki", "https://minecraft.wiki/w/" + URLEncoder.encode(searchQuery, StandardCharsets.UTF_8), "Подробная информация, рецепты крафта и руководства из Minecraft Wiki."));
-            this.results.add(new WebResult(searchQuery + " — Смотреть на YouTube", "https://youtube.com/results?search_query=" + URLEncoder.encode(searchQuery, StandardCharsets.UTF_8), "Видеоролики, летсплеи, гайды и стримы по вашему запросу."));
-            this.results.add(new WebResult("Agravity Hub: Обсуждение " + searchQuery, "https://google.com/search?q=" + URLEncoder.encode(searchQuery, StandardCharsets.UTF_8), "Найти самые свежие материалы, советы и новости в интернете."));
-        }
+    @Override
+    protected void init() {
+        super.init();
+        String targetUrl = resolveUrl(this.initialQuery);
+        SwingUtilities.invokeLater(() -> openBrowser(targetUrl));
     }
 
-    private void openInSystemBrowser(String url) {
+    private void openBrowser(String initialUrl) {
         try {
-            Util.getOperatingSystem().open(URI.create(url));
+            if (browserDialog == null) {
+                initDialog();
+            }
+
+            // Sync bounds with Minecraft GLFW window
+            syncWindowBounds();
+
+            if (browserDialog != null) {
+                browserDialog.setVisible(true);
+                browserDialog.toFront();
+                browserDialog.requestFocus();
+            }
+
+            if (urlField != null) {
+                urlField.setText(initialUrl);
+            }
+
+            if (webEngine != null) {
+                Platform.runLater(() -> {
+                    try {
+                        webEngine.load(initialUrl);
+                    } catch (Throwable ignored) {}
+                });
+            }
+        } catch (Throwable t) {
+            t.printStackTrace();
+        }
+    }
+
+    private void initDialog() {
+        browserDialog = new JDialog();
+        browserDialog.setUndecorated(true);
+        browserDialog.setType(JFrame.Type.UTILITY);
+        browserDialog.setAlwaysOnTop(true);
+        browserDialog.getContentPane().setBackground(new Color(16, 18, 26));
+        browserDialog.setLayout(new BorderLayout());
+
+        // --- TOP TOOLBAR ---
+        JPanel topBar = new JPanel();
+        topBar.setBackground(new Color(20, 24, 34));
+        topBar.setPreferredSize(new Dimension(800, 44));
+        topBar.setLayout(new BorderLayout(8, 0));
+        topBar.setBorder(new EmptyBorder(6, 12, 6, 12));
+
+        // 1. Left Navigation Controls (Back, Forward, Reload, Home)
+        JPanel leftNav = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
+        leftNav.setOpaque(false);
+
+        // Agravity Logo Pill
+        JLabel brandLabel = new JLabel(" Agravity ");
+        brandLabel.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        brandLabel.setForeground(new Color(168, 85, 247));
+        brandLabel.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(new Color(168, 85, 247, 100), 1, true),
+            new EmptyBorder(2, 6, 2, 6)
+        ));
+        leftNav.add(brandLabel);
+
+        JButton btnBack = createStyledButton("◀", "Назад", e -> {
+            Platform.runLater(() -> {
+                if (webEngine != null && webEngine.getHistory().getCurrentIndex() > 0) {
+                    webEngine.getHistory().go(-1);
+                }
+            });
+        });
+        JButton btnFwd = createStyledButton("▶", "Вперед", e -> {
+            Platform.runLater(() -> {
+                if (webEngine != null && webEngine.getHistory().getCurrentIndex() < webEngine.getHistory().getEntries().size() - 1) {
+                    webEngine.getHistory().go(1);
+                }
+            });
+        });
+        JButton btnReload = createStyledButton("↻", "Обновить", e -> {
+            Platform.runLater(() -> {
+                if (webEngine != null) webEngine.reload();
+            });
+        });
+        JButton btnHome = createStyledButton("⌂", "Домой (Google)", e -> {
+            Platform.runLater(() -> {
+                if (webEngine != null) webEngine.load("https://www.google.com");
+            });
+        });
+
+        leftNav.add(btnBack);
+        leftNav.add(btnFwd);
+        leftNav.add(btnReload);
+        leftNav.add(btnHome);
+        topBar.add(leftNav, BorderLayout.WEST);
+
+        // 2. Center Omnibox / URL Field
+        urlField = new JTextField();
+        urlField.setBackground(new Color(28, 32, 46));
+        urlField.setForeground(Color.WHITE);
+        urlField.setCaretColor(new Color(168, 85, 247));
+        urlField.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        urlField.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(new Color(55, 62, 85), 1, true),
+            new EmptyBorder(4, 10, 4, 10)
+        ));
+        urlField.addActionListener(e -> {
+            String text = urlField.getText();
+            String target = resolveUrl(text);
+            Platform.runLater(() -> {
+                if (webEngine != null) webEngine.load(target);
+            });
+        });
+        urlField.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyPressed(KeyEvent e) {
+                if (e.getKeyCode() == KeyEvent.VK_ESCAPE) {
+                    closeFromBrowser();
+                }
+            }
+        });
+        topBar.add(urlField, BorderLayout.CENTER);
+
+        // 3. Right Bookmarks & Close Button
+        JPanel rightPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));
+        rightPanel.setOpaque(false);
+
+        JButton bmYt = createBookmarkButton("YouTube", new Color(239, 68, 68), "https://youtube.com");
+        JButton bmVk = createBookmarkButton("VK", new Color(6, 182, 212), "https://vk.com");
+        JButton bmWiki = createBookmarkButton("Wiki", new Color(16, 185, 129), "https://minecraft.wiki");
+        JButton bmGh = createBookmarkButton("GitHub", new Color(148, 163, 184), "https://github.com");
+
+        JButton btnClose = new JButton("✕");
+        btnClose.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        btnClose.setForeground(Color.WHITE);
+        btnClose.setBackground(new Color(239, 68, 68));
+        btnClose.setFocusPainted(false);
+        btnClose.setBorderPainted(false);
+        btnClose.setPreferredSize(new Dimension(30, 26));
+        btnClose.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btnClose.setToolTipText("Закрыть и вернуться в игру (Esc)");
+        btnClose.addActionListener(e -> closeFromBrowser());
+
+        rightPanel.add(bmYt);
+        rightPanel.add(bmVk);
+        rightPanel.add(bmWiki);
+        rightPanel.add(bmGh);
+        rightPanel.add(Box.createHorizontalStrut(6));
+        rightPanel.add(btnClose);
+        topBar.add(rightPanel, BorderLayout.EAST);
+
+        // Top Wrapper with Bottom Progress Bar
+        JPanel topWrapper = new JPanel(new BorderLayout());
+        topWrapper.setBackground(new Color(20, 24, 34));
+        topWrapper.add(topBar, BorderLayout.NORTH);
+
+        progressBar = new JProgressBar(0, 100);
+        progressBar.setPreferredSize(new Dimension(800, 2));
+        progressBar.setForeground(new Color(168, 85, 247));
+        progressBar.setBackground(new Color(20, 24, 34));
+        progressBar.setBorder(null);
+        progressBar.setVisible(false);
+        topWrapper.add(progressBar, BorderLayout.SOUTH);
+
+        browserDialog.getContentPane().add(topWrapper, BorderLayout.NORTH);
+
+        // --- CENTER JFX PANEL WITH WEBVIEW ---
+        jfxPanel = new JFXPanel();
+        browserDialog.getContentPane().add(jfxPanel, BorderLayout.CENTER);
+
+        Platform.runLater(() -> {
+            try {
+                webView = new WebView();
+                webView.setContextMenuEnabled(true);
+                webEngine = webView.getEngine();
+                webEngine.setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36");
+
+                // Location Listener
+                webEngine.locationProperty().addListener((obs, oldLoc, newLoc) -> {
+                    if (newLoc != null) {
+                        SwingUtilities.invokeLater(() -> {
+                            if (urlField != null && !urlField.isFocusOwner()) {
+                                urlField.setText(newLoc);
+                            }
+                        });
+                    }
+                });
+
+                // Progress Listener
+                webEngine.getLoadWorker().progressProperty().addListener((obs, oldVal, newVal) -> {
+                    SwingUtilities.invokeLater(() -> {
+                        if (progressBar != null) {
+                            int prog = (int) (newVal.doubleValue() * 100);
+                            progressBar.setValue(prog);
+                            progressBar.setVisible(prog > 0 && prog < 100);
+                        }
+                    });
+                });
+
+                Scene scene = new Scene(webView);
+                scene.setOnKeyPressed(event -> {
+                    if (event.getCode() == javafx.scene.input.KeyCode.ESCAPE) {
+                        closeFromBrowser();
+                    }
+                });
+                jfxPanel.setScene(scene);
+                jfxInitialized = true;
+            } catch (Throwable t) {
+                t.printStackTrace();
+            }
+        });
+    }
+
+    private static JButton createStyledButton(String text, String tooltip, java.awt.event.ActionListener action) {
+        JButton btn = new JButton(text) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(getModel().isRollover() ? new Color(50, 58, 80) : new Color(30, 36, 50));
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 6, 6);
+                g2.dispose();
+                super.paintComponent(g);
+            }
+        };
+        btn.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        btn.setForeground(Color.WHITE);
+        btn.setContentAreaFilled(false);
+        btn.setFocusPainted(false);
+        btn.setBorderPainted(false);
+        btn.setPreferredSize(new Dimension(28, 26));
+        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btn.setToolTipText(tooltip);
+        btn.addActionListener(action);
+        return btn;
+    }
+
+    private static JButton createBookmarkButton(String title, Color accent, String url) {
+        JButton btn = new JButton(title) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                if (getModel().isRollover()) {
+                    g2.setColor(new Color(accent.getRed(), accent.getGreen(), accent.getBlue(), 60));
+                    g2.fillRoundRect(0, 0, getWidth(), getHeight(), 6, 6);
+                    g2.setColor(accent);
+                    g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 6, 6);
+                } else {
+                    g2.setColor(new Color(28, 34, 46));
+                    g2.fillRoundRect(0, 0, getWidth(), getHeight(), 6, 6);
+                }
+                g2.dispose();
+                super.paintComponent(g);
+            }
+        };
+        btn.setFont(new Font("Segoe UI", Font.BOLD, 11));
+        btn.setForeground(Color.WHITE);
+        btn.setContentAreaFilled(false);
+        btn.setFocusPainted(false);
+        btn.setBorderPainted(false);
+        btn.setPreferredSize(new Dimension(btn.getFontMetrics(btn.getFont()).stringWidth(title) + 16, 26));
+        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btn.addActionListener(e -> {
+            if (urlField != null) urlField.setText(url);
+            Platform.runLater(() -> {
+                if (webEngine != null) webEngine.load(url);
+            });
+        });
+        return btn;
+    }
+
+    private static void syncWindowBounds() {
+        if (browserDialog == null) return;
+        try {
+            long handle = MinecraftClient.getInstance().getWindow().getHandle();
+            int[] wx = new int[1], wy = new int[1], ww = new int[1], wh = new int[1];
+            GLFW.glfwGetWindowPos(handle, wx, wy);
+            GLFW.glfwGetWindowSize(handle, ww, wh);
+
+            boolean isIconified = GLFW.glfwGetWindowAttrib(handle, GLFW.GLFW_ICONIFIED) != 0;
+            if (isIconified) {
+                if (browserDialog.isVisible()) browserDialog.setVisible(false);
+                return;
+            }
+
+            int pad = 24;
+            int targetX = wx[0] + pad;
+            int targetY = wy[0] + pad;
+            int targetW = Math.max(680, ww[0] - pad * 2);
+            int targetH = Math.max(480, wh[0] - pad * 2);
+
+            if (browserDialog.getX() != targetX || browserDialog.getY() != targetY ||
+                browserDialog.getWidth() != targetW || browserDialog.getHeight() != targetH) {
+                browserDialog.setBounds(targetX, targetY, targetW, targetH);
+            }
         } catch (Throwable ignored) {}
+    }
+
+    private static String resolveUrl(String input) {
+        if (input == null || input.trim().isEmpty()) {
+            return "https://www.google.com";
+        }
+        String s = input.trim();
+        if (s.startsWith("http://") || s.startsWith("https://")) {
+            return s;
+        }
+        if (!s.contains(" ") && (s.contains(".com") || s.contains(".ru") || s.contains(".net") ||
+            s.contains(".org") || s.contains(".io") || s.contains(".gg") || s.contains(".su") ||
+            s.contains(".to") || s.contains(".tv") || s.contains(".wiki") || s.contains(".dev"))) {
+            return "https://" + s;
+        }
+        return "https://www.google.com/search?q=" + URLEncoder.encode(s, StandardCharsets.UTF_8);
+    }
+
+    private static void closeFromBrowser() {
+        SwingUtilities.invokeLater(() -> {
+            if (browserDialog != null) {
+                browserDialog.setVisible(false);
+            }
+        });
+        MinecraftClient mc = MinecraftClient.getInstance();
+        if (mc != null) {
+            mc.execute(() -> {
+                if (mc.currentScreen instanceof BrowserScreen) {
+                    BrowserScreen bs = (BrowserScreen) mc.currentScreen;
+                    mc.setScreen(bs.parentScreen);
+                }
+            });
+        }
     }
 
     @Override
     public void render(III custom) {
-        // Dark browser window backdrop
-        custom.drawRect(0.0F, 0.0F, (float)this.width, (float)this.height, new ColorRGBA(18.0F, 20.0F, 28.0F, 255.0F));
+        // Keep browser dialog synced with Minecraft window
+        syncWindowBounds();
 
-        IIiIIi_Class10 titleFont = null;
-        IIiIIi_Class10 boldFont = null;
+        // Dark frosted backdrop behind browser window inside Minecraft
+        custom.drawRect(0.0F, 0.0F, (float)this.width, (float)this.height, new ColorRGBA(12.0F, 14.0F, 20.0F, 245.0F));
+
         IIiIIi_Class10 font = null;
         IIiIIi_Class10 subFont = null;
         try {
             if (IIiIiI_Class11.i_field_857c0621 != null) {
-                titleFont = IIiIiI_Class11.i_field_857c0621.I_method_3a2d5e3(16.0F);
-                boldFont = IIiIiI_Class11.i_field_857c0621.I_method_3a2d5e3(12.0F);
-                font = IIiIiI_Class11.i_field_857c0621.I_method_3a2d5e3(10.0F);
-                subFont = IIiIiI_Class11.II_field_857c0621.I_method_3a2d5e3(8.0F);
+                font = IIiIiI_Class11.i_field_857c0621.I_method_3a2d5e3(13.0F);
+                subFont = IIiIiI_Class11.II_field_857c0621.I_method_3a2d5e3(9.0F);
             }
         } catch (Throwable ignored) {}
 
-        // --- 1. TOP BROWSER CHROME / TOOLBAR ---
-        float barH = 44.0F;
-        custom.drawRect(0.0F, 0.0F, (float)this.width, barH, new ColorRGBA(24.0F, 28.0F, 40.0F, 255.0F));
-        custom.drawRect(0.0F, barH, (float)this.width, 1.0F, new ColorRGBA(255.0F, 255.0F, 255.0F, 30.0F));
-
-        // Window controls (Back ◀, Forward ▶, Refresh 🔄)
-        float navY = 12.0F;
         if (font != null) {
-            custom.drawText(font, "◀", 16.0F, navY + 4.0F, new ColorRGBA(255.0F, 255.0F, 255.0F, 180.0F));
-            custom.drawText(font, "▶", 36.0F, navY + 4.0F, new ColorRGBA(255.0F, 255.0F, 255.0F, 120.0F));
-            custom.drawText(font, "🔄", 56.0F, navY + 4.0F, new ColorRGBA(255.0F, 255.0F, 255.0F, 210.0F));
+            String title = "🌐 Встроенный браузер Agravity Web";
+            float tw = font.I_method_2c375926(title);
+            custom.drawText(font, title, ((float)this.width - tw) / 2.0F, 10.0F, ColorRGBA.WHITE);
         }
-
-        // URL / Address Pill
-        float urlX = 84.0F;
-        float urlW = this.width - 240.0F;
-        float urlH = 28.0F;
-        IIiii_Class8 urlRad = IIiii_Class8.I_method_893b2757(14.0F);
-        custom.drawRoundedRect(urlX, 8.0F, urlW, urlH, urlRad, new ColorRGBA(14.0F, 16.0F, 24.0F, 255.0F));
-        custom.drawRoundedBorder(urlX, 8.0F, urlW, urlH, 1.0F, urlRad, isEditingUrl ? IiiiiIIIi_Class242.I_method_7df8e08e() : new ColorRGBA(255.0F, 255.0F, 255.0F, 40.0F));
-
-        // Lock / HTTPS icon & URL text
-        if (font != null) {
-            custom.drawText(font, "🔒", urlX + 10.0F, 14.0F, new ColorRGBA(52.0F, 199.0F, 89.0F));
-            String dispUrl = isEditingUrl ? (searchQuery + ((System.currentTimeMillis() % 1000L < 500L) ? "|" : "")) : currentUrl;
-            if (dispUrl.length() > 65) dispUrl = dispUrl.substring(0, 62) + "...";
-            custom.drawText(font, dispUrl, urlX + 28.0F, 14.0F, ColorRGBA.WHITE);
+        if (subFont != null) {
+            String hint = "Нажмите [Esc] или кнопку [✕] в браузере, чтобы вернуться в игру";
+            float hw = subFont.I_method_2c375926(hint);
+            custom.drawText(subFont, hint, ((float)this.width - hw) / 2.0F, (float)this.height - 18.0F, new ColorRGBA(255.0F, 255.0F, 255.0F, 160.0F));
         }
-
-        // Open in Windows Browser Button
-        float openBtnX = this.width - 146.0F;
-        float btnW = 98.0F;
-        float btnH = 26.0F;
-        IIiii_Class8 btnRad = IIiii_Class8.I_method_893b2757(8.0F);
-        custom.drawRoundedRect(openBtnX, 9.0F, btnW, btnH, btnRad, IiiiiIIIi_Class242.I_method_7df8e08e().withAlpha(220.0F));
-        if (font != null) {
-            String openTxt = "↗ В браузере";
-            float ow = font.I_method_2c375926(openTxt);
-            custom.drawText(font, openTxt, openBtnX + (btnW - ow) / 2.0F, 15.0F, ColorRGBA.WHITE);
-        }
-
-        // Close (✕) Button
-        float closeX = this.width - 32.0F;
-        if (boldFont != null) {
-            custom.drawText(boldFont, "✕", closeX, 12.0F, new ColorRGBA(255.0F, 255.0F, 255.0F, 210.0F));
-        }
-
-        // --- 2. BROWSER VIEWPORT CONTENT ---
-        float cx = this.width / 2.0F;
-
-        // If Home / Empty Search -> Show Google Hero Logo & Shortcuts
-        if (searchQuery.isEmpty()) {
-            float heroY = 90.0F;
-            if (titleFont != null) {
-                // Multi-colored Google Letters
-                float gX = cx - 55.0F;
-                custom.drawText(titleFont, "G", gX, heroY, new ColorRGBA(66.0F, 133.0F, 244.0F));
-                custom.drawText(titleFont, "o", gX + 16.0F, heroY, new ColorRGBA(234.0F, 67.0F, 53.0F));
-                custom.drawText(titleFont, "o", gX + 30.0F, heroY, new ColorRGBA(251.0F, 188.0F, 5.0F));
-                custom.drawText(titleFont, "g", gX + 44.0F, heroY, new ColorRGBA(66.0F, 133.0F, 244.0F));
-                custom.drawText(titleFont, "l", gX + 58.0F, heroY, new ColorRGBA(52.0F, 168.0F, 83.0F));
-                custom.drawText(titleFont, "e", gX + 66.0F, heroY, new ColorRGBA(234.0F, 67.0F, 53.0F));
-            }
-
-            // Big Center Search Input Box
-            float sBoxW = Math.min(480.0F, this.width - 64.0F);
-            float sBoxH = 40.0F;
-            float sBoxX = cx - sBoxW / 2.0F;
-            float sBoxY = heroY + 44.0F;
-            IIiii_Class8 sRad = IIiii_Class8.I_method_893b2757(20.0F);
-            custom.drawShadow(sBoxX, sBoxY, sBoxW, sBoxH, 20.0F, sRad, new ColorRGBA(0.0F, 0.0F, 0.0F, 90.0F));
-            custom.drawRoundedRect(sBoxX, sBoxY, sBoxW, sBoxH, sRad, new ColorRGBA(30.0F, 34.0F, 48.0F, 255.0F));
-            custom.drawRoundedBorder(sBoxX, sBoxY, sBoxW, sBoxH, 1.2F, sRad, new ColorRGBA(255.0F, 255.0F, 255.0F, 45.0F));
-
-            if (font != null) {
-                String searchPrompt = "🔍  Введите поисковый запрос и нажмите Enter...";
-                custom.drawText(font, searchPrompt, sBoxX + 18.0F, sBoxY + 13.0F, new ColorRGBA(255.0F, 255.0F, 255.0F, 150.0F));
-            }
-
-            // Quick Shortcut Badges
-            String[] pills = { "YouTube", "Minecraft Wiki", "FunTime", "VKontakte", "Discord", "GitHub" };
-            float pStartX = cx - (pills.length * 70.0F) / 2.0F;
-            float pY = sBoxY + 60.0F;
-            for (int i = 0; i < pills.length; i++) {
-                float px = pStartX + i * 72.0F;
-                float pw = 66.0F;
-                float ph = 26.0F;
-                IIiii_Class8 pr = IIiii_Class8.I_method_893b2757(13.0F);
-                custom.drawRoundedRect(px, pY, pw, ph, pr, new ColorRGBA(36.0F, 42.0F, 58.0F, 230.0F));
-                custom.drawRoundedBorder(px, pY, pw, ph, 1.0F, pr, new ColorRGBA(255.0F, 255.0F, 255.0F, 35.0F));
-                if (subFont != null) {
-                    float tw = subFont.I_method_2c375926(pills[i]);
-                    custom.drawText(subFont, pills[i], px + (pw - tw) / 2.0F, pY + 7.0F, ColorRGBA.WHITE);
-                }
-            }
-        }
-
-        // --- 3. SEARCH RESULTS LIST ---
-        float resStartY = searchQuery.isEmpty() ? 275.0F : 62.0F;
-        float cardW = Math.min(560.0F, this.width - 48.0F);
-        float cardX = cx - cardW / 2.0F;
-
-        int idx = 0;
-        for (WebResult res : results) {
-            float ry = resStartY + idx * 72.0F;
-            if (ry + 64.0F > this.height) break;
-
-            IIiii_Class8 cRad = IIiii_Class8.I_method_893b2757(10.0F);
-            custom.drawRoundedRect(cardX, ry, cardW, 64.0F, cRad, new ColorRGBA(26.0F, 30.0F, 42.0F, 220.0F));
-            custom.drawRoundedBorder(cardX, ry, cardW, 64.0F, 1.0F, cRad, new ColorRGBA(255.0F, 255.0F, 255.0F, 25.0F));
-
-            if (subFont != null) {
-                custom.drawText(subFont, res.url, cardX + 14.0F, ry + 8.0F, new ColorRGBA(156.0F, 163.0F, 175.0F));
-            }
-            if (boldFont != null) {
-                custom.drawText(boldFont, res.title, cardX + 14.0F, ry + 22.0F, new ColorRGBA(147.0F, 197.0F, 253.0F));
-            }
-            if (subFont != null) {
-                custom.drawText(subFont, res.snippet, cardX + 14.0F, ry + 42.0F, new ColorRGBA(209.0F, 213.0F, 219.0F));
-            }
-            idx++;
-        }
-    }
-
-    @Override
-    public void onMouseClicked(double mouseX, double mouseY, IiIII_Class9 button) {
-        // Close Button
-        float closeX = this.width - 32.0F;
-        if (mouseX >= closeX - 6.0F && mouseX <= closeX + 20.0F && mouseY >= 6.0F && mouseY <= 34.0F) {
-            UISoundManager.playButtonClick();
-            if (MinecraftClient.getInstance() != null) {
-                MinecraftClient.getInstance().setScreen(this.parentScreen);
-            }
-            return;
-        }
-
-        // Open in Browser Button
-        float openBtnX = this.width - 146.0F;
-        if (mouseX >= openBtnX && mouseX <= openBtnX + 98.0F && mouseY >= 9.0F && mouseY <= 35.0F) {
-            UISoundManager.playButtonClick();
-            openInSystemBrowser(this.currentUrl);
-            return;
-        }
-
-        // URL bar click (toggle editing)
-        float urlX = 84.0F;
-        float urlW = this.width - 240.0F;
-        if (mouseX >= urlX && mouseX <= urlX + urlW && mouseY >= 8.0F && mouseY <= 36.0F) {
-            isEditingUrl = true;
-            return;
-        } else {
-            isEditingUrl = false;
-        }
-
-        // Search Results Clicks (Opens target link)
-        float cx = this.width / 2.0F;
-        float cardW = Math.min(560.0F, this.width - 48.0F);
-        float cardX = cx - cardW / 2.0F;
-        float resStartY = searchQuery.isEmpty() ? 275.0F : 62.0F;
-
-        int idx = 0;
-        for (WebResult res : results) {
-            float ry = resStartY + idx * 72.0F;
-            if (mouseX >= cardX && mouseX <= cardX + cardW && mouseY >= ry && mouseY <= ry + 64.0F) {
-                UISoundManager.playButtonClick();
-                openInSystemBrowser(res.url);
-                return;
-            }
-            idx++;
-        }
-
-        // Quick Shortcuts
-        if (searchQuery.isEmpty()) {
-            float heroY = 90.0F;
-            float sBoxH = 40.0F;
-            float sBoxY = heroY + 44.0F;
-            float pY = sBoxY + 60.0F;
-            String[] urls = {
-                "https://youtube.com", "https://minecraft.wiki", "https://funtime.su",
-                "https://vk.com", "https://discord.com", "https://github.com"
-            };
-            float pStartX = cx - (urls.length * 70.0F) / 2.0F;
-            for (int i = 0; i < urls.length; i++) {
-                float px = pStartX + i * 72.0F;
-                if (mouseX >= px && mouseX <= px + 66.0F && mouseY >= pY && mouseY <= pY + 26.0F) {
-                    UISoundManager.playButtonClick();
-                    openInSystemBrowser(urls[i]);
-                    return;
-                }
-            }
-        }
-    }
-
-    @Override
-    public boolean charTyped(char chr, int modifiers) {
-        if (isEditingUrl) {
-            if (chr >= 32 && chr != 127) {
-                searchQuery += chr;
-                return true;
-            }
-        }
-        return super.charTyped(chr, modifiers);
     }
 
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
         if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
-            if (MinecraftClient.getInstance() != null) {
-                MinecraftClient.getInstance().setScreen(this.parentScreen);
-            }
+            this.close();
             return true;
         }
-
-        if (isEditingUrl) {
-            if (keyCode == GLFW.GLFW_KEY_BACKSPACE && !searchQuery.isEmpty()) {
-                searchQuery = searchQuery.substring(0, searchQuery.length() - 1);
-                return true;
-            }
-            if (keyCode == GLFW.GLFW_KEY_ENTER || keyCode == GLFW.GLFW_KEY_KP_ENTER) {
-                isEditingUrl = false;
-                if (!searchQuery.trim().isEmpty()) {
-                    currentUrl = "https://www.google.com/search?q=" + URLEncoder.encode(searchQuery.trim(), StandardCharsets.UTF_8);
-                } else {
-                    currentUrl = "https://www.google.com";
-                }
-                buildResults();
-                UISoundManager.playButtonClick();
-                return true;
-            }
-        }
-
         return super.keyPressed(keyCode, scanCode, modifiers);
+    }
+
+    @Override
+    public void close() {
+        SwingUtilities.invokeLater(() -> {
+            if (browserDialog != null) {
+                browserDialog.setVisible(false);
+            }
+        });
+        if (this.client != null) {
+            this.client.setScreen(this.parentScreen);
+        }
+    }
+
+    @Override
+    public void removed() {
+        super.removed();
+        SwingUtilities.invokeLater(() -> {
+            if (browserDialog != null) {
+                browserDialog.setVisible(false);
+            }
+        });
     }
 }

@@ -201,9 +201,15 @@ implements iIIiIIiIi_Class294 {
         custom.drawShadow(snakeX, bRowY, gBtnW, bRowH, 10.0F, sRad, new ColorRGBA(0.0F, 0.0F, 0.0F, 70.0F));
         custom.drawRoundedRect(snakeX, bRowY, gBtnW, bRowH, sRad, new ColorRGBA(26.0F, 32.0F, 46.0F, snakeHov ? 255.0F : 210.0F));
         custom.drawRoundedBorder(snakeX, bRowY, gBtnW, bRowH, 1.2F, sRad, snakeHov ? new ColorRGBA(52.0F, 199.0F, 89.0F, 220.0F) : new ColorRGBA(255.0F, 255.0F, 255.0F, 40.0F));
-        if (font != null) {
-            float snW = font.I_method_2c375926("🐍");
-            custom.drawText(font, "🐍", snakeX + (gBtnW - snW) / 2.0F, bRowY + 10.0F, ColorRGBA.WHITE);
+        float snIconSz = 22.0F;
+        custom.drawTexture(RockstarClient.id("icons/snake.png"), snakeX + (gBtnW - snIconSz) / 2.0F, bRowY + (bRowH - snIconSz) / 2.0F, snIconSz, snIconSz, snakeHov ? ColorRGBA.WHITE : ColorRGBA.WHITE.withAlpha(220.0F));
+        if (snakeHov && subFont != null) {
+            float ttW = subFont.I_method_2c375926("Змейка") + 12.0F;
+            float ttX = snakeX + (gBtnW - ttW) / 2.0F;
+            float ttY = bRowY - 18.0F;
+            custom.drawRoundedRect(ttX, ttY, ttW, 14.0F, IIiii_Class8.I_method_893b2757(4.0F), new ColorRGBA(18.0F, 20.0F, 28.0F, 230.0F));
+            custom.drawRoundedBorder(ttX, ttY, ttW, 14.0F, 1.0F, IIiii_Class8.I_method_893b2757(4.0F), new ColorRGBA(52.0F, 199.0F, 89.0F, 180.0F));
+            custom.drawText(subFont, "Змейка", ttX + 6.0F, ttY + 3.0F, ColorRGBA.WHITE);
         }
 
         // Minesweeper Button (Сапёр)
@@ -213,9 +219,15 @@ implements iIIiIIiIi_Class294 {
         custom.drawShadow(mineX, bRowY, mBtnW, bRowH, 10.0F, sRad, new ColorRGBA(0.0F, 0.0F, 0.0F, 70.0F));
         custom.drawRoundedRect(mineX, bRowY, mBtnW, bRowH, sRad, new ColorRGBA(26.0F, 32.0F, 46.0F, mineHov ? 255.0F : 210.0F));
         custom.drawRoundedBorder(mineX, bRowY, mBtnW, bRowH, 1.2F, sRad, mineHov ? new ColorRGBA(255.0F, 59.0F, 48.0F, 220.0F) : new ColorRGBA(255.0F, 255.0F, 255.0F, 40.0F));
-        if (font != null) {
-            float mnW = font.I_method_2c375926("💣");
-            custom.drawText(font, "💣", mineX + (mBtnW - mnW) / 2.0F, bRowY + 10.0F, ColorRGBA.WHITE);
+        float mnIconSz = 22.0F;
+        custom.drawTexture(RockstarClient.id("icons/mine.png"), mineX + (mBtnW - mnIconSz) / 2.0F, bRowY + (bRowH - mnIconSz) / 2.0F, mnIconSz, mnIconSz, mineHov ? ColorRGBA.WHITE : ColorRGBA.WHITE.withAlpha(220.0F));
+        if (mineHov && subFont != null) {
+            float ttW = subFont.I_method_2c375926("Сапёр") + 12.0F;
+            float ttX = mineX + (mBtnW - ttW) / 2.0F;
+            float ttY = bRowY - 18.0F;
+            custom.drawRoundedRect(ttX, ttY, ttW, 14.0F, IIiii_Class8.I_method_893b2757(4.0F), new ColorRGBA(18.0F, 20.0F, 28.0F, 230.0F));
+            custom.drawRoundedBorder(ttX, ttY, ttW, 14.0F, 1.0F, IIiii_Class8.I_method_893b2757(4.0F), new ColorRGBA(255.0F, 59.0F, 48.0F, 180.0F));
+            custom.drawText(subFont, "Сапёр", ttX + 6.0F, ttY + 3.0F, ColorRGBA.WHITE);
         }
 
         // Fullscreen Shutter Flash on Screenshot
