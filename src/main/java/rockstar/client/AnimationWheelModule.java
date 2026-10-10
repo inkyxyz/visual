@@ -64,6 +64,7 @@ public class AnimationWheelModule extends Module {
         .I_method_c8c9a7d7(0.5F).i_method_65e2aff7(2.5F).II_method_b0f56334(0.1F).Ii_method_4e0e6b54(1.0F);
 
     private final ModeSetting walkingAnim = new ModeSetting(this, "Анимация ходьбы");
+    private final ModeSetting.Nested1_42765c60 walkRoblox;
     private final ModeSetting.Nested1_42765c60 walkDefault;
     private final ModeSetting.Nested1_42765c60 walkSkating;
     private final ModeSetting.Nested1_42765c60 walkSprint;
@@ -89,7 +90,8 @@ public class AnimationWheelModule extends Module {
 
     public AnimationWheelModule() {
         INSTANCE = this;
-        this.walkDefault = new ModeSetting.Nested1_42765c60(this.walkingAnim, "Обычная").select();
+        this.walkRoblox = new ModeSetting.Nested1_42765c60(this.walkingAnim, "Роблокс").select();
+        this.walkDefault = new ModeSetting.Nested1_42765c60(this.walkingAnim, "Обычная");
         this.walkSkating = new ModeSetting.Nested1_42765c60(this.walkingAnim, "Коньки");
         this.walkSprint = new ModeSetting.Nested1_42765c60(this.walkingAnim, "Спринт");
         this.walkMarch = new ModeSetting.Nested1_42765c60(this.walkingAnim, "Марш");
@@ -135,12 +137,72 @@ public class AnimationWheelModule extends Module {
 
     private static void applyWalkingTransforms(PlayerEntity player, BipedEntityModelAccessor accessor, float tickDelta) {
         if (INSTANCE == null || !INSTANCE.isEnabled()) return;
-        boolean isMoving = player.getVelocity().horizontalLengthSquared() > 0.001;
-        if (!isMoving) return;
 
+        // 1. Roblox In-Air Jumping / Falling Animation
+        if (!player.isOnGround()) {
+            double vy = player.getVelocity().y;
+            if (vy > 0.05) {
+                // Ascending jump leap: torso leans slightly back, arms flare up & back, legs bend at knees
+                accessor.rockstar$getBody().pitch = -0.16F;
+                accessor.rockstar$getLeftArm().pitch = -1.55F;
+                accessor.rockstar$getRightArm().pitch = -1.55F;
+                accessor.rockstar$getLeftArm().roll = -0.38F;
+                accessor.rockstar$getRightArm().roll = 0.38F;
+                accessor.rockstar$getLeftLeg().pitch = 0.50F;
+                accessor.rockstar$getRightLeg().pitch = 0.32F;
+                accessor.rockstar$getLeftLeg().roll = -0.12F;
+                accessor.rockstar$getRightLeg().roll = 0.12F;
+            } else {
+                // Descending fall: torso leans slightly forward, arms reach high for balance with subtle flail
+                accessor.rockstar$getBody().pitch = 0.10F;
+                float flail = (float) Math.sin((player.age + tickDelta) * 0.3F) * 0.08F;
+                accessor.rockstar$getLeftArm().pitch = -2.25F + flail;
+                accessor.rockstar$getRightArm().pitch = -2.25F - flail;
+                accessor.rockstar$getLeftArm().roll = -0.22F;
+                accessor.rockstar$getRightArm().roll = 0.22F;
+                accessor.rockstar$getLeftLeg().pitch = -0.18F;
+                accessor.rockstar$getRightLeg().pitch = 0.08F;
+            }
+            return;
+        }
+
+        boolean isMoving = player.getVelocity().horizontalLengthSquared() > 0.001;
         float timeSec = (player.age + tickDelta) * 0.22F;
 
-        if (INSTANCE.walkSkating.isSelected()) {
+        // 2. Roblox Idle Animation (Breathing, posture, natural arm offset)
+        if (!isMoving) {
+            float idlePhase = (player.age + tickDelta) * 0.08F;
+            accessor.rockstar$getBody().pivotY = (float) Math.sin(idlePhase * 2.0F) * 0.45F;
+            accessor.rockstar$getBody().pitch = (float) Math.sin(idlePhase * 2.0F) * 0.02F;
+            accessor.rockstar$getLeftArm().pitch = 0.05F + (float) Math.sin(idlePhase) * 0.03F;
+            accessor.rockstar$getRightArm().pitch = 0.05F - (float) Math.sin(idlePhase) * 0.03F;
+            accessor.rockstar$getLeftArm().roll = -0.16F - (float) Math.cos(idlePhase) * 0.02F;
+            accessor.rockstar$getRightArm().roll = 0.16F + (float) Math.cos(idlePhase) * 0.02F;
+            accessor.rockstar$getHead().yaw = (float) Math.sin(idlePhase * 0.8F) * 0.04F;
+            accessor.rockstar$getHead().pitch = (float) Math.cos(idlePhase * 0.6F) * 0.03F;
+            return;
+        }
+
+        // 3. Ground Walking Animations
+        if (INSTANCE.walkRoblox.isSelected() || INSTANCE.walkDefault.isSelected()) {
+            // Full authentic Roblox Walking: torso displacement bounce, hip/shoulder roll sway, arms swinging with outward flare
+            float walkPhase = (player.age + tickDelta) * 0.65F;
+            float swing = (float) Math.sin(walkPhase);
+
+            accessor.rockstar$getBody().yaw = swing * 0.15F;
+            accessor.rockstar$getBody().roll = swing * 0.08F;
+            accessor.rockstar$getBody().pivotY = Math.abs((float) Math.cos(walkPhase)) * 1.5F;
+            accessor.rockstar$getHead().yaw = -swing * 0.08F;
+            accessor.rockstar$getHead().pitch = 0.04F + Math.abs(swing) * 0.04F;
+
+            accessor.rockstar$getLeftArm().pitch = -swing * 0.85F;
+            accessor.rockstar$getRightArm().pitch = swing * 0.85F;
+            accessor.rockstar$getLeftArm().roll = -0.18F;
+            accessor.rockstar$getRightArm().roll = 0.18F;
+
+            accessor.rockstar$getLeftLeg().pitch = swing * 0.75F;
+            accessor.rockstar$getRightLeg().pitch = -swing * 0.75F;
+        } else if (INSTANCE.walkSkating.isSelected()) {
             // Коньки (Skating) - wide graceful leg kicks, body roll tilt
             float sway = (float) Math.sin(timeSec * 2.2F);
             accessor.rockstar$getBody().roll = sway * 0.16F;

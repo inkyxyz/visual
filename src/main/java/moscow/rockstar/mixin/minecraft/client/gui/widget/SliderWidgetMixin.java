@@ -46,16 +46,12 @@ public abstract class SliderWidgetMixin extends ClickableWidget {
 
         CustomDrawContext custom = (context instanceof CustomDrawContext cdc) ? cdc : new CustomDrawContext(context);
 
-        if (this.height < 25) {
-            this.setHeight(25);
-        }
-
         float bx = (float) this.getX();
         float by = (float) this.getY();
         float bw = (float) this.getWidth();
         float bh = (float) this.getHeight();
 
-        float rad = Math.min(bh / 2.0F, 9.0F);
+        float rad = Math.min(bh / 2.0F, 8.0F);
         IIiii_Class8 radObj = IIiii_Class8.I_method_893b2757(rad);
         ColorRGBA themeAccent = IiiiiIIIi_Class242.I_method_7df8e08e();
         float widgetAlpha = this.alpha;
@@ -85,13 +81,13 @@ public abstract class SliderWidgetMixin extends ClickableWidget {
         // 5. Slim Track Bar & Thumb at the bottom (clearly separated from text line)
         float clampedVal = (float) Math.max(0.0, Math.min(1.0, this.value));
         float trackX = bx + 8.0F;
-        float trackH = 3.0F;
-        float trackY = by + bh - trackH - 3.5F;
+        float trackH = 2.5F;
+        float trackY = by + bh - trackH - (bh >= 22.0F ? 3.5F : 2.5F);
         float trackW = bw - 16.0F;
         IIiii_Class8 trackRad = IIiii_Class8.I_method_893b2757(trackH / 2.0F);
 
         // Track background groove
-        custom.drawRoundedRect(trackX, trackY, trackW, trackH, trackRad, new ColorRGBA(255.0F, 255.0F, 255.0F, 20.0F * widgetAlpha));
+        custom.drawRoundedRect(trackX, trackY, trackW, trackH, trackRad, new ColorRGBA(255.0F, 255.0F, 255.0F, 22.0F * widgetAlpha));
 
         // Track fill
         float fillW = Math.max(trackH, trackW * clampedVal);
@@ -101,7 +97,7 @@ public abstract class SliderWidgetMixin extends ClickableWidget {
         }
 
         // Circular Thumb Knob sliding along track
-        float thumbR = 3.8F;
+        float thumbR = (bh >= 22.0F ? 3.5F : 2.8F);
         float thumbCx = trackX + trackW * clampedVal;
         float thumbCy = trackY + trackH / 2.0F;
         IIiii_Class8 thumbRad = IIiii_Class8.I_method_893b2757(thumbR);
@@ -114,11 +110,15 @@ public abstract class SliderWidgetMixin extends ClickableWidget {
             custom.drawRoundedRect(thumbCx - thumbR, thumbCy - thumbR, thumbR * 2.0F, thumbR * 2.0F, thumbRad, new ColorRGBA(140.0F, 145.0F, 155.0F, 160.0F * widgetAlpha));
         }
 
-        // 6. Content Row: Mini Badge, Label (left), Value (right) - crystal clear in upper area
+        // 6. Content Row: Label (left), Value (right) - crystal clear in upper area
         String rawText = this.getMessage().getString();
         String lower = rawText.toLowerCase().trim();
         int colonIdx = rawText.indexOf(':');
 
+        float badgeSize = 8.5F;
+        float badgeX = bx + 6.0F;
+        float badgeY = by + 2.0F;
+        IIiii_Class8 badgeRad = IIiii_Class8.I_method_893b2757(2.0F);
 
         String badgeIcon = null;
         ColorRGBA badgeTop = new ColorRGBA(255.0F, 149.0F, 0.0F, 255.0F);
@@ -128,10 +128,6 @@ public abstract class SliderWidgetMixin extends ClickableWidget {
             badgeIcon = "music";
             badgeTop = new ColorRGBA(255.0F, 149.0F, 0.0F, 255.0F);
             badgeBot = new ColorRGBA(255.0F, 59.0F, 48.0F, 255.0F);
-        } else if (lower.contains("fov") || lower.contains("\u043f\u043e\u043b\u0435") || lower.contains("\u0437\u0440\u0435\u043d")) {
-            badgeIcon = "category/visuals";
-            badgeTop = new ColorRGBA(52.0F, 199.0F, 89.0F, 255.0F);
-            badgeBot = new ColorRGBA(40.0F, 170.0F, 70.0F, 255.0F);
         } else if (lower.contains("sens") || lower.contains("\u0447\u0443\u0432\u0441\u0442\u0432")) {
             badgeIcon = "keyboard";
             badgeTop = new ColorRGBA(175.0F, 82.0F, 222.0F, 255.0F);
@@ -139,29 +135,25 @@ public abstract class SliderWidgetMixin extends ClickableWidget {
         }
 
         // Only show badge when a distinct icon matches and button is wide enough
-        boolean showBadge = badgeIcon != null && bw > 85.0F && bh >= 18.0F;
-        float badgeSize = 9.5F;
-        float badgeX = bx + 7.0F;
-        float badgeY = by + 2.5F;
-        IIiii_Class8 badgeRad = IIiii_Class8.I_method_893b2757(2.5F);
+        boolean showBadge = badgeIcon != null && bw > 110.0F && bh >= 22.0F;
 
         if (showBadge) {
             custom.drawRoundedRect(badgeX, badgeY, badgeSize, badgeSize, badgeRad, new IiiII_Class13(badgeTop.mulAlpha(widgetAlpha * 0.9F), badgeBot.mulAlpha(widgetAlpha * 0.9F)));
-            float iconSz = 6.0F;
+            float iconSz = 5.5F;
             custom.drawIcon(badgeIcon, badgeX + (badgeSize - iconSz) / 2.0F, badgeY + (badgeSize - iconSz) / 2.0F, iconSz, ColorRGBA.WHITE.mulAlpha(widgetAlpha));
         }
 
         IIiIIi_Class10 font = null;
         try {
             if (IIiIiI_Class11.i_field_857c0621 != null) {
-                font = IIiIiI_Class11.i_field_857c0621.I_method_3a2d5e3(8.5F);
+                font = IIiIiI_Class11.i_field_857c0621.I_method_3a2d5e3(8.0F);
             }
         } catch (Throwable ignored) {
         }
 
         if (font != null) {
-            float labelX = showBadge ? (badgeX + badgeSize + 5.0F) : (bx + 8.0F);
-            float textY = by + 3.0F;
+            float labelX = showBadge ? (badgeX + badgeSize + 4.0F) : (bx + 8.0F);
+            float textY = by + (bh >= 22.0F ? 2.5F : 1.8F);
             ColorRGBA labelCol = this.active ?
                 (this.rockstar$hoverAnim > 0.01F ? ColorRGBA.WHITE : new ColorRGBA(240.0F, 245.0F, 255.0F, 245.0F * widgetAlpha)) :
                 new ColorRGBA(135.0F, 140.0F, 150.0F, 140.0F * widgetAlpha);

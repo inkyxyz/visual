@@ -29,6 +29,7 @@ import org.joml.Matrix4f;
 
 public class IiiIIiIii_Class204 extends ii_Class4 implements iIIiIIiIi_Class294 {
    public static boolean triggerReturnAnimation = false;
+   private static long returnAnimStartTime = 0L;
    private float returnAnimProgress = 0.0F;
    private static boolean I_field_5a;
    private static final List<IiiIIiIiI_Class203> I_field_7865b31 = new ArrayList<>();
@@ -120,7 +121,7 @@ public class IiiIIiIii_Class204 extends ii_Class4 implements iIIiIIiIi_Class294 
          this.vx = (dx / len) * spd;
          this.vy = (dy / len) * spd;
          this.vz = (dz / len) * spd;
-         this.scale = (float) (1.0 + Math.random() * 0.4);
+         this.scale = (float) (2.4 + Math.random() * 0.7);
          this.phase = (float) (Math.random() * Math.PI * 2.0);
          this.hitCooldown = 0.0F;
          this.yaw = (float) Math.toDegrees(Math.atan2(-dx, dz));
@@ -522,14 +523,19 @@ public class IiiIIiIii_Class204 extends ii_Class4 implements iIIiIIiIi_Class294 
       I_method_f0183b55().I_method_3e377827(var1, this.width, this.height, var5, 1.0F);
 
       if (triggerReturnAnimation) {
-         this.returnAnimProgress += (1.0F - this.returnAnimProgress) * 0.12F;
-         if (this.returnAnimProgress > 0.98F) {
+         if (returnAnimStartTime == 0L) {
+            returnAnimStartTime = System.currentTimeMillis();
+         }
+         long elapsed = System.currentTimeMillis() - returnAnimStartTime;
+         this.returnAnimProgress = MathHelper.clamp((float) elapsed / 3000.0F, 0.0F, 1.0F);
+         if (this.returnAnimProgress >= 1.0F) {
             triggerReturnAnimation = false;
+            returnAnimStartTime = 0L;
             this.returnAnimProgress = 1.0F;
          }
          float t = this.returnAnimProgress;
-         float frameScale = 1.0F - 0.55F * t;
-         float frameY = -this.height * 0.75F * t;
+         float frameScale = 1.0F - 0.45F * (float) Math.pow(t, 2.2);
+         float frameY = -this.height * 0.65F * (float) Math.pow(t, 2.5);
          float frameAlpha = (1.0F - t);
 
          float cx = this.width / 2.0F;
@@ -545,14 +551,23 @@ public class IiiIIiIii_Class204 extends ii_Class4 implements iIIiIIiIi_Class294 
          float frameX = 24.0F;
          float fY = 24.0F;
 
-         var1.drawShadow(frameX, fY, frameW, frameH, 30.0F, IIiii_Class8.I_method_893b2757(12.0F), ColorRGBA.BLACK.withAlpha(200.0F * frameAlpha));
-         var1.drawRoundedRect(frameX, fY, frameW, frameH, IIiii_Class8.I_method_893b2757(12.0F), new ColorRGBA(8.0F, 10.0F, 16.0F, 230.0F * frameAlpha));
-         var1.drawRoundedBorder(frameX, fY, frameW, frameH, 1.5F, IIiii_Class8.I_method_893b2757(12.0F), IiiiiIIIi_Class242.I_method_7df8e08e().withAlpha(180.0F * frameAlpha));
+         var1.drawShadow(frameX, fY, frameW, frameH, 36.0F, IIiii_Class8.I_method_893b2757(14.0F), ColorRGBA.BLACK.withAlpha(220.0F * frameAlpha));
+         var1.drawBlurredRect(frameX, fY, frameW, frameH, 20.0F, 4.0F, IIiii_Class8.I_method_893b2757(14.0F), new ColorRGBA(255.0F, 255.0F, 255.0F, 24.0F * frameAlpha));
+         var1.drawRoundedRect(frameX, fY, frameW, frameH, IIiii_Class8.I_method_893b2757(14.0F), new ColorRGBA(8.0F, 10.0F, 16.0F, 235.0F * frameAlpha));
+         var1.drawRoundedBorder(frameX, fY, frameW, frameH, 1.5F, IIiii_Class8.I_method_893b2757(14.0F), IiiiiIIIi_Class242.I_method_7df8e08e().withAlpha(190.0F * frameAlpha));
 
-         IIiIIi_Class10 bFont = IIiIiI_Class11.i_field_857c0621.I_method_3a2d5e3(12.0F);
+         IIiIIi_Class10 bFont = IIiIiI_Class11.i_field_857c0621.I_method_3a2d5e3(13.0F);
          String exitTxt = "Возвращение в главное меню...";
          float ew = bFont.I_method_2c375926(exitTxt);
-         var1.drawText(bFont, exitTxt, cx - ew / 2.0F, cy - 8.0F, ColorRGBA.WHITE.withAlpha(255.0F * frameAlpha));
+         var1.drawText(bFont, exitTxt, cx - ew / 2.0F, cy - 14.0F, ColorRGBA.WHITE.withAlpha(255.0F * frameAlpha));
+
+         float retBarW = 200.0F;
+         float retBarH = 3.5F;
+         float retBarX = cx - retBarW / 2.0F;
+         float retBarY = cy + 10.0F;
+         IIiii_Class8 retRadBar = IIiii_Class8.I_method_893b2757(retBarH / 2.0F);
+         var1.drawRoundedRect(retBarX, retBarY, retBarW, retBarH, retRadBar, new ColorRGBA(255.0F, 255.0F, 255.0F, 40.0F * frameAlpha));
+         var1.drawRoundedRect(retBarX, retBarY, retBarW * t, retBarH, retRadBar, IiiiiIIIi_Class242.I_method_7df8e08e().withAlpha(255.0F * frameAlpha));
 
          var1.getMatrices().pop();
       }
@@ -825,9 +840,9 @@ public class IiiIIiIii_Class204 extends ii_Class4 implements iIIiIIiIi_Class294 
          matrices.pop();
       }
 
-      // --- 3. 3D FACETED EXTRUDED LETTER "A" (ANTIGRAVITY / ROCKSTAR LOGO) ---
+      // --- 3. 3D MINIMALIST CLIENT LOGO (ROCKSTAR CHEVRON / DELTA EMBLEM) ---
       float coreR = 54.0F * this.coreSquish * (1.0F + 0.04F * pulse);
-      drawFaceted3DLetterA(matrices, coreR, timeSec, wallAccent, alpha, prim, acc);
+      drawFaceted3DLogo(matrices, coreR, timeSec, wallAccent, alpha, prim, acc);
 
       // 2C. Counter-Rotating Holographic Gyroscope Orbiting Rings
       BufferBuilder ringBuf = RenderSystem.renderThreadTesselator().begin(DrawMode.QUADS, VertexFormats.POSITION_COLOR);
@@ -863,110 +878,119 @@ public class IiiIIiIii_Class204 extends ii_Class4 implements iIIiIIiIi_Class294 
       int aInt = (int)(230.0F * alpha);
 
       switch (theme) {
-         case 0 -> { // Бабочки (Butterflies with flapping wings)
+         case 0 -> { // Бабочки (Butterflies with large flapping wings)
             float flap = (float) Math.sin(pet.phase) * 0.75F;
             int bodyCol = 0xFF222228;
             int wingCol1 = (wallAccent.getRGB() & 0x00FFFFFF) | (aInt << 24);
             int wingCol2 = 0xFFFFFFFF;
 
-            // Body
-            buf.vertex(mat, 0.0F, 0.0F, 5.0F).color(bodyCol);
-            buf.vertex(mat, -1.0F, 0.0F, 0.0F).color(bodyCol);
-            buf.vertex(mat, 1.0F, 0.0F, 0.0F).color(bodyCol);
+            // Large Body
+            buf.vertex(mat, 0.0F, 0.0F, 11.0F).color(bodyCol);
+            buf.vertex(mat, -2.0F, 0.0F, 0.0F).color(bodyCol);
+            buf.vertex(mat, 2.0F, 0.0F, 0.0F).color(bodyCol);
 
-            buf.vertex(mat, 0.0F, 0.0F, -5.0F).color(bodyCol);
-            buf.vertex(mat, 1.0F, 0.0F, 0.0F).color(bodyCol);
-            buf.vertex(mat, -1.0F, 0.0F, 0.0F).color(bodyCol);
+            buf.vertex(mat, 0.0F, 0.0F, -11.0F).color(bodyCol);
+            buf.vertex(mat, 2.0F, 0.0F, 0.0F).color(bodyCol);
+            buf.vertex(mat, -2.0F, 0.0F, 0.0F).color(bodyCol);
 
-            // Left Wing
-            float lx = -8.5F * (float)Math.cos(flap);
-            float ly = -8.5F * (float)Math.sin(flap);
-            buf.vertex(mat, 0.0F, 0.0F, 2.0F).color(wingCol1);
-            buf.vertex(mat, lx, ly, 6.0F).color(wingCol2);
-            buf.vertex(mat, lx * 0.9F, ly, -3.0F).color(wingCol1);
+            // Left Wing (Enlarged)
+            float lx = -18.5F * (float)Math.cos(flap);
+            float ly = -18.5F * (float)Math.sin(flap);
+            buf.vertex(mat, 0.0F, 0.0F, 4.0F).color(wingCol1);
+            buf.vertex(mat, lx, ly, 13.0F).color(wingCol2);
+            buf.vertex(mat, lx * 0.9F, ly, -6.0F).color(wingCol1);
 
-            buf.vertex(mat, 0.0F, 0.0F, -3.0F).color(wingCol1);
-            buf.vertex(mat, lx * 0.9F, ly, -3.0F).color(wingCol2);
-            buf.vertex(mat, lx * 0.6F, ly, -7.0F).color(wingCol1);
+            buf.vertex(mat, 0.0F, 0.0F, -6.0F).color(wingCol1);
+            buf.vertex(mat, lx * 0.9F, ly, -6.0F).color(wingCol2);
+            buf.vertex(mat, lx * 0.6F, ly, -15.0F).color(wingCol1);
 
-            // Right Wing
-            float rx = 8.5F * (float)Math.cos(flap);
-            float ry = -8.5F * (float)Math.sin(flap);
-            buf.vertex(mat, 0.0F, 0.0F, 2.0F).color(wingCol1);
-            buf.vertex(mat, rx * 0.9F, ry, -3.0F).color(wingCol1);
-            buf.vertex(mat, rx, ry, 6.0F).color(wingCol2);
+            // Right Wing (Enlarged)
+            float rx = 18.5F * (float)Math.cos(flap);
+            float ry = -18.5F * (float)Math.sin(flap);
+            buf.vertex(mat, 0.0F, 0.0F, 4.0F).color(wingCol1);
+            buf.vertex(mat, rx * 0.9F, ry, -6.0F).color(wingCol1);
+            buf.vertex(mat, rx, ry, 13.0F).color(wingCol2);
 
-            buf.vertex(mat, 0.0F, 0.0F, -3.0F).color(wingCol1);
-            buf.vertex(mat, rx * 0.6F, ry, -7.0F).color(wingCol1);
-            buf.vertex(mat, rx * 0.9F, ry, -3.0F).color(wingCol2);
+            buf.vertex(mat, 0.0F, 0.0F, -6.0F).color(wingCol1);
+            buf.vertex(mat, rx * 0.6F, ry, -15.0F).color(wingCol1);
+            buf.vertex(mat, rx * 0.9F, ry, -6.0F).color(wingCol2);
          }
-         case 1 -> { // Листья (Autumn Leaves tumbling in wind)
+         case 1 -> { // Листья (Enlarged Autumn Leaves tumbling in wind)
             int leafAmber = 0xFFFFA028;
             int leafCrimson = 0xFFFF4520;
             int leafGold = 0xFFFFCC33;
 
-            buf.vertex(mat, 0.0F, 0.0F, 7.0F).color(leafGold);
-            buf.vertex(mat, -4.5F, 1.5F, 1.0F).color(leafAmber);
-            buf.vertex(mat, 0.0F, 0.0F, -6.0F).color(leafCrimson);
+            buf.vertex(mat, 0.0F, 0.0F, 16.0F).color(leafGold);
+            buf.vertex(mat, -10.0F, 3.0F, 2.0F).color(leafAmber);
+            buf.vertex(mat, 0.0F, 0.0F, -14.0F).color(leafCrimson);
 
-            buf.vertex(mat, 0.0F, 0.0F, 7.0F).color(leafGold);
-            buf.vertex(mat, 0.0F, 0.0F, -6.0F).color(leafCrimson);
-            buf.vertex(mat, 4.5F, 1.5F, 1.0F).color(leafAmber);
+            buf.vertex(mat, 0.0F, 0.0F, 16.0F).color(leafGold);
+            buf.vertex(mat, 0.0F, 0.0F, -14.0F).color(leafCrimson);
+            buf.vertex(mat, 10.0F, 3.0F, 2.0F).color(leafAmber);
          }
-         case 2 -> { // FPV Дроны (FPV Quadcopters with spinning rotors)
+         case 2 -> { // FPV Дроны (Large Quadcopters with dual spinning rotors & LEDs)
             int frameCol = 0xFF2A2D34;
-            int ledCol = (0x00FF3333) | (aInt << 24);
-            int propCol = (0x0088CCFF) | ((int)(160.0F * alpha) << 24);
+            int ledCol1 = (0x00FF3333) | (aInt << 24);
+            int ledCol2 = (0x0033E0FF) | (aInt << 24);
+            int propCol = (0x0088CCFF) | ((int)(170.0F * alpha) << 24);
 
-            // Center pod
-            buf.vertex(mat, -2.5F, -1.5F, 3.0F).color(frameCol);
-            buf.vertex(mat, 2.5F, -1.5F, 3.0F).color(frameCol);
-            buf.vertex(mat, 0.0F, 1.5F, -3.0F).color(frameCol);
+            // Center fuselage pod
+            buf.vertex(mat, -5.5F, -3.0F, 7.0F).color(frameCol);
+            buf.vertex(mat, 5.5F, -3.0F, 7.0F).color(frameCol);
+            buf.vertex(mat, 0.0F, 3.0F, -7.0F).color(frameCol);
 
-            // LED eye
-            buf.vertex(mat, -1.0F, -1.0F, 3.2F).color(ledCol);
-            buf.vertex(mat, 1.0F, -1.0F, 3.2F).color(ledCol);
-            buf.vertex(mat, 0.0F, 0.5F, 3.2F).color(ledCol);
+            // Forward LED eye
+            buf.vertex(mat, -2.5F, -2.0F, 7.4F).color(ledCol1);
+            buf.vertex(mat, 2.5F, -2.0F, 7.4F).color(ledCol1);
+            buf.vertex(mat, 0.0F, 1.2F, 7.4F).color(ledCol1);
 
-            // 4 Carbon Arms & Rotor Propellers
+            // Rear LED indicator
+            buf.vertex(mat, -2.0F, 0.0F, -7.2F).color(ledCol2);
+            buf.vertex(mat, 2.0F, 0.0F, -7.2F).color(ledCol2);
+            buf.vertex(mat, 0.0F, 2.2F, -7.2F).color(ledCol2);
+
+            // 4 Long Carbon Arms & Rotor Propellers
             float[][] arms = new float[][]{
-               {-6.0F, 5.0F}, {6.0F, 5.0F}, {-6.0F, -5.0F}, {6.0F, -5.0F}
+               {-14.0F, 12.0F}, {14.0F, 12.0F}, {-14.0F, -12.0F}, {14.0F, -12.0F}
             };
-            float propSpin = pet.phase * 4.0F;
-            float pR = 3.5F;
+            float propSpin = pet.phase * 4.5F;
+            float pR = 8.0F;
             for (float[] arm : arms) {
                float ax = arm[0], az = arm[1];
                buf.vertex(mat, 0.0F, 0.0F, 0.0F).color(frameCol);
                buf.vertex(mat, ax, 0.0F, az).color(frameCol);
-               buf.vertex(mat, ax * 0.8F, -0.8F, az * 0.8F).color(frameCol);
+               buf.vertex(mat, ax * 0.85F, -1.8F, az * 0.85F).color(frameCol);
 
                float px1 = ax + (float)Math.cos(propSpin) * pR;
                float pz1 = az + (float)Math.sin(propSpin) * pR;
                float px2 = ax - (float)Math.cos(propSpin) * pR;
                float pz2 = az - (float)Math.sin(propSpin) * pR;
-               buf.vertex(mat, ax, 0.5F, az).color(propCol);
-               buf.vertex(mat, px1, 0.5F, pz1).color(propCol);
-               buf.vertex(mat, px2, 0.5F, pz2).color(propCol);
+               buf.vertex(mat, ax, 1.2F, az).color(propCol);
+               buf.vertex(mat, px1, 1.2F, pz1).color(propCol);
+               buf.vertex(mat, px2, 1.2F, pz2).color(propCol);
             }
          }
-         case 3 -> { // Рыбки (Neon bioluminescent fish)
+         case 3 -> { // Рыбки (Large Neon bioluminescent fish)
             float tailWiggle = (float) Math.sin(pet.phase) * 0.60F;
             int fishCyan = (0x0033E0FF) | (aInt << 24);
             int fishDeep = (0x000A5588) | (aInt << 24);
-            int finCol = (0x0070FFFF) | ((int)(200.0F * alpha) << 24);
+            int finCol = (0x0070FFFF) | ((int)(210.0F * alpha) << 24);
 
-            buf.vertex(mat, 0.0F, 0.0F, 6.0F).color(fishCyan);
-            buf.vertex(mat, -2.5F, 0.0F, 1.0F).color(fishDeep);
-            buf.vertex(mat, 2.5F, 0.0F, 1.0F).color(fishDeep);
+            // Fish head & main body
+            buf.vertex(mat, 0.0F, 0.0F, 15.0F).color(fishCyan);
+            buf.vertex(mat, -6.0F, 0.0F, 3.0F).color(fishDeep);
+            buf.vertex(mat, 6.0F, 0.0F, 3.0F).color(fishDeep);
 
-            buf.vertex(mat, 0.0F, 2.5F, 1.0F).color(finCol);
-            buf.vertex(mat, -2.5F, 0.0F, 1.0F).color(fishDeep);
-            buf.vertex(mat, 2.5F, 0.0F, 1.0F).color(fishDeep);
+            // Dorsal fin
+            buf.vertex(mat, 0.0F, 6.5F, 3.0F).color(finCol);
+            buf.vertex(mat, -6.0F, 0.0F, 3.0F).color(fishDeep);
+            buf.vertex(mat, 6.0F, 0.0F, 3.0F).color(fishDeep);
 
-            float tx = (float) Math.sin(tailWiggle) * 5.5F;
-            buf.vertex(mat, 0.0F, 0.0F, 1.0F).color(fishDeep);
-            buf.vertex(mat, tx - 1.5F, 3.0F, -6.0F).color(finCol);
-            buf.vertex(mat, tx + 1.5F, -3.0F, -6.0F).color(finCol);
+            // Undulating tail fin
+            float tx = (float) Math.sin(tailWiggle) * 11.0F;
+            buf.vertex(mat, 0.0F, 0.0F, 3.0F).color(fishDeep);
+            buf.vertex(mat, tx - 3.5F, 6.5F, -15.0F).color(finCol);
+            buf.vertex(mat, tx + 3.5F, -6.5F, -15.0F).color(finCol);
          }
       }
 
@@ -974,110 +998,67 @@ public class IiiIIiIii_Class204 extends ii_Class4 implements iIIiIIiIi_Class294 
       if (b != null) BufferRenderer.drawWithGlobalProgram(b);
    }
 
-   private static void drawFaceted3DLetterA(MatrixStack matrices, float r, float timeSec, ColorRGBA wallAccent, float alpha, int prim, int acc) {
+   private static void drawFaceted3DLogo(MatrixStack matrices, float r, float timeSec, ColorRGBA wallAccent, float alpha, int prim, int acc) {
       Matrix4f mat = matrices.peek().getPositionMatrix();
       BufferBuilder buf = RenderSystem.renderThreadTesselator().begin(DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR);
 
-      float w = r * 0.82F;
-      float topY = -r * 1.15F;
-      float botY = r * 1.15F;
-      float legW = r * 0.28F;
-      float barTop = r * 0.05F;
-      float barBot = r * 0.35F;
-      float holeW = r * 0.22F;
-      float holeTop = -r * 0.45F;
+      // Minimalist Client Logo (Rockstar / Chevron Delta Vector Emblem)
+      float[][] pts = new float[][]{
+         { 0.0F, -r * 1.15F },         // 0: Top Apex Tip
+         { r * 0.58F, -r * 0.15F },     // 1: Right Upper Shoulder
+         { r * 0.88F, r * 0.72F },      // 2: Right Wingtip Outer
+         { r * 0.85F, r * 0.90F },      // 3: Right Fin Outer Corner
+         { r * 0.58F, r * 0.95F },      // 4: Right Fin Bottom Curve
+         { r * 0.32F, r * 0.18F },      // 5: Right Inner Swept Flank
+         { 0.0F, -r * 0.18F },          // 6: Center Inner Arch Apex
+         { -r * 0.32F, r * 0.18F },     // 7: Left Inner Swept Flank
+         { -r * 0.58F, r * 0.95F },     // 8: Left Fin Bottom Curve
+         { -r * 0.85F, r * 0.90F },     // 9: Left Fin Outer Corner
+         { -r * 0.88F, r * 0.72F },     // 10: Left Wingtip Outer
+         { -r * 0.58F, -r * 0.15F }     // 11: Left Upper Shoulder
+      };
       float z = r * 0.22F;
 
-      // Front Face (+z)
       int fCol = ColorRGBA.WHITE.mix(wallAccent, 0.70F).withAlpha(235.0F * alpha).getRGB();
-      buf.vertex(mat, 0.0F, topY, z).color(fCol);
-      buf.vertex(mat, -holeW, holeTop, z).color(fCol);
-      buf.vertex(mat, holeW, holeTop, z).color(fCol);
+      int bCol = wallAccent.withAlpha(160.0F * alpha).getRGB();
 
-      buf.vertex(mat, 0.0F, topY, z).color(fCol);
-      buf.vertex(mat, -w * 0.55F, barTop, z).color(fCol);
-      buf.vertex(mat, -holeW, holeTop, z).color(fCol);
+      int[][] tris = new int[][]{
+         // Right Wing
+         { 0, 1, 6 },
+         { 1, 5, 6 },
+         { 1, 2, 5 },
+         { 2, 3, 5 },
+         { 3, 4, 5 },
+         // Left Wing
+         { 0, 6, 11 },
+         { 11, 6, 7 },
+         { 11, 7, 10 },
+         { 10, 7, 9 },
+         { 9, 7, 8 }
+      };
 
-      buf.vertex(mat, 0.0F, topY, z).color(fCol);
-      buf.vertex(mat, holeW, holeTop, z).color(fCol);
-      buf.vertex(mat, w * 0.55F, barTop, z).color(fCol);
-
-      buf.vertex(mat, -w * 0.55F, barTop, z).color(fCol);
-      buf.vertex(mat, -w * 0.65F, barBot, z).color(fCol);
-      buf.vertex(mat, w * 0.55F, barTop, z).color(fCol);
-
-      buf.vertex(mat, w * 0.55F, barTop, z).color(fCol);
-      buf.vertex(mat, -w * 0.65F, barBot, z).color(fCol);
-      buf.vertex(mat, w * 0.65F, barBot, z).color(fCol);
-
-      buf.vertex(mat, -w * 0.65F, barBot, z).color(fCol);
-      buf.vertex(mat, -w, botY, z).color(fCol);
-      buf.vertex(mat, -w + legW, botY, z).color(fCol);
-
-      buf.vertex(mat, -w * 0.65F, barBot, z).color(fCol);
-      buf.vertex(mat, -w + legW, botY, z).color(fCol);
-      buf.vertex(mat, -w * 0.35F, barBot, z).color(fCol);
-
-      buf.vertex(mat, w * 0.65F, barBot, z).color(fCol);
-      buf.vertex(mat, w - legW, botY, z).color(fCol);
-      buf.vertex(mat, w, botY, z).color(fCol);
-
-      buf.vertex(mat, w * 0.65F, barBot, z).color(fCol);
-      buf.vertex(mat, w * 0.35F, barBot, z).color(fCol);
-      buf.vertex(mat, w - legW, botY, z).color(fCol);
+      // Front Face (+z)
+      for (int[] t : tris) {
+         buf.vertex(mat, pts[t[0]][0], pts[t[0]][1], z).color(fCol);
+         buf.vertex(mat, pts[t[1]][0], pts[t[1]][1], z).color(fCol);
+         buf.vertex(mat, pts[t[2]][0], pts[t[2]][1], z).color(fCol);
+      }
 
       // Back Face (-z)
-      int bCol = wallAccent.withAlpha(160.0F * alpha).getRGB();
-      buf.vertex(mat, 0.0F, topY, -z).color(bCol);
-      buf.vertex(mat, holeW, holeTop, -z).color(bCol);
-      buf.vertex(mat, -holeW, holeTop, -z).color(bCol);
+      for (int[] t : tris) {
+         buf.vertex(mat, pts[t[0]][0], pts[t[0]][1], -z).color(bCol);
+         buf.vertex(mat, pts[t[2]][0], pts[t[2]][1], -z).color(bCol);
+         buf.vertex(mat, pts[t[1]][0], pts[t[1]][1], -z).color(bCol);
+      }
 
-      buf.vertex(mat, 0.0F, topY, -z).color(bCol);
-      buf.vertex(mat, -holeW, holeTop, -z).color(bCol);
-      buf.vertex(mat, -w * 0.55F, barTop, -z).color(bCol);
-
-      buf.vertex(mat, 0.0F, topY, -z).color(bCol);
-      buf.vertex(mat, w * 0.55F, barTop, -z).color(bCol);
-      buf.vertex(mat, holeW, holeTop, -z).color(bCol);
-
-      buf.vertex(mat, -w * 0.55F, barTop, -z).color(bCol);
-      buf.vertex(mat, w * 0.55F, barTop, -z).color(bCol);
-      buf.vertex(mat, -w * 0.65F, barBot, -z).color(bCol);
-
-      buf.vertex(mat, w * 0.55F, barTop, -z).color(bCol);
-      buf.vertex(mat, w * 0.65F, barBot, -z).color(bCol);
-      buf.vertex(mat, -w * 0.65F, barBot, -z).color(bCol);
-
-      buf.vertex(mat, -w * 0.65F, barBot, -z).color(bCol);
-      buf.vertex(mat, -w + legW, botY, -z).color(bCol);
-      buf.vertex(mat, -w, botY, -z).color(bCol);
-
-      buf.vertex(mat, -w * 0.65F, barBot, -z).color(bCol);
-      buf.vertex(mat, -w * 0.35F, barBot, -z).color(bCol);
-      buf.vertex(mat, -w + legW, botY, -z).color(bCol);
-
-      buf.vertex(mat, w * 0.65F, barBot, -z).color(bCol);
-      buf.vertex(mat, w, botY, -z).color(bCol);
-      buf.vertex(mat, w - legW, botY, -z).color(bCol);
-
-      buf.vertex(mat, w * 0.65F, barBot, -z).color(bCol);
-      buf.vertex(mat, w - legW, botY, -z).color(bCol);
-      buf.vertex(mat, w * 0.35F, barBot, -z).color(bCol);
-
-      // Extrusion Side Walls (+z to -z)
+      // Extrusion Side Wall Facets (+z to -z)
       int sCol1 = wallAccent.withAlpha(200.0F * alpha).getRGB();
       int sCol2 = wallAccent.withAlpha(140.0F * alpha).getRGB();
-
-      drawExtrusionQuad(buf, mat, 0.0F, topY, -w, botY, z, sCol1);
-      drawExtrusionQuad(buf, mat, w, botY, 0.0F, topY, z, sCol1);
-      drawExtrusionQuad(buf, mat, -w, botY, -w + legW, botY, z, sCol2);
-      drawExtrusionQuad(buf, mat, w - legW, botY, w, botY, z, sCol2);
-      drawExtrusionQuad(buf, mat, -w + legW, botY, -w * 0.35F, barBot, z, sCol2);
-      drawExtrusionQuad(buf, mat, -w * 0.35F, barBot, w * 0.35F, barBot, z, sCol2);
-      drawExtrusionQuad(buf, mat, w * 0.35F, barBot, w - legW, botY, z, sCol2);
-      drawExtrusionQuad(buf, mat, -holeW, holeTop, holeW, holeTop, z, sCol1);
-      drawExtrusionQuad(buf, mat, holeW, holeTop, 0.0F, topY + r * 0.25F, z, sCol1);
-      drawExtrusionQuad(buf, mat, 0.0F, topY + r * 0.25F, -holeW, holeTop, z, sCol1);
+      for (int i = 0; i < 12; i++) {
+         int next = (i + 1) % 12;
+         int col = (i >= 5 && i <= 7) ? sCol2 : sCol1;
+         drawExtrusionQuad(buf, mat, pts[i][0], pts[i][1], pts[next][0], pts[next][1], z, col);
+      }
 
       BuiltBuffer bBuilt = buf.endNullable();
       if (bBuilt != null) BufferRenderer.drawWithGlobalProgram(bBuilt);
@@ -1086,19 +1067,19 @@ public class IiiIIiIii_Class204 extends ii_Class4 implements iIIiIIiIi_Class294 
       BufferBuilder lineBuf = RenderSystem.renderThreadTesselator().begin(DrawMode.DEBUG_LINES, VertexFormats.POSITION_COLOR);
       int edgeCol = (acc & 0x00FFFFFF) | ((int)(245.0F * alpha) << 24);
 
-      drawLetterAWireframe(lineBuf, mat, w, topY, botY, legW, barTop, barBot, holeW, holeTop, z, edgeCol);
-      drawLetterAWireframe(lineBuf, mat, w, topY, botY, legW, barTop, barBot, holeW, holeTop, -z, edgeCol);
+      // Front and Back Perimeter Loop
+      for (int i = 0; i < 12; i++) {
+         int next = (i + 1) % 12;
+         lineBuf.vertex(mat, pts[i][0], pts[i][1], z).color(edgeCol);
+         lineBuf.vertex(mat, pts[next][0], pts[next][1], z).color(edgeCol);
 
-      lineBuf.vertex(mat, 0.0F, topY, z).color(edgeCol);
-      lineBuf.vertex(mat, 0.0F, topY, -z).color(edgeCol);
-      lineBuf.vertex(mat, -w, botY, z).color(edgeCol);
-      lineBuf.vertex(mat, -w, botY, -z).color(edgeCol);
-      lineBuf.vertex(mat, w, botY, z).color(edgeCol);
-      lineBuf.vertex(mat, w, botY, -z).color(edgeCol);
-      lineBuf.vertex(mat, -w + legW, botY, z).color(edgeCol);
-      lineBuf.vertex(mat, -w + legW, botY, -z).color(edgeCol);
-      lineBuf.vertex(mat, w - legW, botY, z).color(edgeCol);
-      lineBuf.vertex(mat, w - legW, botY, -z).color(edgeCol);
+         lineBuf.vertex(mat, pts[i][0], pts[i][1], -z).color(edgeCol);
+         lineBuf.vertex(mat, pts[next][0], pts[next][1], -z).color(edgeCol);
+
+         // Connect Front to Back at each corner vertex
+         lineBuf.vertex(mat, pts[i][0], pts[i][1], z).color(edgeCol);
+         lineBuf.vertex(mat, pts[i][0], pts[i][1], -z).color(edgeCol);
+      }
 
       BuiltBuffer lBuilt = lineBuf.endNullable();
       if (lBuilt != null) BufferRenderer.drawWithGlobalProgram(lBuilt);
@@ -1112,32 +1093,6 @@ public class IiiIIiIii_Class204 extends ii_Class4 implements iIIiIIiIi_Class294 
       buf.vertex(mat, x1, y1, z).color(col);
       buf.vertex(mat, x2, y2, -z).color(col);
       buf.vertex(mat, x1, y1, -z).color(col);
-   }
-
-   private static void drawLetterAWireframe(BufferBuilder buf, Matrix4f mat, float w, float topY, float botY, float legW, float barTop, float barBot, float holeW, float holeTop, float z, int col) {
-      buf.vertex(mat, 0.0F, topY, z).color(col);
-      buf.vertex(mat, -w, botY, z).color(col);
-      buf.vertex(mat, 0.0F, topY, z).color(col);
-      buf.vertex(mat, w, botY, z).color(col);
-
-      buf.vertex(mat, -w, botY, z).color(col);
-      buf.vertex(mat, -w + legW, botY, z).color(col);
-      buf.vertex(mat, w, botY, z).color(col);
-      buf.vertex(mat, w - legW, botY, z).color(col);
-
-      buf.vertex(mat, -w + legW, botY, z).color(col);
-      buf.vertex(mat, -w * 0.35F, barBot, z).color(col);
-      buf.vertex(mat, -w * 0.35F, barBot, z).color(col);
-      buf.vertex(mat, w * 0.35F, barBot, z).color(col);
-      buf.vertex(mat, w * 0.35F, barBot, z).color(col);
-      buf.vertex(mat, w - legW, botY, z).color(col);
-
-      buf.vertex(mat, -holeW, holeTop, z).color(col);
-      buf.vertex(mat, holeW, holeTop, z).color(col);
-      buf.vertex(mat, holeW, holeTop, z).color(col);
-      buf.vertex(mat, 0.0F, topY + (barTop - topY) * 0.3F, z).color(col);
-      buf.vertex(mat, 0.0F, topY + (barTop - topY) * 0.3F, z).color(col);
-      buf.vertex(mat, -holeW, holeTop, z).color(col);
    }
 
    private static void draw3DGlowingRing(BufferBuilder buf, Matrix4f mat, float radius, float thickness, int segs, int color) {

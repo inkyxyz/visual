@@ -19,8 +19,8 @@ import net.minecraft.client.realms.gui.screen.RealmsMainScreen;
 import net.minecraft.client.util.ScreenshotRecorder;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.text.Text;
+import net.minecraft.util.Identifier;
 import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.math.Vec2f;
 import net.minecraft.world.Difficulty;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -33,13 +33,14 @@ import rockstar.client.III;
 import rockstar.client.IIiIIi_Class10;
 import rockstar.client.IIiIiI_Class11;
 import rockstar.client.IIiii_Class8;
-import rockstar.client.IiIiIIII_Class81;
+import rockstar.client.IiiiiIIIi_Class242;
 import rockstar.client.IiiIIiIii_Class204;
 import rockstar.client.RockstarClient;
 import rockstar.client.UISoundManager;
 import rockstar.client.iIIIiiIii_Class284;
 import rockstar.client.iIIIiiiII_Class285;
 import rockstar.client.iIIiIIiIi_Class294;
+import rockstar.client.iiIiIIIiI_Class419;
 
 @Mixin(value={GameMenuScreen.class})
 public class GameMenuScreenMixin
@@ -50,30 +51,9 @@ implements iIIiIIiIi_Class294 {
     private ButtonWidget field_40792;
 
     @Unique private static float rockstar$flashAlpha = 0.0F;
-    @Unique private static boolean rockstar$isPlaying = true;
 
-    // Interactive Media Player State
-    @Unique private static final String[] rockstar$playlistTitles = new String[]{
-        "Midnight Drive",
-        "Aria Math (Cyber Mix)",
-        "Pigstep (Lo-Fi)",
-        "Neon Dreams",
-        "Subwoofer Lullaby"
-    };
-    @Unique private static final String[] rockstar$playlistArtists = new String[]{
-        "Rockstar Sound Team",
-        "C418 & SynthLab",
-        "Lena Raine (Chillwave)",
-        "Antigravity Studio",
-        "Daniel Rosenfeld"
-    };
-    @Unique private static final int[] rockstar$playlistDurations = new int[]{
-        214, 310, 148, 195, 208
-    };
-    @Unique private static int rockstar$currentTrack = 0;
-    @Unique private static float rockstar$trackElapsedSec = 42.0F;
-    @Unique private static boolean rockstar$isScrubbing = false;
-    @Unique private static float[] rockstar$eqFrequencies = new float[]{0.45F, 0.72F, 0.90F, 0.55F, 0.82F, 0.38F};
+    // Interactive Equalizer Visualizer State
+    @Unique private static final float[] rockstar$eqFrequencies = new float[]{0.45F, 0.72F, 0.90F, 0.55F, 0.82F, 0.38F};
 
     // Interactive iOS Calculator State
     @Unique private static String rockstar$calcDisplay = "0";
@@ -84,13 +64,8 @@ implements iIIiIIiIi_Class294 {
     // Volume Drag State
     @Unique private static boolean rockstar$isDraggingVolume = false;
 
-    // Tile Reordering State (Intentional Long Press Hold required: ~480ms)
-    @Unique private static int[] rockstar$tileSlots = new int[]{0, 1, 2, 3, 4, 5};
-    @Unique private static int rockstar$draggedSlot = -1;
-    @Unique private static long rockstar$pressStartTime = 0L;
-    @Unique private static int rockstar$pressedCandidateSlot = -1;
-    @Unique private static double rockstar$dragOffsetX = 0;
-    @Unique private static double rockstar$dragOffsetY = 0;
+    // Per-tile hover float animations ("что бы наводишься а оно выплывает")
+    @Unique private static final float[] rockstar$tileHoverAnim = new float[6];
 
     protected GameMenuScreenMixin(Text text) {
         super(text);
@@ -114,7 +89,7 @@ implements iIIiIIiIi_Class294 {
         float cy = this.height / 2.0F;
         long now = System.currentTimeMillis();
 
-        // Dark frosted backdrop
+        // Dark frosted backdrop with Liquid Glass tint
         custom.drawRect(0.0F, 0.0F, (float)this.width, (float)this.height, new ColorRGBA(0.0F, 0.0F, 0.0F, 125.0F));
 
         IIiIIi_Class10 font = null;
@@ -130,98 +105,64 @@ implements iIIiIIiIi_Class294 {
             }
         } catch (Throwable ignored) {}
 
-        // Advance music playback track time and animate equalizer
-        if (rockstar$isPlaying && !rockstar$isScrubbing) {
-            rockstar$trackElapsedSec += delta * 0.05F;
-            int maxDur = rockstar$playlistDurations[rockstar$currentTrack % rockstar$playlistDurations.length];
-            if (rockstar$trackElapsedSec >= maxDur) {
-                rockstar$trackElapsedSec = 0.0F;
-                rockstar$currentTrack = (rockstar$currentTrack + 1) % rockstar$playlistTitles.length;
-            }
-        }
+        // Browser media playback status
+        iiIiIIIiI_Class419 tracker = RockstarClient.getInstance().I_method_be969482();
+        iiIiIIIiI_Class419.Nested1_a961800 snap = tracker != null ? tracker.I_method_7effc530() : null;
+        boolean isBrowserPlaying = (snap != null && snap.I_method_1a22ebbe());
 
         // Animate Equalizer bars
         float timeF = (float)(now % 1000000L) / 1000.0F;
         for (int i = 0; i < rockstar$eqFrequencies.length; i++) {
-            if (rockstar$isPlaying) {
-                float target = (float)(Math.sin(timeF * 8.0F + i * 1.5F) * 0.35F + 0.55F);
+            if (isBrowserPlaying) {
+                float target = (float)(Math.sin(timeF * 8.5F + i * 1.5F) * 0.35F + 0.55F);
                 rockstar$eqFrequencies[i] += (target - rockstar$eqFrequencies[i]) * 0.22F;
             } else {
-                rockstar$eqFrequencies[i] += (0.15F - rockstar$eqFrequencies[i]) * 0.15F;
+                float idleTarget = (float)(Math.sin(timeF * 2.0F + i * 0.8F) * 0.08F + 0.16F);
+                rockstar$eqFrequencies[i] += (idleTarget - rockstar$eqFrequencies[i]) * 0.12F;
             }
         }
 
-        // 6 Blueprint Slot Base Layout Coordinates (Uniform iOS Grid)
-        // Slot 0: Media Player Card (112 x 70)
-        // Slot 1: Camera Tile (52 x 50)
-        // Slot 2: Fullscreen Quick Tile (52 x 50)
-        // Slot 3: Master Volume Slider Pill (52 x 108)
-        // Slot 4: Large Interactive Calculator (148 x 186)
-        // Slot 5: Right 3-Circle Column (48 x 186)
-        float[][] defaultBounds = new float[][]{
-            { cx - 175.0F, cy - 93.0F, 112.0F, 70.0F },  // 0: Media Player
-            { cx - 175.0F, cy - 15.0F, 52.0F, 50.0F },   // 1: Camera
-            { cx - 175.0F, cy + 43.0F, 52.0F, 50.0F },   // 2: Fullscreen
-            { cx - 115.0F, cy - 15.0F, 52.0F, 108.0F },  // 3: Volume Pill
-            { cx - 55.0F, cy - 93.0F, 148.0F, 186.0F },  // 4: Calculator Card
-            { cx + 101.0F, cy - 93.0F, 48.0F, 186.0F }   // 5: Right Circles
+        // 6 Frozen Layout Slots (Permanent and unmovable as requested: "запрети перемещать")
+        // Balanced layout with proper heights:
+        // Slot 0: Browser Media Player (114 x 74)
+        // Slot 1: Camera Quick Tile (53 x 50)
+        // Slot 2: Fullscreen Quick Tile (53 x 50)
+        // Slot 3: Master Volume Slider Pill (53 x 108)
+        // Slot 4: Interactive iOS Calculator (150 x 192) - completely contained!
+        // Slot 5: Right Squircle Column (52 x 192) - Resume, Settings, Disconnect well separated!
+        float[][] bounds = new float[][]{
+            { cx - 180.0F, cy - 98.0F, 114.0F, 74.0F },  // 0: Media Player
+            { cx - 180.0F, cy - 16.0F, 53.0F, 50.0F },   // 1: Camera
+            { cx - 180.0F, cy + 42.0F, 53.0F, 50.0F },   // 2: Fullscreen
+            { cx - 119.0F, cy - 16.0F, 53.0F, 108.0F },  // 3: Volume Pill
+            { cx - 58.0F,  cy - 98.0F, 150.0F, 192.0F }, // 4: Calculator Card
+            { cx + 100.0F, cy - 98.0F, 52.0F,  192.0F }  // 5: Right Column Squircles
         };
 
-        // Long-press detection: user MUST hold down for >480ms to enter edit mode!
-        boolean inEditMode = rockstar$draggedSlot >= 0;
-        if (rockstar$pressedCandidateSlot >= 0 && rockstar$draggedSlot < 0 && (now - rockstar$pressStartTime) > 480L) {
-            rockstar$draggedSlot = rockstar$pressedCandidateSlot;
-            rockstar$pressedCandidateSlot = -1;
-            inEditMode = true;
-            UISoundManager.playButtonClick();
+        // Smooth Floating Elevation Hover Animation for all cards
+        for (int i = 0; i < 6; i++) {
+            float[] b = bounds[i];
+            boolean isHov = (mouseX >= b[0] && mouseX <= b[0] + b[2] && mouseY >= b[1] && mouseY <= b[1] + b[3]);
+            float target = isHov ? 1.0F : 0.0F;
+            rockstar$tileHoverAnim[i] += (target - rockstar$tileHoverAnim[i]) * 0.20F;
         }
 
-        // Draw Slot Blueprint outlines with soft glowing highlight when dragging
-        if (inEditMode) {
-            for (int s = 0; s < 6; s++) {
-                float[] b = defaultBounds[s];
-                IIiii_Class8 slotRad = IIiii_Class8.I_method_893b2757(14.0F);
-                custom.drawRoundedBorder(b[0], b[1], b[2], b[3], 1.2F, slotRad, new ColorRGBA(255.0F, 255.0F, 255.0F, 55.0F));
-            }
-        }
-
-        // Render each placed module according to rockstar$tileSlots
+        // Render each module in place with hover float offset
         for (int slotIdx = 0; slotIdx < 6; slotIdx++) {
-            int moduleType = rockstar$tileSlots[slotIdx];
-            float[] b = defaultBounds[slotIdx];
+            float[] b = bounds[slotIdx];
+            float hoverA = rockstar$tileHoverAnim[slotIdx];
             float drawX = b[0];
-            float drawY = b[1];
-
-            boolean isBeingDragged = (rockstar$draggedSlot == slotIdx);
-            if (isBeingDragged) {
-                drawX = (float)(mouseX - rockstar$dragOffsetX);
-                drawY = (float)(mouseY - rockstar$dragOffsetY);
-            }
-
-            // Apple iOS Jiggle wiggle animation when in edit mode
-            float wiggleAngle = 0.0F;
-            if (inEditMode && !isBeingDragged) {
-                wiggleAngle = (float) Math.sin((now + slotIdx * 135L) * 0.018) * 1.6F;
-            }
+            float drawY = b[1] - hoverA * 4.5F; // Physical float-up elevation on hover!
 
             drawContext.getMatrices().push();
-            if (Math.abs(wiggleAngle) > 0.01F) {
-                float midX = drawX + b[2] / 2.0F;
-                float midY = drawY + b[3] / 2.0F;
-                drawContext.getMatrices().translate(midX, midY, 0.0F);
-                drawContext.getMatrices().multiply(net.minecraft.util.math.RotationAxis.POSITIVE_Z.rotationDegrees(wiggleAngle));
-                drawContext.getMatrices().translate(-midX, -midY, 0.0F);
+            switch (slotIdx) {
+                case 0 -> rockstar$renderMediaCard(custom, drawX, drawY, b[2], b[3], font, subFont, tinyFont, mouseX, mouseY, hoverA, snap, tracker);
+                case 1 -> rockstar$renderCameraTile(custom, drawX, drawY, b[2], b[3], mouseX, mouseY, hoverA);
+                case 2 -> rockstar$renderFullscreenTile(custom, drawX, drawY, b[2], b[3], mouseX, mouseY, hoverA);
+                case 3 -> rockstar$renderVolumePill(custom, drawX, drawY, b[2], b[3], subFont, mouseX, mouseY, hoverA);
+                case 4 -> rockstar$renderCalculatorCard(custom, drawX, drawY, b[2], b[3], boldFont, font, mouseX, mouseY, hoverA);
+                case 5 -> rockstar$renderActionSquircles(custom, drawX, drawY, b[2], b[3], mouseX, mouseY, hoverA);
             }
-
-            switch (moduleType) {
-                case 0 -> rockstar$renderMediaCard(custom, drawX, drawY, b[2], b[3], font, subFont, tinyFont, mouseX, mouseY);
-                case 1 -> rockstar$renderCameraTile(custom, drawX, drawY, b[2], b[3], mouseX, mouseY);
-                case 2 -> rockstar$renderFullscreenTile(custom, drawX, drawY, b[2], b[3], mouseX, mouseY);
-                case 3 -> rockstar$renderVolumePill(custom, drawX, drawY, b[2], b[3], subFont, mouseX, mouseY);
-                case 4 -> rockstar$renderCalculatorCard(custom, drawX, drawY, b[2], b[3], boldFont, font, mouseX, mouseY);
-                case 5 -> rockstar$renderActionCircles(custom, drawX, drawY, b[2], b[3], mouseX, mouseY);
-            }
-
             drawContext.getMatrices().pop();
         }
 
@@ -232,72 +173,77 @@ implements iIIiIIiIi_Class294 {
         }
     }
 
-    // Module 0: Functional Media Player Card with Interactive Scrubber & Animated Equalizer
+    // Module 0: Functional Real Browser Media Player Card (Windows SMTC / Chrome / Spotify / VK)
     @Unique
-    private void rockstar$renderMediaCard(III custom, float x, float y, float w, float h, IIiIIi_Class10 font, IIiIIi_Class10 subFont, IIiIIi_Class10 tinyFont, int mx, int my) {
+    private void rockstar$renderMediaCard(III custom, float x, float y, float w, float h, IIiIIi_Class10 font, IIiIIi_Class10 subFont, IIiIIi_Class10 tinyFont, int mx, int my, float hoverA, @Nullable iiIiIIIiI_Class419.Nested1_a961800 snap, @Nullable iiIiIIIiI_Class419 tracker) {
         IIiii_Class8 rad = IIiii_Class8.I_method_893b2757(14.0F);
-        custom.drawShadow(x, y, w, h, 14.0F, rad, new ColorRGBA(0.0F, 0.0F, 0.0F, 90.0F));
+        ColorRGBA theme = IiiiiIIIi_Class242.I_method_7df8e08e();
+        custom.drawShadow(x, y, w, h, 14.0F + 8.0F * hoverA, rad, new ColorRGBA(0.0F, 0.0F, 0.0F, 90.0F + 40.0F * hoverA));
         custom.drawBlurredRect(x, y, w, h, 16.0F, 3.0F, rad, new ColorRGBA(255.0F, 255.0F, 255.0F, 24.0F));
-        custom.drawRoundedRect(x, y, w, h, rad, new ColorRGBA(25.0F, 28.0F, 38.0F, 195.0F));
-        custom.drawRoundedBorder(x, y, w, h, 1.0F, rad, new ColorRGBA(255.0F, 255.0F, 255.0F, 38.0F));
+        custom.drawRoundedRect(x, y, w, h, rad, new ColorRGBA(22.0F, 26.0F, 36.0F, 205.0F));
+        custom.drawRoundedBorder(x, y, w, h, 1.0F, rad, hoverA > 0.01F ? theme.withAlpha(220.0F * hoverA) : new ColorRGBA(255.0F, 255.0F, 255.0F, 38.0F));
 
-        int curIdx = rockstar$currentTrack % rockstar$playlistTitles.length;
-        String trackTitle = rockstar$playlistTitles[curIdx];
-        String artistName = rockstar$playlistArtists[curIdx];
-        int totalSec = rockstar$playlistDurations[curIdx];
+        boolean hasTrack = (snap != null);
+        String trackTitle = hasTrack ? snap.I_method_33e8b426() : "Музыка в браузере";
+        String artistName = hasTrack ? snap.i_method_c7076446() : "Включите трек в браузере";
+        boolean isPlaying = hasTrack && snap.I_method_1a22ebbe();
+        double posSec = hasTrack ? snap.I_method_1a22eba8() : 0.0;
+        long durSec = hasTrack ? snap.I_method_1a22ebae() : 0L;
+        Identifier artwork = hasTrack ? snap.I_method_77a14989() : null;
 
         // Album artwork thumbnail
-        float thumbSz = 24.0F;
-        custom.drawRoundedRect(x + 8.0F, y + 8.0F, thumbSz, thumbSz, IIiii_Class8.I_method_893b2757(6.0F), new ColorRGBA(255.0F, 255.0F, 255.0F, 28.0F));
-        custom.drawIcon("music", x + 13.0F, y + 13.0F, 14.0F, ColorRGBA.WHITE.withAlpha(220.0F));
+        float thumbSz = 26.0F;
+        custom.drawRoundedRect(x + 8.0F, y + 8.0F, thumbSz, thumbSz, IIiii_Class8.I_method_893b2757(6.0F), new ColorRGBA(255.0F, 255.0F, 255.0F, 24.0F));
+        if (artwork != null) {
+            custom.drawTexture(artwork, x + 8.0F, y + 8.0F, thumbSz, thumbSz, ColorRGBA.WHITE);
+        } else {
+            custom.drawIcon("music", x + 13.0F, y + 13.0F, 16.0F, ColorRGBA.WHITE.withAlpha(220.0F));
+        }
 
-        // Animated Equalizer Visualizer Bars next to album art
-        float eqStartX = x + 36.0F;
-        float eqBaseY = y + 26.0F;
+        // Equalizer Bars
+        float eqStartX = x + 38.0F;
+        float eqBaseY = y + 28.0F;
         float barW = 2.0F;
         float barGap = 2.0F;
         for (int b = 0; b < rockstar$eqFrequencies.length; b++) {
             float bH = Math.max(3.0F, rockstar$eqFrequencies[b] * 16.0F);
             float bx = eqStartX + b * (barW + barGap);
-            custom.drawRoundedRect(bx, eqBaseY - bH, barW, bH, IIiii_Class8.I_method_893b2757(1.0F), new ColorRGBA(255.0F, 255.0F, 255.0F, rockstar$isPlaying ? 230.0F : 90.0F));
+            custom.drawRoundedRect(bx, eqBaseY - bH, barW, bH, IIiii_Class8.I_method_893b2757(1.0F), new ColorRGBA(255.0F, 255.0F, 255.0F, isPlaying ? 235.0F : 80.0F));
         }
 
-        // AirPlay / WiFi indicator icon in top right
-        custom.drawIcon("wifi", x + w - 18.0F, y + 9.0F, 11.0F, new ColorRGBA(255.0F, 255.0F, 255.0F, 160.0F));
+        // Web / Browser indicator icon in top right
+        custom.drawIcon("language", x + w - 18.0F, y + 9.0F, 11.0F, new ColorRGBA(255.0F, 255.0F, 255.0F, 170.0F));
 
         // Track title & Artist
         if (font != null) {
-            String shortTitle = trackTitle;
+            String shortTitle = trackTitle != null ? trackTitle : "Трек";
             if (shortTitle.length() > 16) shortTitle = shortTitle.substring(0, 15) + "…";
-            custom.drawText(font, shortTitle, x + 8.0F, y + 36.0F, ColorRGBA.WHITE);
+            custom.drawText(font, shortTitle, x + 8.0F, y + 38.0F, ColorRGBA.WHITE);
         }
 
-        // Interactive Progress Scrubber Bar
-        float scrubY = y + 49.0F;
+        // Progress Scrubber Bar
+        float scrubY = y + 51.0F;
         float scrubW = w - 16.0F;
-        float scrubH = 3.0F;
+        float scrubH = 2.5F;
         float scrubX = x + 8.0F;
-        float progRatio = MathHelper.clamp(rockstar$trackElapsedSec / (float)totalSec, 0.0F, 1.0F);
+        float progRatio = (durSec > 0) ? MathHelper.clamp((float)(posSec / (double)durSec), 0.0F, 1.0F) : 0.0F;
 
-        custom.drawRoundedRect(scrubX, scrubY, scrubW, scrubH, IIiii_Class8.I_method_893b2757(1.5F), new ColorRGBA(255.0F, 255.0F, 255.0F, 40.0F));
+        custom.drawRoundedRect(scrubX, scrubY, scrubW, scrubH, IIiii_Class8.I_method_893b2757(1.5F), new ColorRGBA(255.0F, 255.0F, 255.0F, 35.0F));
         if (progRatio > 0.01F) {
-            custom.drawRoundedRect(scrubX, scrubY, scrubW * progRatio, scrubH, IIiii_Class8.I_method_893b2757(1.5F), ColorRGBA.WHITE);
-            custom.drawRoundedRect(scrubX + scrubW * progRatio - 2.5F, scrubY - 1.5F, 5.0F, 6.0F, IIiii_Class8.I_method_893b2757(2.5F), ColorRGBA.WHITE);
+            custom.drawRoundedRect(scrubX, scrubY, scrubW * progRatio, scrubH, IIiii_Class8.I_method_893b2757(1.5F), theme);
+            custom.drawRoundedRect(scrubX + scrubW * progRatio - 2.5F, scrubY - 1.5F, 5.0F, 5.5F, IIiii_Class8.I_method_893b2757(2.5F), ColorRGBA.WHITE);
         }
 
         // Media controls row (Previous ⏮, Play/Pause ▶/⏸, Next ⏭)
-        float ctrlY = y + 55.0F;
+        float ctrlY = y + 57.0F;
         if (subFont != null) {
-            // Previous Button
             boolean prevHov = mx >= x + 12.0F && mx <= x + 28.0F && my >= ctrlY - 2.0F && my <= ctrlY + 12.0F;
             custom.drawText(subFont, "⏮", x + 14.0F, ctrlY, prevHov ? ColorRGBA.WHITE : new ColorRGBA(255.0F, 255.0F, 255.0F, 180.0F));
 
-            // Play / Pause Button
             boolean playHov = mx >= x + w / 2.0F - 10.0F && mx <= x + w / 2.0F + 10.0F && my >= ctrlY - 2.0F && my <= ctrlY + 12.0F;
-            String playSym = rockstar$isPlaying ? "⏸" : "▶";
+            String playSym = isPlaying ? "⏸" : "▶";
             custom.drawText(subFont, playSym, x + w / 2.0F - 4.0F, ctrlY, playHov ? ColorRGBA.WHITE : new ColorRGBA(255.0F, 255.0F, 255.0F, 230.0F));
 
-            // Next Button
             boolean nextHov = mx >= x + w - 28.0F && mx <= x + w - 12.0F && my >= ctrlY - 2.0F && my <= ctrlY + 12.0F;
             custom.drawText(subFont, "⏭", x + w - 26.0F, ctrlY, nextHov ? ColorRGBA.WHITE : new ColorRGBA(255.0F, 255.0F, 255.0F, 180.0F));
         }
@@ -305,52 +251,52 @@ implements iIIiIIiIi_Class294 {
 
     // Module 1: Camera Tile (Screenshot with Shutter Flash)
     @Unique
-    private void rockstar$renderCameraTile(III custom, float x, float y, float w, float h, int mx, int my) {
+    private void rockstar$renderCameraTile(III custom, float x, float y, float w, float h, int mx, int my, float hoverA) {
         IIiii_Class8 rad = IIiii_Class8.I_method_893b2757(14.0F);
         boolean hov = mx >= x && mx <= x + w && my >= y && my <= y + h;
-        custom.drawShadow(x, y, w, h, 12.0F, rad, new ColorRGBA(0.0F, 0.0F, 0.0F, 80.0F));
+        custom.drawShadow(x, y, w, h, 12.0F + 6.0F * hoverA, rad, new ColorRGBA(0.0F, 0.0F, 0.0F, 80.0F + 30.0F * hoverA));
         custom.drawBlurredRect(x, y, w, h, 14.0F, 3.0F, rad, new ColorRGBA(255.0F, 255.0F, 255.0F, 24.0F));
-        custom.drawRoundedRect(x, y, w, h, rad, new ColorRGBA(25.0F, 28.0F, 38.0F, 190.0F));
+        custom.drawRoundedRect(x, y, w, h, rad, new ColorRGBA(22.0F, 26.0F, 36.0F, 195.0F));
         custom.drawRoundedBorder(x, y, w, h, 1.0F, rad, hov ? new ColorRGBA(0.0F, 122.0F, 255.0F, 220.0F) : new ColorRGBA(255.0F, 255.0F, 255.0F, 35.0F));
 
-        // Circular center pod
-        float cirSz = 34.0F;
-        float cx = x + (w - cirSz) / 2.0F;
-        float cy = y + (h - cirSz) / 2.0F;
-        IIiii_Class8 cRad = IIiii_Class8.I_method_893b2757(cirSz / 2.0F);
-        custom.drawRoundedRect(cx, cy, cirSz, cirSz, cRad, new ColorRGBA(0.0F, 122.0F, 255.0F, hov ? 255.0F : 210.0F));
-        custom.drawIcon("hud/target", cx + 9.0F, cy + 9.0F, 16.0F, ColorRGBA.WHITE);
+        // Squircle center icon pod
+        float podSz = 32.0F;
+        float px = x + (w - podSz) / 2.0F;
+        float py = y + (h - podSz) / 2.0F;
+        IIiii_Class8 pRad = IIiii_Class8.I_method_893b2757(10.0F);
+        custom.drawRoundedRect(px, py, podSz, podSz, pRad, new ColorRGBA(0.0F, 122.0F, 255.0F, hov ? 255.0F : 210.0F));
+        custom.drawIcon("hud/target", px + 8.0F, py + 8.0F, 16.0F, ColorRGBA.WHITE);
     }
 
     // Module 2: Fullscreen Quick Tile
     @Unique
-    private void rockstar$renderFullscreenTile(III custom, float x, float y, float w, float h, int mx, int my) {
+    private void rockstar$renderFullscreenTile(III custom, float x, float y, float w, float h, int mx, int my, float hoverA) {
         IIiii_Class8 rad = IIiii_Class8.I_method_893b2757(14.0F);
         boolean hov = mx >= x && mx <= x + w && my >= y && my <= y + h;
         boolean isFs = (MinecraftClient.getInstance() != null && MinecraftClient.getInstance().getWindow().isFullscreen());
 
-        custom.drawShadow(x, y, w, h, 12.0F, rad, new ColorRGBA(0.0F, 0.0F, 0.0F, 80.0F));
+        custom.drawShadow(x, y, w, h, 12.0F + 6.0F * hoverA, rad, new ColorRGBA(0.0F, 0.0F, 0.0F, 80.0F + 30.0F * hoverA));
         custom.drawBlurredRect(x, y, w, h, 14.0F, 3.0F, rad, new ColorRGBA(255.0F, 255.0F, 255.0F, 24.0F));
-        custom.drawRoundedRect(x, y, w, h, rad, new ColorRGBA(25.0F, 28.0F, 38.0F, 190.0F));
+        custom.drawRoundedRect(x, y, w, h, rad, new ColorRGBA(22.0F, 26.0F, 36.0F, 195.0F));
         custom.drawRoundedBorder(x, y, w, h, 1.0F, rad, hov ? new ColorRGBA(52.0F, 199.0F, 89.0F, 220.0F) : new ColorRGBA(255.0F, 255.0F, 255.0F, 35.0F));
 
-        float cirSz = 34.0F;
-        float cx = x + (w - cirSz) / 2.0F;
-        float cy = y + (h - cirSz) / 2.0F;
-        IIiii_Class8 cRad = IIiii_Class8.I_method_893b2757(cirSz / 2.0F);
-        custom.drawRoundedRect(cx, cy, cirSz, cirSz, cRad, isFs ? new ColorRGBA(52.0F, 199.0F, 89.0F, hov ? 255.0F : 220.0F) : new ColorRGBA(255.0F, 255.0F, 255.0F, hov ? 40.0F : 20.0F));
-        custom.drawIcon("keyboard", cx + 7.0F, cy + 7.0F, 20.0F, ColorRGBA.WHITE);
+        float podSz = 32.0F;
+        float px = x + (w - podSz) / 2.0F;
+        float py = y + (h - podSz) / 2.0F;
+        IIiii_Class8 pRad = IIiii_Class8.I_method_893b2757(10.0F);
+        custom.drawRoundedRect(px, py, podSz, podSz, pRad, isFs ? new ColorRGBA(52.0F, 199.0F, 89.0F, hov ? 255.0F : 220.0F) : new ColorRGBA(255.0F, 255.0F, 255.0F, hov ? 40.0F : 20.0F));
+        custom.drawIcon("keyboard", px + 6.0F, py + 6.0F, 20.0F, ColorRGBA.WHITE);
     }
 
     // Module 3: Master Volume Vertical Slider Pill
     @Unique
-    private void rockstar$renderVolumePill(III custom, float x, float y, float w, float h, IIiIIi_Class10 subFont, int mx, int my) {
+    private void rockstar$renderVolumePill(III custom, float x, float y, float w, float h, IIiIIi_Class10 subFont, int mx, int my, float hoverA) {
         IIiii_Class8 rad = IIiii_Class8.I_method_893b2757(w / 2.0F);
         float currentVol = (float)MinecraftClient.getInstance().options.getSoundVolume(SoundCategory.MASTER);
 
-        custom.drawShadow(x, y, w, h, 14.0F, rad, new ColorRGBA(0.0F, 0.0F, 0.0F, 90.0F));
+        custom.drawShadow(x, y, w, h, 14.0F + 6.0F * hoverA, rad, new ColorRGBA(0.0F, 0.0F, 0.0F, 90.0F + 30.0F * hoverA));
         custom.drawBlurredRect(x, y, w, h, 16.0F, 3.0F, rad, new ColorRGBA(255.0F, 255.0F, 255.0F, 24.0F));
-        custom.drawRoundedRect(x, y, w, h, rad, new ColorRGBA(25.0F, 28.0F, 38.0F, 190.0F));
+        custom.drawRoundedRect(x, y, w, h, rad, new ColorRGBA(22.0F, 26.0F, 36.0F, 195.0F));
 
         // Filled white volume bar rising from bottom
         float fillH = h * MathHelper.clamp(currentVol, 0.0F, 1.0F);
@@ -373,23 +319,23 @@ implements iIIiIIiIi_Class294 {
         }
     }
 
-    // Module 4: Interactive iOS Calculator
+    // Module 4: Interactive iOS Calculator - Clean layout with bottom row 100% inside card
     @Unique
-    private void rockstar$renderCalculatorCard(III custom, float x, float y, float w, float h, IIiIIi_Class10 boldFont, IIiIIi_Class10 font, int mx, int my) {
+    private void rockstar$renderCalculatorCard(III custom, float x, float y, float w, float h, IIiIIi_Class10 boldFont, IIiIIi_Class10 font, int mx, int my, float hoverA) {
         IIiii_Class8 rad = IIiii_Class8.I_method_893b2757(16.0F);
-        custom.drawShadow(x, y, w, h, 18.0F, rad, new ColorRGBA(0.0F, 0.0F, 0.0F, 110.0F));
+        custom.drawShadow(x, y, w, h, 18.0F + 8.0F * hoverA, rad, new ColorRGBA(0.0F, 0.0F, 0.0F, 110.0F + 40.0F * hoverA));
         custom.drawBlurredRect(x, y, w, h, 18.0F, 4.0F, rad, new ColorRGBA(255.0F, 255.0F, 255.0F, 24.0F));
         custom.drawRoundedRect(x, y, w, h, rad, new ColorRGBA(18.0F, 20.0F, 28.0F, 220.0F));
-        custom.drawRoundedBorder(x, y, w, h, 1.2F, rad, new ColorRGBA(255.0F, 255.0F, 255.0F, 45.0F));
+        custom.drawRoundedBorder(x, y, w, h, 1.2F, rad, hoverA > 0.01F ? new ColorRGBA(255.0F, 255.0F, 255.0F, 140.0F) : new ColorRGBA(255.0F, 255.0F, 255.0F, 45.0F));
 
         // LCD Display Area
-        float lcdH = 34.0F;
+        float lcdH = 28.0F;
         float lcdY = y + 8.0F;
         String disp = rockstar$calcDisplay;
         if (disp.length() > 9) disp = disp.substring(0, 9);
         if (boldFont != null) {
             float txtW = boldFont.I_method_2c375926(disp);
-            custom.drawText(boldFont, disp, x + w - txtW - 14.0F, lcdY + 10.0F, ColorRGBA.WHITE);
+            custom.drawText(boldFont, disp, x + w - txtW - 14.0F, lcdY + 8.0F, ColorRGBA.WHITE);
         }
 
         // Circular Button Grid (5 rows x 4 columns)
@@ -402,8 +348,8 @@ implements iIIiIIiIi_Class294 {
         };
 
         float gridStartY = lcdY + lcdH + 4.0F;
-        float btnSz = 26.0F;
-        float gap = 6.0F;
+        float btnSz = 25.0F;
+        float gap = 4.5F;
 
         for (int r = 0; r < 5; r++) {
             float rowY = gridStartY + r * (btnSz + gap);
@@ -430,42 +376,43 @@ implements iIIiIIiIi_Class294 {
                 if (font != null) {
                     float lw = font.I_method_2c375926(label);
                     float lx = label.equals("0") ? (bX + 10.0F) : (bX + (bW - lw) / 2.0F);
-                    custom.drawText(font, label, lx, rowY + 7.0F, fg);
+                    custom.drawText(font, label, lx, rowY + 6.5F, fg);
                 }
             }
         }
     }
 
-    // Module 5: Right Column 3 Action Circles (Resume, Settings, Disconnect)
+    // Module 5: Right Column 3 Squircles (Resume, Settings, Disconnect - Separated & Rounded-Square!)
     @Unique
-    private void rockstar$renderActionCircles(III custom, float x, float y, float w, float h, int mx, int my) {
-        float circleSz = 40.0F;
-        float cx = x + (w - circleSz) / 2.0F;
-        IIiii_Class8 rad = IIiii_Class8.I_method_893b2757(circleSz / 2.0F);
+    private void rockstar$renderActionSquircles(III custom, float x, float y, float w, float h, int mx, int my, float hoverA) {
+        float btnSz = 48.0F;
+        float bx = x + (w - btnSz) / 2.0F;
+        IIiii_Class8 rad = IIiii_Class8.I_method_893b2757(12.0F); // Sleek rounded-square squircle!
+        ColorRGBA theme = IiiiiIIIi_Class242.I_method_7df8e08e();
 
-        // 1. Resume Game Button (Top: Black circle + White Play)
-        float y1 = y + 16.0F;
-        boolean hov1 = mx >= cx && mx <= cx + circleSz && my >= y1 && my <= y1 + circleSz;
-        custom.drawShadow(cx, y1, circleSz, circleSz, 10.0F, rad, new ColorRGBA(0.0F, 0.0F, 0.0F, 80.0F));
-        custom.drawRoundedRect(cx, y1, circleSz, circleSz, rad, new ColorRGBA(18.0F, 20.0F, 28.0F, hov1 ? 255.0F : 210.0F));
-        custom.drawRoundedBorder(cx, y1, circleSz, circleSz, 1.0F, rad, new ColorRGBA(255.0F, 255.0F, 255.0F, hov1 ? 160.0F : 40.0F));
-        custom.drawIcon("play", cx + 13.0F, y1 + 13.0F, 14.0F, ColorRGBA.WHITE);
+        // 1. Resume Game Button (Top Squircle: Dark Frosted + Play Icon)
+        float y1 = y + 4.0F;
+        boolean hov1 = mx >= bx && mx <= bx + btnSz && my >= y1 && my <= y1 + btnSz;
+        custom.drawShadow(bx, y1, btnSz, btnSz, 10.0F, rad, new ColorRGBA(0.0F, 0.0F, 0.0F, 80.0F));
+        custom.drawRoundedRect(bx, y1, btnSz, btnSz, rad, new ColorRGBA(22.0F, 26.0F, 36.0F, hov1 ? 255.0F : 210.0F));
+        custom.drawRoundedBorder(bx, y1, btnSz, btnSz, 1.2F, rad, hov1 ? theme : new ColorRGBA(255.0F, 255.0F, 255.0F, 40.0F));
+        custom.drawIcon("play", bx + 17.0F, y1 + 17.0F, 14.0F, ColorRGBA.WHITE);
 
-        // 2. Settings / Options Button (Middle: Frosted circle + Gear)
-        float y2 = y + h / 2.0F - circleSz / 2.0F;
-        boolean hov2 = mx >= cx && mx <= cx + circleSz && my >= y2 && my <= y2 + circleSz;
-        custom.drawShadow(cx, y2, circleSz, circleSz, 10.0F, rad, new ColorRGBA(0.0F, 0.0F, 0.0F, 80.0F));
-        custom.drawRoundedRect(cx, y2, circleSz, circleSz, rad, new ColorRGBA(40.0F, 44.0F, 56.0F, hov2 ? 255.0F : 210.0F));
-        custom.drawRoundedBorder(cx, y2, circleSz, circleSz, 1.0F, rad, new ColorRGBA(255.0F, 255.0F, 255.0F, hov2 ? 160.0F : 40.0F));
-        custom.drawIcon("setting", cx + 12.0F, y2 + 12.0F, 16.0F, ColorRGBA.WHITE);
+        // 2. Settings / Options Button (Middle Squircle: Frosted Accent + Clear Gear Icon)
+        float y2 = y + h / 2.0F - btnSz / 2.0F;
+        boolean hov2 = mx >= bx && mx <= bx + btnSz && my >= y2 && my <= y2 + btnSz;
+        custom.drawShadow(bx, y2, btnSz, btnSz, 10.0F, rad, new ColorRGBA(0.0F, 0.0F, 0.0F, 80.0F));
+        custom.drawRoundedRect(bx, y2, btnSz, btnSz, rad, new ColorRGBA(36.0F, 42.0F, 56.0F, hov2 ? 255.0F : 210.0F));
+        custom.drawRoundedBorder(bx, y2, btnSz, btnSz, 1.2F, rad, hov2 ? theme : new ColorRGBA(255.0F, 255.0F, 255.0F, 40.0F));
+        custom.drawIcon("setting", bx + 16.0F, y2 + 16.0F, 16.0F, ColorRGBA.WHITE);
 
-        // 3. Disconnect Button (Bottom: Red circle + Exit door icon)
-        float y3 = y + h - circleSz - 16.0F;
-        boolean hov3 = mx >= cx && mx <= cx + circleSz && my >= y3 && my <= y3 + circleSz;
-        custom.drawShadow(cx, y3, circleSz, circleSz, 12.0F, rad, new ColorRGBA(255.0F, 59.0F, 48.0F, 80.0F));
-        custom.drawRoundedRect(cx, y3, circleSz, circleSz, rad, new ColorRGBA(255.0F, 59.0F, 48.0F, hov3 ? 255.0F : 220.0F));
-        custom.drawRoundedBorder(cx, y3, circleSz, circleSz, 1.0F, rad, new ColorRGBA(255.0F, 255.0F, 255.0F, hov3 ? 200.0F : 50.0F));
-        custom.drawIcon("back", cx + 12.0F, y3 + 12.0F, 16.0F, ColorRGBA.WHITE);
+        // 3. Disconnect Button (Far Bottom Squircle: Alert Crimson Squircle + Distinct Exit Door)
+        float y3 = y + h - btnSz - 4.0F;
+        boolean hov3 = mx >= bx && mx <= bx + btnSz && my >= y3 && my <= y3 + btnSz;
+        custom.drawShadow(bx, y3, btnSz, btnSz, 12.0F, rad, new ColorRGBA(255.0F, 59.0F, 48.0F, 80.0F));
+        custom.drawRoundedRect(bx, y3, btnSz, btnSz, rad, new ColorRGBA(235.0F, 55.0F, 50.0F, hov3 ? 255.0F : 215.0F));
+        custom.drawRoundedBorder(bx, y3, btnSz, btnSz, 1.2F, rad, new ColorRGBA(255.0F, 255.0F, 255.0F, hov3 ? 220.0F : 60.0F));
+        custom.drawIcon("back", bx + 16.0F, y3 + 16.0F, 16.0F, ColorRGBA.WHITE);
     }
 
     @Override
@@ -473,153 +420,115 @@ implements iIIiIIiIi_Class294 {
         float cx = this.width / 2.0F;
         float cy = this.height / 2.0F;
 
-        float[][] defaultBounds = new float[][]{
-            { cx - 175.0F, cy - 93.0F, 112.0F, 70.0F },  // 0: Media
-            { cx - 175.0F, cy - 15.0F, 52.0F, 50.0F },   // 1: Camera
-            { cx - 175.0F, cy + 43.0F, 52.0F, 50.0F },   // 2: Fullscreen
-            { cx - 115.0F, cy - 15.0F, 52.0F, 108.0F },  // 3: Volume Pill
-            { cx - 55.0F, cy - 93.0F, 148.0F, 186.0F },  // 4: Calculator
-            { cx + 101.0F, cy - 93.0F, 48.0F, 186.0F }   // 5: Right Circles
+        float[][] bounds = new float[][]{
+            { cx - 180.0F, cy - 98.0F, 114.0F, 74.0F },  // 0: Media
+            { cx - 180.0F, cy - 16.0F, 53.0F, 50.0F },   // 1: Camera
+            { cx - 180.0F, cy + 42.0F, 53.0F, 50.0F },   // 2: Fullscreen
+            { cx - 119.0F, cy - 16.0F, 53.0F, 108.0F },  // 3: Volume Pill
+            { cx - 58.0F,  cy - 98.0F, 150.0F, 192.0F }, // 4: Calculator
+            { cx + 100.0F, cy - 98.0F, 52.0F,  192.0F }  // 5: Right Squircles
         };
 
-        // Check which slot was clicked for intentional long-press drag
-        for (int s = 0; s < 6; s++) {
-            float[] b = defaultBounds[s];
-            if (mouseX >= b[0] && mouseX <= b[0] + b[2] && mouseY >= b[1] && mouseY <= b[1] + b[3]) {
-                rockstar$pressedCandidateSlot = s;
-                rockstar$pressStartTime = System.currentTimeMillis();
-                rockstar$dragOffsetX = mouseX - b[0];
-                rockstar$dragOffsetY = mouseY - b[1];
-                break;
+        // 0. Media Player Controls Click
+        float[] b0 = bounds[0];
+        if (mouseX >= b0[0] && mouseX <= b0[0] + b0[2] && mouseY >= b0[1] && mouseY <= b0[1] + b0[3]) {
+            iiIiIIIiI_Class419 tracker = RockstarClient.getInstance().I_method_be969482();
+            float ctrlY = b0[1] + 55.0F;
+            if (mouseY >= ctrlY && mouseY <= b0[1] + b0[3]) {
+                // Previous
+                if (mouseX >= b0[0] + 10.0F && mouseX <= b0[0] + 32.0F) {
+                    if (tracker != null && tracker.I_method_9b92c97b() != null) tracker.I_method_9b92c97b().previous();
+                    UISoundManager.playButtonClick();
+                    return true;
+                }
+                // Play / Pause
+                if (mouseX >= b0[0] + b0[2] / 2.0F - 16.0F && mouseX <= b0[0] + b0[2] / 2.0F + 16.0F) {
+                    if (tracker != null && tracker.I_method_9b92c97b() != null) tracker.I_method_9b92c97b().playPause();
+                    UISoundManager.playButtonClick();
+                    return true;
+                }
+                // Next
+                if (mouseX >= b0[0] + b0[2] - 32.0F && mouseX <= b0[0] + b0[2] - 10.0F) {
+                    if (tracker != null && tracker.I_method_9b92c97b() != null) tracker.I_method_9b92c97b().next();
+                    UISoundManager.playButtonClick();
+                    return true;
+                }
+            }
+
+            // General click toggles play/pause on browser
+            if (tracker != null && tracker.I_method_9b92c97b() != null) {
+                tracker.I_method_9b92c97b().playPause();
+            }
+            UISoundManager.playButtonClick();
+            return true;
+        }
+
+        // 1. Camera / Screenshot Click
+        float[] b1 = bounds[1];
+        if (mouseX >= b1[0] && mouseX <= b1[0] + b1[2] && mouseY >= b1[1] && mouseY <= b1[1] + b1[3]) {
+            rockstar$flashAlpha = 1.0F;
+            UISoundManager.playButtonClick();
+            if (this.client != null && this.client.getFramebuffer() != null) {
+                ScreenshotRecorder.saveScreenshot(this.client.runDirectory, this.client.getFramebuffer(), msg -> {
+                    if (this.client != null) this.client.execute(() -> this.client.inGameHud.getChatHud().addMessage(msg));
+                });
+            }
+            return true;
+        }
+
+        // 2. Fullscreen Quick Tile Click
+        float[] b2 = bounds[2];
+        if (mouseX >= b2[0] && mouseX <= b2[0] + b2[2] && mouseY >= b2[1] && mouseY <= b2[1] + b2[3]) {
+            UISoundManager.playButtonClick();
+            if (this.client != null) {
+                this.client.getWindow().toggleFullscreen();
+            }
+            return true;
+        }
+
+        // 3. Volume Pill Drag Click
+        float[] b3 = bounds[3];
+        if (mouseX >= b3[0] && mouseX <= b3[0] + b3[2] && mouseY >= b3[1] && mouseY <= b3[1] + b3[3]) {
+            rockstar$isDraggingVolume = true;
+            rockstar$updateVolume(mouseY, b3[1], b3[3]);
+            return true;
+        }
+
+        // 4. Calculator Click
+        float[] b4 = bounds[4];
+        if (mouseX >= b4[0] && mouseX <= b4[0] + b4[2] && mouseY >= b4[1] && mouseY <= b4[1] + b4[3]) {
+            if (rockstar$handleCalcClick(mouseX, mouseY, b4[0], b4[1], b4[2], b4[3])) {
+                return true;
             }
         }
 
-        // Direct Clicks for Modules
-        for (int slotIdx = 0; slotIdx < 6; slotIdx++) {
-            int moduleType = rockstar$tileSlots[slotIdx];
-            float[] b = defaultBounds[slotIdx];
+        // 5. Right Action Squircles Click (Resume, Settings, Disconnect)
+        float[] b5 = bounds[5];
+        if (mouseX >= b5[0] - 4.0F && mouseX <= b5[0] + b5[2] + 4.0F) {
+            float btnSz = 48.0F;
+            float y1 = b5[1] + 4.0F;
+            float y2 = b5[1] + b5[3] / 2.0F - btnSz / 2.0F;
+            float y3 = b5[1] + b5[3] - btnSz - 4.0F;
 
-            // 0. Media Player Controls & Scrubber Click
-            if (moduleType == 0 && mouseX >= b[0] && mouseX <= b[0] + b[2] && mouseY >= b[1] && mouseY <= b[1] + b[3]) {
-                float scrubY = b[1] + 47.0F;
-                float scrubH = 10.0F;
-                float scrubX = b[0] + 8.0F;
-                float scrubW = b[2] - 16.0F;
-
-                // Scrub Bar Click
-                if (mouseY >= scrubY - 3.0F && mouseY <= scrubY + scrubH && mouseX >= scrubX && mouseX <= scrubX + scrubW) {
-                    float rel = MathHelper.clamp((float)((mouseX - scrubX) / scrubW), 0.0F, 1.0F);
-                    int maxDur = rockstar$playlistDurations[rockstar$currentTrack % rockstar$playlistDurations.length];
-                    rockstar$trackElapsedSec = rel * maxDur;
-                    rockstar$isScrubbing = true;
-                    UISoundManager.playButtonClick();
-                    rockstar$pressedCandidateSlot = -1;
-                    return true;
-                }
-
-                // Previous Button Click
-                float ctrlY = b[1] + 53.0F;
-                if (mouseY >= ctrlY && mouseY <= b[1] + b[3]) {
-                    if (mouseX >= b[0] + 10.0F && mouseX <= b[0] + 32.0F) {
-                        rockstar$currentTrack = (rockstar$currentTrack - 1 + rockstar$playlistTitles.length) % rockstar$playlistTitles.length;
-                        rockstar$trackElapsedSec = 0.0F;
-                        UISoundManager.playButtonClick();
-                        rockstar$pressedCandidateSlot = -1;
-                        return true;
-                    }
-                    // Play/Pause Button Click
-                    if (mouseX >= b[0] + b[2] / 2.0F - 16.0F && mouseX <= b[0] + b[2] / 2.0F + 16.0F) {
-                        rockstar$isPlaying = !rockstar$isPlaying;
-                        UISoundManager.playButtonClick();
-                        rockstar$pressedCandidateSlot = -1;
-                        return true;
-                    }
-                    // Next Button Click
-                    if (mouseX >= b[0] + b[2] - 32.0F && mouseX <= b[0] + b[2] - 10.0F) {
-                        rockstar$currentTrack = (rockstar$currentTrack + 1) % rockstar$playlistTitles.length;
-                        rockstar$trackElapsedSec = 0.0F;
-                        UISoundManager.playButtonClick();
-                        rockstar$pressedCandidateSlot = -1;
-                        return true;
-                    }
-                }
-
-                // General card click toggles play/pause
-                rockstar$isPlaying = !rockstar$isPlaying;
+            // Resume Game
+            if (mouseY >= y1 && mouseY <= y1 + btnSz) {
                 UISoundManager.playButtonClick();
-                rockstar$pressedCandidateSlot = -1;
+                this.close();
                 return true;
             }
-
-            // 1. Camera / Screenshot Click
-            if (moduleType == 1 && mouseX >= b[0] && mouseX <= b[0] + b[2] && mouseY >= b[1] && mouseY <= b[1] + b[3]) {
-                rockstar$flashAlpha = 1.0F;
+            // Options / Settings
+            if (mouseY >= y2 && mouseY <= y2 + btnSz) {
                 UISoundManager.playButtonClick();
-                rockstar$pressedCandidateSlot = -1;
-                if (this.client != null && this.client.getFramebuffer() != null) {
-                    ScreenshotRecorder.saveScreenshot(this.client.runDirectory, this.client.getFramebuffer(), msg -> {
-                        if (this.client != null) this.client.execute(() -> this.client.inGameHud.getChatHud().addMessage(msg));
-                    });
-                }
-                return true;
-            }
-
-            // 2. Fullscreen Quick Tile Click
-            if (moduleType == 2 && mouseX >= b[0] && mouseX <= b[0] + b[2] && mouseY >= b[1] && mouseY <= b[1] + b[3]) {
-                UISoundManager.playButtonClick();
-                rockstar$pressedCandidateSlot = -1;
                 if (this.client != null) {
-                    this.client.getWindow().toggleFullscreen();
+                    this.client.setScreen(new OptionsScreen(this, this.client.options));
                 }
                 return true;
             }
-
-            // 3. Volume Pill Drag
-            if (moduleType == 3 && mouseX >= b[0] && mouseX <= b[0] + b[2] && mouseY >= b[1] && mouseY <= b[1] + b[3]) {
-                rockstar$isDraggingVolume = true;
-                rockstar$pressedCandidateSlot = -1;
-                rockstar$updateVolume(mouseY, b[1], b[3]);
+            // Disconnect / Leave
+            if (mouseY >= y3 && mouseY <= y3 + btnSz) {
+                UISoundManager.playButtonClick();
+                this.disconnect();
                 return true;
-            }
-
-            // 4. Calculator Click
-            if (moduleType == 4 && mouseX >= b[0] && mouseX <= b[0] + b[2] && mouseY >= b[1] && mouseY <= b[1] + b[3]) {
-                if (rockstar$handleCalcClick(mouseX, mouseY, b[0], b[1], b[2], b[3])) {
-                    rockstar$pressedCandidateSlot = -1;
-                    return true;
-                }
-            }
-
-            // 5. Right Action Circles Click (Resume, Settings, Disconnect / Leave)
-            if (moduleType == 5 && mouseX >= b[0] - 4.0F && mouseX <= b[0] + b[2] + 4.0F) {
-                float circleSz = 40.0F;
-                float y1 = b[1] + 16.0F;
-                float y2 = b[1] + b[3] / 2.0F - circleSz / 2.0F;
-                float y3 = b[1] + b[3] - circleSz - 16.0F;
-
-                // Resume Game
-                if (mouseY >= b[1] && mouseY <= y1 + circleSz + 8.0F) {
-                    UISoundManager.playButtonClick();
-                    rockstar$pressedCandidateSlot = -1;
-                    this.close();
-                    return true;
-                }
-                // Options / Settings
-                if (mouseY >= y2 - 8.0F && mouseY <= y2 + circleSz + 8.0F) {
-                    UISoundManager.playButtonClick();
-                    rockstar$pressedCandidateSlot = -1;
-                    if (this.client != null) {
-                        this.client.setScreen(new OptionsScreen(this, this.client.options));
-                    }
-                    return true;
-                }
-                // Disconnect / Leave (Clean Singleplayer + Multiplayer support)
-                if (mouseY >= y3 - 8.0F && mouseY <= b[1] + b[3] + 8.0F) {
-                    UISoundManager.playButtonClick();
-                    rockstar$pressedCandidateSlot = -1;
-                    this.disconnect();
-                    return true;
-                }
             }
         }
 
@@ -630,19 +539,8 @@ implements iIIiIIiIi_Class294 {
     public boolean mouseDragged(double mouseX, double mouseY, int button, double deltaX, double deltaY) {
         if (rockstar$isDraggingVolume) {
             float cy = this.height / 2.0F;
-            float volY = cy - 15.0F;
+            float volY = cy - 16.0F;
             rockstar$updateVolume(mouseY, volY, 108.0F);
-            return true;
-        }
-
-        if (rockstar$isScrubbing) {
-            float cx = this.width / 2.0F;
-            float cy = this.height / 2.0F;
-            float mediaX = cx - 175.0F + 8.0F;
-            float scrubW = 112.0F - 16.0F;
-            float rel = MathHelper.clamp((float)((mouseX - mediaX) / scrubW), 0.0F, 1.0F);
-            int maxDur = rockstar$playlistDurations[rockstar$currentTrack % rockstar$playlistDurations.length];
-            rockstar$trackElapsedSec = rel * maxDur;
             return true;
         }
 
@@ -652,44 +550,6 @@ implements iIIiIIiIi_Class294 {
     @Override
     public boolean mouseReleased(double mouseX, double mouseY, int button) {
         rockstar$isDraggingVolume = false;
-        rockstar$isScrubbing = false;
-        rockstar$pressedCandidateSlot = -1;
-
-        if (rockstar$draggedSlot >= 0) {
-            float cx = this.width / 2.0F;
-            float cy = this.height / 2.0F;
-            float[][] defaultBounds = new float[][]{
-                { cx - 175.0F, cy - 93.0F, 112.0F, 70.0F },
-                { cx - 175.0F, cy - 15.0F, 52.0F, 50.0F },
-                { cx - 175.0F, cy + 43.0F, 52.0F, 50.0F },
-                { cx - 115.0F, cy - 15.0F, 52.0F, 108.0F },
-                { cx - 55.0F, cy - 93.0F, 148.0F, 186.0F },
-                { cx + 101.0F, cy - 93.0F, 48.0F, 186.0F }
-            };
-
-            // Find closest slot
-            int closestSlot = 0;
-            double minDist = Double.MAX_VALUE;
-            for (int s = 0; s < 6; s++) {
-                double dx = mouseX - (defaultBounds[s][0] + defaultBounds[s][2] / 2.0F);
-                double dy = mouseY - (defaultBounds[s][1] + defaultBounds[s][3] / 2.0F);
-                double d = dx * dx + dy * dy;
-                if (d < minDist) {
-                    minDist = d;
-                    closestSlot = s;
-                }
-            }
-
-            // Swap positions
-            int temp = rockstar$tileSlots[rockstar$draggedSlot];
-            rockstar$tileSlots[rockstar$draggedSlot] = rockstar$tileSlots[closestSlot];
-            rockstar$tileSlots[closestSlot] = temp;
-
-            rockstar$draggedSlot = -1;
-            UISoundManager.playButtonClick();
-            return true;
-        }
-
         return super.mouseReleased(mouseX, mouseY, button);
     }
 
@@ -704,10 +564,10 @@ implements iIIiIIiIi_Class294 {
 
     @Unique
     private static boolean rockstar$handleCalcClick(double mx, double my, float x, float y, float w, float h) {
-        float lcdH = 34.0F;
+        float lcdH = 28.0F;
         float gridStartY = y + 8.0F + lcdH + 4.0F;
-        float btnSz = 26.0F;
-        float gap = 6.0F;
+        float btnSz = 25.0F;
+        float gap = 4.5F;
 
         String[][] btnGrid = new String[][]{
             { "C", "+/-", "%", "÷" },
