@@ -80,4 +80,13 @@ public class UISoundManager {
             }
         } catch (Throwable ignored) {}
     }
+
+    public static void playError() {
+        try {
+            MinecraftClient mc = MinecraftClient.getInstance();
+            if (mc.getSoundManager() != null) {
+                mc.getSoundManager().play(PositionedSoundInstance.master(SoundEvents.BLOCK_NOTE_BLOCK_BASS.value(), 0.6F, 1.0F));
+            }
+        } catch (Throwable ignored) {}
+    }
 }

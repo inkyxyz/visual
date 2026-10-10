@@ -41,6 +41,10 @@ import rockstar.client.iIIIiiIii_Class284;
 import rockstar.client.iIIIiiiII_Class285;
 import rockstar.client.iIIiIIiIi_Class294;
 import rockstar.client.iiIiIIIiI_Class419;
+import org.lwjgl.glfw.GLFW;
+import rockstar.client.BrowserScreen;
+import rockstar.client.SnakeScreen;
+import rockstar.client.MinesweeperScreen;
 
 @Mixin(value={GameMenuScreen.class})
 public class GameMenuScreenMixin
@@ -63,6 +67,10 @@ implements iIIiIIiIi_Class294 {
 
     // Volume Drag State
     @Unique private static boolean rockstar$isDraggingVolume = false;
+
+    // Bottom Search & Mini-games State
+    @Unique private static String rockstar$searchText = "";
+    @Unique private static boolean rockstar$searchFocused = false;
 
     // Per-tile hover float animations ("что бы наводишься а оно выплывает")
     @Unique private static final float[] rockstar$tileHoverAnim = new float[6];
@@ -164,6 +172,50 @@ implements iIIiIIiIi_Class294 {
                 case 5 -> rockstar$renderActionSquircles(custom, drawX, drawY, b[2], b[3], mouseX, mouseY, hoverA);
             }
             drawContext.getMatrices().pop();
+        }
+
+        // --- BOTTOM SEARCH BAR & MINI-GAMES BAR ---
+        float bRowY = cy + 104.0F;
+        float bRowH = 34.0F;
+        float bStartX = cx - 180.0F;
+        float sWidth = 220.0F;
+
+        IIiii_Class8 sRad = IIiii_Class8.I_method_893b2757(10.0F);
+        boolean sHover = mouseX >= bStartX && mouseX <= bStartX + sWidth && mouseY >= bRowY && mouseY <= bRowY + bRowH;
+        custom.drawShadow(bStartX, bRowY, sWidth, bRowH, 12.0F, sRad, new ColorRGBA(0.0F, 0.0F, 0.0F, 80.0F));
+        custom.drawBlurredRect(bStartX, bRowY, sWidth, bRowH, 14.0F, 3.0F, sRad, new ColorRGBA(255.0F, 255.0F, 255.0F, 24.0F));
+        custom.drawRoundedRect(bStartX, bRowY, sWidth, bRowH, sRad, new ColorRGBA(22.0F, 26.0F, 36.0F, 215.0F));
+        custom.drawRoundedBorder(bStartX, bRowY, sWidth, bRowH, 1.2F, sRad, rockstar$searchFocused ? IiiiiIIIi_Class242.I_method_7df8e08e() : (sHover ? new ColorRGBA(255.0F, 255.0F, 255.0F, 80.0F) : new ColorRGBA(255.0F, 255.0F, 255.0F, 38.0F)));
+
+        if (font != null) {
+            String sPrompt = rockstar$searchText.isEmpty() ? (rockstar$searchFocused ? "" : "🔍 Поиск в Google... (Enter)") : rockstar$searchText;
+            if (rockstar$searchFocused && (System.currentTimeMillis() % 1000L < 500L)) sPrompt += "|";
+            ColorRGBA sCol = rockstar$searchText.isEmpty() ? new ColorRGBA(255.0F, 255.0F, 255.0F, 140.0F) : ColorRGBA.WHITE;
+            custom.drawText(font, sPrompt, bStartX + 12.0F, bRowY + 11.0F, sCol);
+        }
+
+        // Snake Button (Змейка)
+        float snakeX = bStartX + sWidth + 8.0F;
+        float gBtnW = 48.0F;
+        boolean snakeHov = mouseX >= snakeX && mouseX <= snakeX + gBtnW && mouseY >= bRowY && mouseY <= bRowY + bRowH;
+        custom.drawShadow(snakeX, bRowY, gBtnW, bRowH, 10.0F, sRad, new ColorRGBA(0.0F, 0.0F, 0.0F, 70.0F));
+        custom.drawRoundedRect(snakeX, bRowY, gBtnW, bRowH, sRad, new ColorRGBA(26.0F, 32.0F, 46.0F, snakeHov ? 255.0F : 210.0F));
+        custom.drawRoundedBorder(snakeX, bRowY, gBtnW, bRowH, 1.2F, sRad, snakeHov ? new ColorRGBA(52.0F, 199.0F, 89.0F, 220.0F) : new ColorRGBA(255.0F, 255.0F, 255.0F, 40.0F));
+        if (font != null) {
+            float snW = font.I_method_2c375926("🐍");
+            custom.drawText(font, "🐍", snakeX + (gBtnW - snW) / 2.0F, bRowY + 10.0F, ColorRGBA.WHITE);
+        }
+
+        // Minesweeper Button (Сапёр)
+        float mineX = snakeX + gBtnW + 8.0F;
+        float mBtnW = 48.0F;
+        boolean mineHov = mouseX >= mineX && mouseX <= mineX + mBtnW && mouseY >= bRowY && mouseY <= bRowY + bRowH;
+        custom.drawShadow(mineX, bRowY, mBtnW, bRowH, 10.0F, sRad, new ColorRGBA(0.0F, 0.0F, 0.0F, 70.0F));
+        custom.drawRoundedRect(mineX, bRowY, mBtnW, bRowH, sRad, new ColorRGBA(26.0F, 32.0F, 46.0F, mineHov ? 255.0F : 210.0F));
+        custom.drawRoundedBorder(mineX, bRowY, mBtnW, bRowH, 1.2F, sRad, mineHov ? new ColorRGBA(255.0F, 59.0F, 48.0F, 220.0F) : new ColorRGBA(255.0F, 255.0F, 255.0F, 40.0F));
+        if (font != null) {
+            float mnW = font.I_method_2c375926("💣");
+            custom.drawText(font, "💣", mineX + (mBtnW - mnW) / 2.0F, bRowY + 10.0F, ColorRGBA.WHITE);
         }
 
         // Fullscreen Shutter Flash on Screenshot
@@ -532,6 +584,43 @@ implements iIIiIIiIi_Class294 {
             }
         }
 
+        // 6. Bottom Row: Search Bar, Snake, Minesweeper Clicks
+        float bRowY = cy + 104.0F;
+        float bRowH = 34.0F;
+        float bStartX = cx - 180.0F;
+        float sWidth = 220.0F;
+        float snakeX = bStartX + sWidth + 8.0F;
+        float gBtnW = 48.0F;
+        float mineX = snakeX + gBtnW + 8.0F;
+        float mBtnW = 48.0F;
+
+        // Search Bar click
+        if (mouseX >= bStartX && mouseX <= bStartX + sWidth && mouseY >= bRowY && mouseY <= bRowY + bRowH) {
+            rockstar$searchFocused = true;
+            UISoundManager.playButtonClick();
+            return true;
+        } else {
+            rockstar$searchFocused = false;
+        }
+
+        // Snake button click
+        if (mouseX >= snakeX && mouseX <= snakeX + gBtnW && mouseY >= bRowY && mouseY <= bRowY + bRowH) {
+            UISoundManager.playButtonClick();
+            if (this.client != null) {
+                this.client.setScreen(new SnakeScreen(this));
+            }
+            return true;
+        }
+
+        // Minesweeper button click
+        if (mouseX >= mineX && mouseX <= mineX + mBtnW && mouseY >= bRowY && mouseY <= bRowY + bRowH) {
+            UISoundManager.playButtonClick();
+            if (this.client != null) {
+                this.client.setScreen(new MinesweeperScreen(this));
+            }
+            return true;
+        }
+
         return super.mouseClicked(mouseX, mouseY, button);
     }
 
@@ -698,4 +787,40 @@ implements iIIiIIiIi_Class294 {
             this.client.disconnect(new IiiIIiIii_Class204());
         }
     }
+
+    @Override
+    public boolean charTyped(char chr, int modifiers) {
+        if (rockstar$searchFocused) {
+            if (chr >= 32 && chr != 127) {
+                rockstar$searchText += chr;
+                return true;
+            }
+        }
+        return super.charTyped(chr, modifiers);
+    }
+
+    @Override
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if (rockstar$searchFocused) {
+            if (keyCode == GLFW.GLFW_KEY_BACKSPACE && !rockstar$searchText.isEmpty()) {
+                rockstar$searchText = rockstar$searchText.substring(0, rockstar$searchText.length() - 1);
+                return true;
+            }
+            if (keyCode == GLFW.GLFW_KEY_ENTER || keyCode == GLFW.GLFW_KEY_KP_ENTER) {
+                String q = rockstar$searchText;
+                rockstar$searchFocused = false;
+                UISoundManager.playButtonClick();
+                if (this.client != null) {
+                    this.client.setScreen(new BrowserScreen(this, q));
+                }
+                return true;
+            }
+            if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
+                rockstar$searchFocused = false;
+                return true;
+            }
+        }
+        return super.keyPressed(keyCode, scanCode, modifiers);
+    }
 }
+

@@ -220,6 +220,10 @@ public class ModuleManager {
         this.registerModule(new TitlesModule());
         this.registerModule(new ItemPhysicsModule());
         this.registerModule(new AnimationWheelModule());
+        this.registerModule(new ParticlesModule());
+        this.registerModule(new BlockOverlayModule());
+        this.registerModule(new WeatherAlertModule());
+        this.registerModule(new ItemChangerModule());
         this.snapshotModuleSettings();
     }
 

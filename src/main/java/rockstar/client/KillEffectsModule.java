@@ -64,6 +64,10 @@ public class KillEffectsModule extends Module {
    private final List<NetherPortalAbductionEffect> netherPortalEffects = new CopyOnWriteArrayList<>();
    private final List<SingularityCollapseEffect> singularityCollapseEffects = new CopyOnWriteArrayList<>();
    private final List<GlacialTombEffect> glacialTombEffects = new CopyOnWriteArrayList<>();
+   private final List<CyberVortexEffect> cyberVortexEffects = new CopyOnWriteArrayList<>();
+   private final List<QuantumShatterEffect> quantumShatterEffects = new CopyOnWriteArrayList<>();
+   private final List<SolarFlareEffect> solarFlareEffects = new CopyOnWriteArrayList<>();
+   private final List<VoidTentaclesEffect> voidTentaclesEffects = new CopyOnWriteArrayList<>();
 
    private static PlayerEntityModel VICTIM_MODEL;
 
@@ -101,6 +105,10 @@ public class KillEffectsModule extends Module {
    private ModeSetting.Nested1_42765c60 modeNetherPortal;
    private ModeSetting.Nested1_42765c60 modeSingularityCollapse;
    private ModeSetting.Nested1_42765c60 modeGlacialTomb;
+   private ModeSetting.Nested1_42765c60 modeCyberVortex;
+   private ModeSetting.Nested1_42765c60 modeQuantumShatter;
+   private ModeSetting.Nested1_42765c60 modeSolarFlare;
+   private ModeSetting.Nested1_42765c60 modeVoidTentacles;
    private BooleanSetting disintegrationSetting;
 
    private ModeSetting cardDeckSetting;
@@ -213,6 +221,14 @@ public class KillEffectsModule extends Module {
             this.singularityCollapseEffects.add(new SingularityCollapseEffect(pos, var2, entitySkin, entityYaw));
          } else if (this.modeGlacialTomb != null && this.modeGlacialTomb.isSelected()) {
             this.glacialTombEffects.add(new GlacialTombEffect(pos, var2, entitySkin, entityYaw));
+         } else if (this.modeCyberVortex != null && this.modeCyberVortex.isSelected()) {
+            this.cyberVortexEffects.add(new CyberVortexEffect(pos, var2));
+         } else if (this.modeQuantumShatter != null && this.modeQuantumShatter.isSelected()) {
+            this.quantumShatterEffects.add(new QuantumShatterEffect(pos, var2));
+         } else if (this.modeSolarFlare != null && this.modeSolarFlare.isSelected()) {
+            this.solarFlareEffects.add(new SolarFlareEffect(pos, var2));
+         } else if (this.modeVoidTentacles != null && this.modeVoidTentacles.isSelected()) {
+            this.voidTentaclesEffects.add(new VoidTentaclesEffect(pos, var2, entitySkin, entityYaw));
          }
       }
    };
@@ -305,6 +321,18 @@ public class KillEffectsModule extends Module {
       for (GlacialTombEffect gte : this.glacialTombEffects) {
          if (!gte.isExpired()) gte.render(var1, var5, var3);
       }
+      for (CyberVortexEffect cve : this.cyberVortexEffects) {
+         if (!cve.isExpired()) cve.render(var1, var5, var3);
+      }
+      for (QuantumShatterEffect qse : this.quantumShatterEffects) {
+         if (!qse.isExpired()) qse.render(var1, var5, var3);
+      }
+      for (SolarFlareEffect sfe : this.solarFlareEffects) {
+         if (!sfe.isExpired()) sfe.render(var1, var5, var3);
+      }
+      for (VoidTentaclesEffect vte : this.voidTentaclesEffects) {
+         if (!vte.isExpired()) vte.render(var1, var5, var3);
+      }
 
       this.particleEffects.removeIf(KillEffectsModule.Nested1_a9895860::I_method_b508e75e);
       this.tombstoneEffects.removeIf(TombstoneEffect::isExpired);
@@ -323,6 +351,10 @@ public class KillEffectsModule extends Module {
       this.netherPortalEffects.removeIf(NetherPortalAbductionEffect::isExpired);
       this.singularityCollapseEffects.removeIf(SingularityCollapseEffect::isExpired);
       this.glacialTombEffects.removeIf(GlacialTombEffect::isExpired);
+      this.cyberVortexEffects.removeIf(CyberVortexEffect::isExpired);
+      this.quantumShatterEffects.removeIf(QuantumShatterEffect::isExpired);
+      this.solarFlareEffects.removeIf(SolarFlareEffect::isExpired);
+      this.voidTentaclesEffects.removeIf(VoidTentaclesEffect::isExpired);
 
       BuiltBuffer var9 = var5.endNullable();
       if (var9 != null) {
@@ -341,6 +373,9 @@ public class KillEffectsModule extends Module {
       }
       for (GlacialTombEffect gte : this.glacialTombEffects) {
          if (!gte.isExpired()) gte.renderModel(var1, var3);
+      }
+      for (VoidTentaclesEffect vte : this.voidTentaclesEffects) {
+         if (!vte.isExpired()) vte.renderModel(var1, var3);
       }
 
       RenderSystem.depthMask(true);
@@ -371,6 +406,10 @@ public class KillEffectsModule extends Module {
       this.netherPortalEffects.clear();
       this.singularityCollapseEffects.clear();
       this.glacialTombEffects.clear();
+      this.cyberVortexEffects.clear();
+      this.quantumShatterEffects.clear();
+      this.solarFlareEffects.clear();
+      this.voidTentaclesEffects.clear();
    };
 
    public KillEffectsModule() {
@@ -400,6 +439,10 @@ public class KillEffectsModule extends Module {
       this.modeNetherPortal = new ModeSetting.Nested1_42765c60(this.modeSetting, "Nether Abduction");
       this.modeSingularityCollapse = new ModeSetting.Nested1_42765c60(this.modeSetting, "Celestial Judgement");
       this.modeGlacialTomb = new ModeSetting.Nested1_42765c60(this.modeSetting, "Glacial Tomb");
+      this.modeCyberVortex = new ModeSetting.Nested1_42765c60(this.modeSetting, "Cyber Vortex");
+      this.modeQuantumShatter = new ModeSetting.Nested1_42765c60(this.modeSetting, "Quantum Shatter");
+      this.modeSolarFlare = new ModeSetting.Nested1_42765c60(this.modeSetting, "Solar Flare");
+      this.modeVoidTentacles = new ModeSetting.Nested1_42765c60(this.modeSetting, "Void Tentacles");
 
       this.disintegrationSetting = new BooleanSetting(this, "Disintegration / Рассеивание").I_method_decd82b5();
 
@@ -2256,6 +2299,443 @@ public class KillEffectsModule extends Module {
 
          // Cyan frozen tint
          int tint = (220 << 24) | 0x00A0F0FF;
+
+         try {
+            VertexConsumerProvider.Immediate consumers = MinecraftClient.getInstance().getBufferBuilders().getEntityVertexConsumers();
+            VertexConsumer vc = consumers.getBuffer(RenderLayer.getEntityTranslucent(this.skin.texture()));
+            victimModel.render(m, vc, 15728880, OverlayTexture.DEFAULT_UV, tint);
+            consumers.draw();
+         } catch (Throwable ignored) {}
+
+         m.pop();
+      }
+   }
+
+   static class CyberVortexEffect {
+      private final Vec3d pos;
+      private final ColorRGBA col;
+      private final long startTime;
+      private static final long DURATION = 3000L;
+      private final float[][] bitOffsets = new float[36][3];
+      private final float[] bitSpeeds = new float[36];
+
+      CyberVortexEffect(Vec3d pos, ColorRGBA col) {
+         this.pos = pos;
+         this.col = col;
+         this.startTime = System.currentTimeMillis();
+         Random r = KillEffectsModule.RANDOM;
+         for (int i = 0; i < 36; i++) {
+            this.bitOffsets[i][0] = r.nextFloat() * (float)Math.PI * 2.0F;
+            this.bitOffsets[i][1] = 0.4F + r.nextFloat() * 1.6F;
+            this.bitOffsets[i][2] = r.nextFloat() * 2.5F;
+            this.bitSpeeds[i] = 1.5F + r.nextFloat() * 2.5F;
+         }
+      }
+
+      boolean isExpired() {
+         return System.currentTimeMillis() - this.startTime > DURATION;
+      }
+
+      void render(Render3DEvent event, BufferBuilder buf, Camera cam) {
+         long elapsed = System.currentTimeMillis() - this.startTime;
+         float prog = MathHelper.clamp((float)elapsed / (float)DURATION, 0.0F, 1.0F);
+         float alpha = (prog < 0.85F) ? Math.min(1.0F, prog * 5.0F) : (1.0F - (prog - 0.85F) / 0.15F);
+         if (alpha <= 0.01F) return;
+
+         MatrixStack m = event.getMatrices();
+         Vec3d cpos = cam.getPos();
+
+         m.push();
+         m.translate(this.pos.x - cpos.x, this.pos.y - cpos.y, this.pos.z - cpos.z);
+
+         ColorRGBA cyan = new ColorRGBA(0.0F, 240.0F, 255.0F, 220.0F * alpha);
+         ColorRGBA magenta = new ColorRGBA(255.0F, 20.0F, 147.0F, 210.0F * alpha);
+         ColorRGBA white = new ColorRGBA(255.0F, 255.0F, 255.0F, 240.0F * alpha);
+
+         for (int b = 0; b < 3; b++) {
+            m.push();
+            m.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(elapsed * 0.15F + b * 120.0F));
+            m.translate(0.0, 2.5, 0.0);
+            m.multiply(cam.getRotation());
+            float beamH = 5.0F * (1.0F - prog * 0.3F);
+            float beamW = 0.18F;
+            ColorRGBA bc = (b % 2 == 0) ? cyan : magenta;
+            iIiiIIiii_Class360.I_method_a9f124df(m, buf, -beamW * 0.5F, -beamH * 0.5F, 0.0, beamW, beamH, bc);
+            m.pop();
+         }
+
+         int ringCount = 4;
+         for (int r = 0; r < ringCount; r++) {
+            float ry = 0.3F + r * 0.9F;
+            float radius = 1.4F - r * 0.2F + (float)Math.sin(elapsed * 0.003F + r) * 0.15F;
+            float rot = (elapsed * 0.12F * (r % 2 == 0 ? 1.0F : -1.0F)) + r * 45.0F;
+
+            int segs = 16;
+            for (int s = 0; s < segs; s++) {
+               double a = Math.toRadians(rot + (s * 360.0F / segs));
+               float sx = (float)Math.cos(a) * radius;
+               float sz = (float)Math.sin(a) * radius;
+
+               m.push();
+               m.translate(sx, ry, sz);
+               m.multiply(cam.getRotation());
+               float segW = 0.28F;
+               float segH = 0.08F;
+               ColorRGBA ringCol = (s % 2 == 0) ? cyan : magenta;
+               iIiiIIiii_Class360.I_method_a9f124df(m, buf, -segW * 0.5F, -segH * 0.5F, 0.0, segW, segH, ringCol);
+               m.pop();
+            }
+         }
+
+         for (int i = 0; i < 36; i++) {
+            float curA = this.bitOffsets[i][0] + (elapsed * 0.004F * this.bitSpeeds[i]);
+            float curR = this.bitOffsets[i][1] * (1.0F - prog * 0.4F);
+            float curY = (this.bitOffsets[i][2] + (elapsed * 0.0025F * this.bitSpeeds[i])) % 4.5F;
+
+            float bx = (float)Math.cos(curA) * curR;
+            float bz = (float)Math.sin(curA) * curR;
+
+            m.push();
+            m.translate(bx, curY, bz);
+            m.multiply(cam.getRotation());
+            float bitSz = 0.12F + (i % 3 == 0 ? 0.06F : 0.0F);
+            ColorRGBA bitC = (i % 3 == 0) ? white : ((i % 2 == 0) ? cyan : magenta);
+            iIiiIIiii_Class360.I_method_a9f124df(m, buf, -bitSz * 0.5F, -bitSz * 0.5F, 0.0, bitSz, bitSz, bitC);
+            m.pop();
+         }
+
+         m.pop();
+      }
+   }
+
+   static class QuantumShatterEffect {
+      private final Vec3d pos;
+      private final ColorRGBA col;
+      private final long startTime;
+      private static final long DURATION = 2800L;
+      private final float[][] shardDir = new float[42][3];
+      private final float[] shardRot = new float[42];
+      private final float[] shardScale = new float[42];
+
+      QuantumShatterEffect(Vec3d pos, ColorRGBA col) {
+         this.pos = pos;
+         this.col = col;
+         this.startTime = System.currentTimeMillis();
+         Random r = KillEffectsModule.RANDOM;
+         for (int i = 0; i < 42; i++) {
+            double theta = r.nextDouble() * Math.PI * 2.0;
+            double phi = (r.nextDouble() - 0.5) * Math.PI;
+            float speed = 2.0F + r.nextFloat() * 4.0F;
+            this.shardDir[i][0] = (float)(Math.cos(phi) * Math.cos(theta)) * speed;
+            this.shardDir[i][1] = (float)Math.sin(phi) * speed + 1.2F;
+            this.shardDir[i][2] = (float)(Math.cos(phi) * Math.sin(theta)) * speed;
+            this.shardRot[i] = r.nextFloat() * 360.0F;
+            this.shardScale[i] = 0.15F + r.nextFloat() * 0.22F;
+         }
+      }
+
+      boolean isExpired() {
+         return System.currentTimeMillis() - this.startTime > DURATION;
+      }
+
+      void render(Render3DEvent event, BufferBuilder buf, Camera cam) {
+         long elapsed = System.currentTimeMillis() - this.startTime;
+         float prog = MathHelper.clamp((float)elapsed / (float)DURATION, 0.0F, 1.0F);
+         float alpha = (prog < 0.85F) ? Math.min(1.0F, prog * 6.0F) : (1.0F - (prog - 0.85F) / 0.15F);
+         if (alpha <= 0.01F) return;
+
+         MatrixStack m = event.getMatrices();
+         Vec3d cpos = cam.getPos();
+
+         m.push();
+         m.translate(this.pos.x - cpos.x, this.pos.y - cpos.y, this.pos.z - cpos.z);
+
+         if (prog < 0.25F) {
+            float prepProg = prog / 0.25F;
+            float jitter = (float)Math.sin(elapsed * 0.3F) * 0.08F * prepProg;
+            m.push();
+            m.translate(jitter, 1.1 + jitter, -jitter);
+            m.multiply(cam.getRotation());
+            float coreSz = 0.6F * (1.0F - prepProg * 0.4F);
+            ColorRGBA red = new ColorRGBA(255.0F, 50.0F, 50.0F, 180.0F * alpha);
+            ColorRGBA cyan = new ColorRGBA(50.0F, 220.0F, 255.0F, 180.0F * alpha);
+            ColorRGBA white = new ColorRGBA(255.0F, 255.0F, 255.0F, 240.0F * alpha);
+            iIiiIIiii_Class360.I_method_a9f124df(m, buf, -coreSz * 0.5F - 0.04F, -coreSz * 0.5F, 0.0, coreSz, coreSz, red);
+            iIiiIIiii_Class360.I_method_a9f124df(m, buf, -coreSz * 0.5F + 0.04F, -coreSz * 0.5F, 0.0, coreSz, coreSz, cyan);
+            iIiiIIiii_Class360.I_method_a9f124df(m, buf, -coreSz * 0.5F, -coreSz * 0.5F, 0.0, coreSz, coreSz, white);
+            m.pop();
+         } else {
+            float shatterProg = (prog - 0.25F) / 0.75F;
+            float drag = (float)Math.pow(shatterProg, 0.75);
+
+            float shockRadius = shatterProg * 5.0F;
+            float shockAlpha = (1.0F - shatterProg) * alpha * 180.0F;
+            for (int sr = 0; sr < 20; sr++) {
+               double sAng = (Math.PI * 2.0 * sr) / 20.0;
+               m.push();
+               m.translate((float)Math.cos(sAng) * shockRadius, 0.15F, (float)Math.sin(sAng) * shockRadius);
+               m.multiply(cam.getRotation());
+               float rSz = 0.22F * (1.0F - shatterProg);
+               iIiiIIiii_Class360.I_method_a9f124df(m, buf, -rSz * 0.5F, -rSz * 0.5F, 0.0, rSz, rSz, new ColorRGBA(100.0F, 200.0F, 255.0F, shockAlpha));
+               m.pop();
+            }
+
+            for (int i = 0; i < 42; i++) {
+               float sx = this.shardDir[i][0] * drag;
+               float sy = 1.1F + this.shardDir[i][1] * drag - (shatterProg * shatterProg * 1.8F);
+               float sz = this.shardDir[i][2] * drag;
+
+               m.push();
+               m.translate(sx, sy, sz);
+               m.multiply(cam.getRotation());
+               m.multiply(RotationAxis.POSITIVE_Z.rotationDegrees(this.shardRot[i] + elapsed * 0.2F));
+
+               float sSize = this.shardScale[i] * (1.0F - shatterProg * 0.5F);
+               float shardA = (1.0F - shatterProg * 0.8F) * alpha;
+
+               ColorRGBA colCyan = new ColorRGBA(0.0F, 230.0F, 255.0F, shardA * 210.0F);
+               ColorRGBA colViolet = new ColorRGBA(220.0F, 60.0F, 255.0F, shardA * 210.0F);
+               ColorRGBA colGleam = new ColorRGBA(255.0F, 255.0F, 255.0F, shardA * 240.0F);
+
+               iIiiIIiii_Class360.I_method_a9f124df(m, buf, -sSize * 0.5F - 0.02F, -sSize * 0.5F, 0.0, sSize, sSize, colCyan);
+               iIiiIIiii_Class360.I_method_a9f124df(m, buf, -sSize * 0.5F + 0.02F, -sSize * 0.5F, 0.0, sSize, sSize, colViolet);
+               iIiiIIiii_Class360.I_method_a9f124df(m, buf, -sSize * 0.4F, -sSize * 0.4F, 0.0, sSize * 0.8F, sSize * 0.8F, colGleam);
+               m.pop();
+            }
+         }
+
+         m.pop();
+      }
+   }
+
+   static class SolarFlareEffect {
+      private final Vec3d pos;
+      private final ColorRGBA col;
+      private final long startTime;
+      private static final long DURATION = 3200L;
+      private final float[][] plasmaSparks = new float[36][3];
+      private final float[] sparkVelocity = new float[36];
+
+      SolarFlareEffect(Vec3d pos, ColorRGBA col) {
+         this.pos = pos;
+         this.col = col;
+         this.startTime = System.currentTimeMillis();
+         Random r = KillEffectsModule.RANDOM;
+         for (int i = 0; i < 36; i++) {
+            double ang = r.nextDouble() * Math.PI * 2.0;
+            float spd = 1.5F + r.nextFloat() * 3.5F;
+            this.plasmaSparks[i][0] = (float)Math.cos(ang) * spd;
+            this.plasmaSparks[i][1] = 1.0F + r.nextFloat() * 4.0F;
+            this.plasmaSparks[i][2] = (float)Math.sin(ang) * spd;
+            this.sparkVelocity[i] = 0.5F + r.nextFloat() * 0.8F;
+         }
+      }
+
+      boolean isExpired() {
+         return System.currentTimeMillis() - this.startTime > DURATION;
+      }
+
+      void render(Render3DEvent event, BufferBuilder buf, Camera cam) {
+         long elapsed = System.currentTimeMillis() - this.startTime;
+         float prog = MathHelper.clamp((float)elapsed / (float)DURATION, 0.0F, 1.0F);
+         float alpha = (prog < 0.85F) ? Math.min(1.0F, prog * 5.0F) : (1.0F - (prog - 0.85F) / 0.15F);
+         if (alpha <= 0.01F) return;
+
+         MatrixStack m = event.getMatrices();
+         Vec3d cpos = cam.getPos();
+
+         m.push();
+         m.translate(this.pos.x - cpos.x, this.pos.y - cpos.y, this.pos.z - cpos.z);
+
+         ColorRGBA solarWhite = new ColorRGBA(255.0F, 255.0F, 220.0F, 245.0F * alpha);
+         ColorRGBA solarGold = new ColorRGBA(255.0F, 190.0F, 30.0F, 220.0F * alpha);
+         ColorRGBA solarOrange = new ColorRGBA(255.0F, 80.0F, 10.0F, 190.0F * alpha);
+
+         float corePulse = 1.0F + (float)Math.sin(elapsed * 0.008F) * 0.15F;
+         float coreSize = (0.8F + (1.0F - prog) * 0.5F) * corePulse;
+         m.push();
+         m.translate(0.0, 1.3, 0.0);
+         m.multiply(cam.getRotation());
+         iIiiIIiii_Class360.I_method_a9f124df(m, buf, -coreSize * 1.2F * 0.5F, -coreSize * 1.2F * 0.5F, 0.0, coreSize * 1.2F, coreSize * 1.2F, solarOrange);
+         iIiiIIiii_Class360.I_method_a9f124df(m, buf, -coreSize * 0.8F * 0.5F, -coreSize * 0.8F * 0.5F, 0.0, coreSize * 0.8F, coreSize * 0.8F, solarGold);
+         iIiiIIiii_Class360.I_method_a9f124df(m, buf, -coreSize * 0.4F * 0.5F, -coreSize * 0.4F * 0.5F, 0.0, coreSize * 0.4F, coreSize * 0.4F, solarWhite);
+         m.pop();
+
+         for (int p = 0; p < 3; p++) {
+            float loopRot = p * 120.0F + elapsed * 0.05F;
+            m.push();
+            m.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(loopRot));
+
+            int arcSteps = 16;
+            for (int s = 0; s <= arcSteps; s++) {
+               float t = (float)s / (float)arcSteps;
+               float arcX = (t - 0.5F) * 2.8F;
+               float arcY = 1.3F + (1.0F - 4.0F * (t - 0.5F) * (t - 0.5F)) * 1.8F;
+               float arcZ = (float)Math.sin(t * Math.PI + elapsed * 0.006F) * 0.3F;
+
+               m.push();
+               m.translate(arcX, arcY, arcZ);
+               m.multiply(cam.getRotation());
+               float pSize = 0.22F * (1.0F - Math.abs(t - 0.5F));
+               ColorRGBA arcCol = (s % 2 == 0) ? solarGold : solarOrange;
+               iIiiIIiii_Class360.I_method_a9f124df(m, buf, -pSize * 0.5F, -pSize * 0.5F, 0.0, pSize, pSize, arcCol);
+               m.pop();
+            }
+            m.pop();
+         }
+
+         float sparkProg = (float)Math.pow(prog, 0.6);
+         for (int i = 0; i < 36; i++) {
+            float px = this.plasmaSparks[i][0] * sparkProg;
+            float py = 1.3F + this.plasmaSparks[i][1] * sparkProg - (prog * prog * 2.5F);
+            float pz = this.plasmaSparks[i][2] * sparkProg;
+
+            m.push();
+            m.translate(px, py, pz);
+            m.multiply(cam.getRotation());
+            float sparkSz = 0.16F * (1.0F - prog * 0.7F);
+            ColorRGBA sc = (i % 3 == 0) ? solarWhite : ((i % 2 == 0) ? solarGold : solarOrange);
+            iIiiIIiii_Class360.I_method_a9f124df(m, buf, -sparkSz * 0.5F, -sparkSz * 0.5F, 0.0, sparkSz, sparkSz, sc);
+            m.pop();
+         }
+
+         float groundR = 1.6F * (1.0F - prog * 0.2F);
+         for (int gr = 0; gr < 14; gr++) {
+            double ga = (Math.PI * 2.0 * gr) / 14.0;
+            m.push();
+            m.translate((float)Math.cos(ga) * groundR, 0.08F, (float)Math.sin(ga) * groundR);
+            m.multiply(cam.getRotation());
+            float gSz = 0.25F;
+            iIiiIIiii_Class360.I_method_a9f124df(m, buf, -gSz * 0.5F, -gSz * 0.5F, 0.0, gSz, gSz, solarOrange.withAlpha(alpha * 140.0F));
+            m.pop();
+         }
+
+         m.pop();
+      }
+   }
+
+   static class VoidTentaclesEffect {
+      private final Vec3d pos;
+      private final ColorRGBA col;
+      private final SkinTextures skin;
+      private final float initialYaw;
+      private final long startTime;
+      private static final long DURATION = 3500L;
+
+      VoidTentaclesEffect(Vec3d pos, ColorRGBA col, SkinTextures skin, float initialYaw) {
+         this.pos = pos;
+         this.col = col;
+         this.skin = (skin != null) ? skin : DefaultSkinHelper.getSkinTextures(UUID.randomUUID());
+         this.initialYaw = initialYaw;
+         this.startTime = System.currentTimeMillis();
+      }
+
+      boolean isExpired() {
+         return System.currentTimeMillis() - this.startTime > DURATION;
+      }
+
+      void render(Render3DEvent event, BufferBuilder buf, Camera cam) {
+         long elapsed = System.currentTimeMillis() - this.startTime;
+         float prog = MathHelper.clamp((float)elapsed / (float)DURATION, 0.0F, 1.0F);
+         float alpha = (prog < 0.85F) ? Math.min(1.0F, prog * 4.0F) : (1.0F - (prog - 0.85F) / 0.15F);
+         if (alpha <= 0.01F) return;
+
+         MatrixStack m = event.getMatrices();
+         Vec3d cpos = cam.getPos();
+
+         m.push();
+         m.translate(this.pos.x - cpos.x, this.pos.y - cpos.y, this.pos.z - cpos.z);
+
+         ColorRGBA voidBlack = new ColorRGBA(15.0F, 5.0F, 25.0F, 230.0F * alpha);
+         ColorRGBA voidPurple = new ColorRGBA(140.0F, 20.0F, 220.0F, 210.0F * alpha);
+         ColorRGBA voidNeon = new ColorRGBA(200.0F, 50.0F, 255.0F, 240.0F * alpha);
+
+         float riftRadius = 1.5F * Math.min(1.0F, prog * 3.0F);
+         int riftSegs = 20;
+         for (int s = 0; s < riftSegs; s++) {
+            double angle = (Math.PI * 2.0 * s) / riftSegs + (elapsed * 0.002);
+            float rx = (float)Math.cos(angle) * riftRadius;
+            float rz = (float)Math.sin(angle) * riftRadius;
+
+            m.push();
+            m.translate(rx, 0.05F, rz);
+            m.multiply(cam.getRotation());
+            float rSz = 0.45F;
+            ColorRGBA rc = (s % 2 == 0) ? voidPurple : voidBlack;
+            iIiiIIiii_Class360.I_method_a9f124df(m, buf, -rSz * 0.5F, -rSz * 0.5F, 0.0, rSz, rSz, rc);
+            m.pop();
+         }
+
+         int tentacleCount = 6;
+         float emerge = Math.min(1.0F, prog * 2.5F);
+
+         for (int t = 0; t < tentacleCount; t++) {
+            double baseAngle = (Math.PI * 2.0 * t) / tentacleCount;
+            float rootDist = 0.75F;
+            float rootX = (float)Math.cos(baseAngle) * rootDist;
+            float rootZ = (float)Math.sin(baseAngle) * rootDist;
+
+            int segCount = 12;
+            float curX = rootX;
+            float curY = 0.05F;
+            float curZ = rootZ;
+
+            for (int seg = 0; seg < segCount; seg++) {
+               float segT = (float)seg / (float)segCount;
+               float wave = (float)Math.sin(elapsed * 0.006F + t * 1.2F + seg * 0.5F);
+               float constrict = (prog > 0.4F) ? (prog - 0.4F) * 1.5F : 0.0F;
+
+               float targetRadius = Math.max(0.2F, rootDist * (1.0F - constrict * 0.7F));
+               float waveOffset = wave * 0.18F;
+
+               curX += (float)Math.cos(baseAngle) * (targetRadius / segCount) + waveOffset * (float)Math.sin(baseAngle);
+               curY += (2.2F * emerge) / segCount;
+               curZ += (float)Math.sin(baseAngle) * (targetRadius / segCount) - waveOffset * (float)Math.cos(baseAngle);
+
+               m.push();
+               m.translate(curX, curY, curZ);
+               m.multiply(cam.getRotation());
+
+               float nodeSz = (0.28F * (1.0F - segT * 0.65F));
+               ColorRGBA segCol = (seg == segCount - 1) ? voidNeon : ((seg % 2 == 0) ? voidPurple : voidBlack);
+               iIiiIIiii_Class360.I_method_a9f124df(m, buf, -nodeSz * 0.5F, -nodeSz * 0.5F, 0.0, nodeSz, nodeSz, segCol);
+               m.pop();
+            }
+         }
+
+         m.pop();
+      }
+
+      void renderModel(Render3DEvent event, Camera cam) {
+         long elapsed = System.currentTimeMillis() - this.startTime;
+         float prog = MathHelper.clamp((float)elapsed / (float)DURATION, 0.0F, 1.0F);
+         if (prog > 0.85F) return;
+
+         PlayerEntityModel victimModel = KillEffectsModule.getVictimModel();
+         if (victimModel == null || this.skin == null) return;
+
+         MatrixStack m = event.getMatrices();
+         Vec3d cpos = cam.getPos();
+
+         float sinkY = (prog > 0.35F) ? (float)Math.pow((prog - 0.35F) / 0.5F, 1.4) * 2.2F : 0.0F;
+         float struggle = (prog < 0.6F) ? (float)Math.sin(elapsed * 0.18F) * 0.05F : 0.0F;
+
+         m.push();
+         m.translate(this.pos.x - cpos.x + struggle, this.pos.y - cpos.y - sinkY, this.pos.z - cpos.z);
+         m.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(this.initialYaw));
+
+         m.scale(-0.9375F, -0.9375F, 0.9375F);
+         m.translate(0.0, -1.501, 0.0);
+
+         victimModel.leftArm.pitch = -2.2F;
+         victimModel.rightArm.pitch = -2.4F;
+         victimModel.leftArm.roll = -0.5F;
+         victimModel.rightArm.roll = 0.5F;
+         victimModel.head.pitch = -0.8F;
+
+         float modelAlpha = Math.max(0.1F, 1.0F - (sinkY / 2.2F));
+         int aInt = (int)(modelAlpha * 240.0F);
+         int tint = (aInt << 24) | 0x004B0082;
 
          try {
             VertexConsumerProvider.Immediate consumers = MinecraftClient.getInstance().getBufferBuilders().getEntityVertexConsumers();

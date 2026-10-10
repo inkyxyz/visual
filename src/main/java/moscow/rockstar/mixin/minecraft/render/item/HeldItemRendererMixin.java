@@ -203,7 +203,10 @@ public abstract class HeldItemRendererMixin {
          boolean var17 = var14 != null && var14.i_method_6c6ff6d1(IiiiIiii_Class120.I_field_10f66741);
          boolean var18 = var15 != null && var15.i_method_6c6ff6d1(IiiiIiii_Class120.I_field_10f66741);
          boolean var19 = var15 != null && var15.i_method_a9c2f090();
-         if (!var19) {
+         boolean customReplaced = rockstar.client.ItemChangerModule.shouldReplace(var3);
+         if (customReplaced) {
+            rockstar.client.ItemChangerModule.renderCustomItem(var3, var4, var5, var6, var7, var9);
+         } else if (!var19) {
             var12.call(new Object[]{var1, var2, var3, var4, var5, var6, var7, var8, var9, var10, var11});
          }
 

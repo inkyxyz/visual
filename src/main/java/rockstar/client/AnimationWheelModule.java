@@ -138,30 +138,60 @@ public class AnimationWheelModule extends Module {
     private static void applyWalkingTransforms(PlayerEntity player, BipedEntityModelAccessor accessor, float tickDelta) {
         if (INSTANCE == null || !INSTANCE.isEnabled()) return;
 
-        // 1. Roblox In-Air Jumping / Falling Animation
+        // 1. Roblox Climbing Animation (Ladders / Vines)
+        if (player.isClimbing()) {
+            float climbPhase = (player.age + tickDelta) * 0.45F;
+            float climbStep = (float) Math.sin(climbPhase);
+            accessor.rockstar$getBody().pitch = 0.04F;
+            accessor.rockstar$getBody().pivotY = Math.abs(climbStep) * 0.8F;
+            accessor.rockstar$getLeftArm().pitch = -2.15F + climbStep * 0.75F;
+            accessor.rockstar$getRightArm().pitch = -2.15F - climbStep * 0.75F;
+            accessor.rockstar$getLeftArm().roll = -0.22F;
+            accessor.rockstar$getRightArm().roll = 0.22F;
+            accessor.rockstar$getLeftLeg().pitch = -climbStep * 0.55F;
+            accessor.rockstar$getRightLeg().pitch = climbStep * 0.55F;
+            return;
+        }
+
+        // 2. Roblox Swimming Animation (Water)
+        if (player.isTouchingWater() || player.isSwimming()) {
+            float swimPhase = (player.age + tickDelta) * 0.35F;
+            float stroke = (float) Math.sin(swimPhase);
+            accessor.rockstar$getBody().pitch = player.isSwimming() ? 1.25F : 0.65F;
+            accessor.rockstar$getHead().pitch = -0.55F;
+            accessor.rockstar$getLeftArm().pitch = -0.85F + stroke * 0.95F;
+            accessor.rockstar$getLeftArm().roll = -0.45F - Math.abs((float) Math.cos(swimPhase)) * 0.65F;
+            accessor.rockstar$getRightArm().pitch = -0.85F - stroke * 0.95F;
+            accessor.rockstar$getRightArm().roll = 0.45F + Math.abs((float) Math.cos(swimPhase)) * 0.65F;
+            accessor.rockstar$getLeftLeg().pitch = (float) Math.sin(swimPhase * 2.2F) * 0.45F;
+            accessor.rockstar$getRightLeg().pitch = -(float) Math.sin(swimPhase * 2.2F) * 0.45F;
+            return;
+        }
+
+        // 3. Roblox In-Air Jumping / Falling Animation
         if (!player.isOnGround()) {
             double vy = player.getVelocity().y;
             if (vy > 0.05) {
-                // Ascending jump leap: torso leans slightly back, arms flare up & back, legs bend at knees
-                accessor.rockstar$getBody().pitch = -0.16F;
-                accessor.rockstar$getLeftArm().pitch = -1.55F;
-                accessor.rockstar$getRightArm().pitch = -1.55F;
-                accessor.rockstar$getLeftArm().roll = -0.38F;
-                accessor.rockstar$getRightArm().roll = 0.38F;
-                accessor.rockstar$getLeftLeg().pitch = 0.50F;
+                // Roblox R15/R6 Authentic Jump: arms flared straight up, legs bent up at knees
+                accessor.rockstar$getBody().pitch = -0.18F;
+                accessor.rockstar$getLeftArm().pitch = -2.25F;
+                accessor.rockstar$getRightArm().pitch = -2.25F;
+                accessor.rockstar$getLeftArm().roll = -0.55F;
+                accessor.rockstar$getRightArm().roll = 0.55F;
+                accessor.rockstar$getLeftLeg().pitch = 0.55F;
                 accessor.rockstar$getRightLeg().pitch = 0.32F;
-                accessor.rockstar$getLeftLeg().roll = -0.12F;
-                accessor.rockstar$getRightLeg().roll = 0.12F;
+                accessor.rockstar$getLeftLeg().roll = -0.15F;
+                accessor.rockstar$getRightLeg().roll = 0.15F;
             } else {
-                // Descending fall: torso leans slightly forward, arms reach high for balance with subtle flail
-                accessor.rockstar$getBody().pitch = 0.10F;
-                float flail = (float) Math.sin((player.age + tickDelta) * 0.3F) * 0.08F;
-                accessor.rockstar$getLeftArm().pitch = -2.25F + flail;
-                accessor.rockstar$getRightArm().pitch = -2.25F - flail;
-                accessor.rockstar$getLeftArm().roll = -0.22F;
-                accessor.rockstar$getRightArm().roll = 0.22F;
-                accessor.rockstar$getLeftLeg().pitch = -0.18F;
-                accessor.rockstar$getRightLeg().pitch = 0.08F;
+                // Roblox Freefall / Falling: torso leans forward, arms flailing back, panicked flutter kick
+                accessor.rockstar$getBody().pitch = 0.22F;
+                float flail = (float) Math.sin((player.age + tickDelta) * 0.45F) * 0.16F;
+                accessor.rockstar$getLeftArm().pitch = -2.55F + flail;
+                accessor.rockstar$getRightArm().pitch = -2.55F - flail;
+                accessor.rockstar$getLeftArm().roll = -0.42F;
+                accessor.rockstar$getRightArm().roll = 0.42F;
+                accessor.rockstar$getLeftLeg().pitch = -0.32F + flail * 0.8F;
+                accessor.rockstar$getRightLeg().pitch = 0.15F - flail * 0.8F;
             }
             return;
         }
@@ -169,7 +199,7 @@ public class AnimationWheelModule extends Module {
         boolean isMoving = player.getVelocity().horizontalLengthSquared() > 0.001;
         float timeSec = (player.age + tickDelta) * 0.22F;
 
-        // 2. Roblox Idle Animation (Breathing, posture, natural arm offset)
+        // 4. Roblox Idle Animation (Breathing, posture, natural arm offset)
         if (!isMoving) {
             float idlePhase = (player.age + tickDelta) * 0.08F;
             accessor.rockstar$getBody().pivotY = (float) Math.sin(idlePhase * 2.0F) * 0.45F;
@@ -183,69 +213,92 @@ public class AnimationWheelModule extends Module {
             return;
         }
 
-        // 3. Ground Walking Animations
-        if (INSTANCE.walkRoblox.isSelected() || INSTANCE.walkDefault.isSelected()) {
-            // Full authentic Roblox Walking: torso displacement bounce, hip/shoulder roll sway, arms swinging with outward flare
+        // 5. Ground Walking Animations
+        if (INSTANCE.walkRoblox.isSelected()) {
+            // Authentic Roblox R15/R6 Procedural Walk: cubic bounce, rigid swinging arms with outward flare
             float walkPhase = (player.age + tickDelta) * 0.65F;
             float swing = (float) Math.sin(walkPhase);
 
-            accessor.rockstar$getBody().yaw = swing * 0.15F;
-            accessor.rockstar$getBody().roll = swing * 0.08F;
-            accessor.rockstar$getBody().pivotY = Math.abs((float) Math.cos(walkPhase)) * 1.5F;
+            accessor.rockstar$getBody().yaw = swing * 0.18F;
+            accessor.rockstar$getBody().roll = swing * 0.10F;
+            accessor.rockstar$getBody().pivotY = Math.abs((float) Math.cos(walkPhase)) * 2.2F;
             accessor.rockstar$getHead().yaw = -swing * 0.08F;
             accessor.rockstar$getHead().pitch = 0.04F + Math.abs(swing) * 0.04F;
 
-            accessor.rockstar$getLeftArm().pitch = -swing * 0.85F;
-            accessor.rockstar$getRightArm().pitch = swing * 0.85F;
-            accessor.rockstar$getLeftArm().roll = -0.18F;
-            accessor.rockstar$getRightArm().roll = 0.18F;
+            accessor.rockstar$getLeftArm().pitch = -swing * 1.15F;
+            accessor.rockstar$getRightArm().pitch = swing * 1.15F;
+            accessor.rockstar$getLeftArm().roll = -0.28F;
+            accessor.rockstar$getRightArm().roll = 0.28F;
 
-            accessor.rockstar$getLeftLeg().pitch = swing * 0.75F;
-            accessor.rockstar$getRightLeg().pitch = -swing * 0.75F;
+            accessor.rockstar$getLeftLeg().pitch = swing * 0.95F;
+            accessor.rockstar$getRightLeg().pitch = -swing * 0.95F;
+        } else if (INSTANCE.walkDefault.isSelected()) {
+            // Enhanced Natural Human Walk: smooth torso sway, counter-rotating shoulders
+            float walkPhase = (player.age + tickDelta) * 0.55F;
+            float swing = (float) Math.sin(walkPhase);
+
+            accessor.rockstar$getBody().yaw = swing * 0.08F;
+            accessor.rockstar$getBody().roll = swing * 0.04F;
+            accessor.rockstar$getBody().pivotY = Math.abs((float) Math.cos(walkPhase)) * 0.8F;
+
+            accessor.rockstar$getLeftArm().pitch = -swing * 0.65F;
+            accessor.rockstar$getRightArm().pitch = swing * 0.65F;
+            accessor.rockstar$getLeftArm().roll = -0.12F;
+            accessor.rockstar$getRightArm().roll = 0.12F;
+
+            accessor.rockstar$getLeftLeg().pitch = swing * 0.65F;
+            accessor.rockstar$getRightLeg().pitch = -swing * 0.65F;
         } else if (INSTANCE.walkSkating.isSelected()) {
             // Коньки (Skating) - wide graceful leg kicks, body roll tilt
             float sway = (float) Math.sin(timeSec * 2.2F);
-            accessor.rockstar$getBody().roll = sway * 0.16F;
-            accessor.rockstar$getBody().pitch = 0.22F;
-            accessor.rockstar$getLeftLeg().roll = Math.max(0.0F, -sway) * 0.32F;
-            accessor.rockstar$getRightLeg().roll = Math.max(0.0F, sway) * 0.32F;
-            accessor.rockstar$getLeftLeg().yaw = -sway * 0.25F;
-            accessor.rockstar$getRightLeg().yaw = -sway * 0.25F;
-            accessor.rockstar$getLeftArm().pitch = 0.35F + sway * 0.35F;
-            accessor.rockstar$getRightArm().pitch = 0.35F - sway * 0.35F;
-            accessor.rockstar$getLeftArm().roll = -0.15F;
-            accessor.rockstar$getRightArm().roll = 0.15F;
+            accessor.rockstar$getBody().roll = sway * 0.22F;
+            accessor.rockstar$getBody().pitch = 0.28F;
+            accessor.rockstar$getLeftLeg().roll = Math.max(0.0F, -sway) * 0.42F;
+            accessor.rockstar$getRightLeg().roll = Math.max(0.0F, sway) * 0.42F;
+            accessor.rockstar$getLeftLeg().yaw = -sway * 0.32F;
+            accessor.rockstar$getRightLeg().yaw = -sway * 0.32F;
+            accessor.rockstar$getLeftArm().pitch = 0.45F + sway * 0.45F;
+            accessor.rockstar$getRightArm().pitch = 0.45F - sway * 0.45F;
+            accessor.rockstar$getLeftArm().roll = -0.20F;
+            accessor.rockstar$getRightArm().roll = 0.20F;
         } else if (INSTANCE.walkSprint.isSelected()) {
             // Спринт (Ninja Sprint) - deep forward lean, arms trailing back
-            accessor.rockstar$getBody().pitch = 0.52F;
-            accessor.rockstar$getHead().pitch = -0.45F;
-            accessor.rockstar$getLeftArm().pitch = 1.35F;
-            accessor.rockstar$getRightArm().pitch = 1.35F;
-            accessor.rockstar$getLeftArm().roll = -0.18F;
-            accessor.rockstar$getRightArm().roll = 0.18F;
+            accessor.rockstar$getBody().pitch = 0.65F;
+            accessor.rockstar$getHead().pitch = -0.55F;
+            accessor.rockstar$getLeftArm().pitch = 1.45F;
+            accessor.rockstar$getRightArm().pitch = 1.45F;
+            accessor.rockstar$getLeftArm().roll = -0.22F;
+            accessor.rockstar$getRightArm().roll = 0.22F;
+            float legSwing = (float) Math.sin((player.age + tickDelta) * 0.85F) * 0.85F;
+            accessor.rockstar$getLeftLeg().pitch = legSwing;
+            accessor.rockstar$getRightLeg().pitch = -legSwing;
         } else if (INSTANCE.walkMarch.isSelected()) {
             // Марш (March) - high knee lift, sharp swinging arms
-            float marchArm = (float) Math.sin(timeSec * 3.5F) * 1.15F;
+            float marchArm = (float) Math.sin(timeSec * 3.5F) * 1.35F;
             accessor.rockstar$getLeftArm().pitch = marchArm;
             accessor.rockstar$getRightArm().pitch = -marchArm;
+            accessor.rockstar$getLeftLeg().pitch = -marchArm * 0.85F;
+            accessor.rockstar$getRightLeg().pitch = marchArm * 0.85F;
             accessor.rockstar$getBody().pitch = -0.06F;
             accessor.rockstar$getHead().pitch = 0.04F;
         } else if (INSTANCE.walkSwagger.isSelected()) {
             // Вразвалку (Swagger) - exaggerated hip & shoulder roll sway
             float swagger = (float) Math.sin(timeSec * 2.0F);
-            accessor.rockstar$getBody().roll = swagger * 0.22F;
-            accessor.rockstar$getHead().roll = -swagger * 0.15F;
-            accessor.rockstar$getLeftArm().roll = -0.35F - swagger * 0.18F;
-            accessor.rockstar$getRightArm().roll = 0.35F - swagger * 0.18F;
+            accessor.rockstar$getBody().roll = swagger * 0.28F;
+            accessor.rockstar$getHead().roll = -swagger * 0.18F;
+            accessor.rockstar$getLeftArm().roll = -0.42F - swagger * 0.22F;
+            accessor.rockstar$getRightArm().roll = 0.42F - swagger * 0.22F;
+            accessor.rockstar$getLeftArm().pitch = swagger * 0.45F;
+            accessor.rockstar$getRightArm().pitch = -swagger * 0.45F;
         } else if (INSTANCE.walkZombie.isSelected()) {
             // Зомби (Zombie) - arms extended forward with subtle sway
             float sway = (float) Math.sin(timeSec * 2.5F) * 0.08F;
-            accessor.rockstar$getLeftArm().pitch = -1.55F + sway;
-            accessor.rockstar$getRightArm().pitch = -1.55F - sway;
-            accessor.rockstar$getLeftArm().roll = -0.08F;
-            accessor.rockstar$getRightArm().roll = 0.08F;
-            accessor.rockstar$getHead().pitch = 0.12F;
-            accessor.rockstar$getHead().roll = sway * 1.5F;
+            accessor.rockstar$getLeftArm().pitch = -1.65F + sway;
+            accessor.rockstar$getRightArm().pitch = -1.65F - sway;
+            accessor.rockstar$getLeftArm().roll = -0.10F;
+            accessor.rockstar$getRightArm().roll = 0.10F;
+            accessor.rockstar$getHead().pitch = 0.14F;
+            accessor.rockstar$getHead().roll = sway * 1.8F;
         } else if (INSTANCE.walkLevitation.isSelected()) {
             // Левитация (Hover / Gliding) - gentle floating hover
             float floatBob = (float) Math.sin(timeSec * 2.8F) * 0.06F;

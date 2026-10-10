@@ -51,6 +51,10 @@ implements iIIiIiIII_Class297 {
         return this;
     }
 
+    public BooleanSetting select() {
+        return this.I_method_decd82b5();
+    }
+
     public void I_method_4e1408b5(boolean bl) {
         if (this.I_field_5a == bl) {
             return;

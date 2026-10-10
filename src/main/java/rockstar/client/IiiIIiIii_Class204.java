@@ -86,88 +86,17 @@ public class IiiIIiIii_Class204 extends ii_Class4 implements iIIiIIiIi_Class294 
    }
    private final List<ShockwaveSpark> shockwaveSparks = new ArrayList<>();
 
-   private static class MenuPet3D {
+   private static class LogoParticle {
       float x, y, z;
       float vx, vy, vz;
-      float yaw, pitch, roll;
-      float scale;
-      float phase;
-      int theme; // 0: butterfly, 1: leaf, 2: fpv drone, 3: fish
-      float hitCooldown;
-
-      void reset(int activeTheme) {
-         this.theme = activeTheme;
-         double theta = Math.random() * Math.PI * 2.0;
-         double phi = (Math.random() - 0.5) * Math.PI * 0.75;
-         float dist = (float) (170.0 + Math.random() * 80.0);
-         this.x = (float) (Math.cos(phi) * Math.cos(theta) * dist);
-         this.y = (float) (Math.sin(phi) * dist * 0.7);
-         this.z = (float) (Math.cos(phi) * Math.sin(theta) * dist);
-
-         float targetX = (float) ((Math.random() - 0.5) * 14.0);
-         float targetY = (float) ((Math.random() - 0.5) * 16.0);
-         float targetZ = (float) ((Math.random() - 0.5) * 14.0);
-         float dx = targetX - this.x;
-         float dy = targetY - this.y;
-         float dz = targetZ - this.z;
-         float len = (float) Math.max(1.0, Math.sqrt(dx * dx + dy * dy + dz * dz));
-
-         float spd = switch (theme) {
-            case 2 -> (float) (85.0 + Math.random() * 50.0); // FPV drone
-            case 3 -> (float) (55.0 + Math.random() * 32.0); // Fish
-            case 1 -> (float) (35.0 + Math.random() * 22.0); // Autumn leaf
-            default -> (float) (45.0 + Math.random() * 26.0); // Butterfly
-         };
-         this.vx = (dx / len) * spd;
-         this.vy = (dy / len) * spd;
-         this.vz = (dz / len) * spd;
-         this.scale = (float) (2.4 + Math.random() * 0.7);
-         this.phase = (float) (Math.random() * Math.PI * 2.0);
-         this.hitCooldown = 0.0F;
-         this.yaw = (float) Math.toDegrees(Math.atan2(-dx, dz));
-         this.pitch = (float) Math.toDegrees(Math.atan2(-dy, Math.sqrt(dx * dx + dz * dz)));
-         this.roll = 0.0F;
-      }
-
-      void update(float dt, int activeTheme) {
-         if (this.theme != activeTheme) {
-            this.theme = activeTheme;
-         }
-         this.phase += dt * (theme == 2 ? 26.0F : (theme == 0 ? 14.0F : 8.0F));
-         if (this.hitCooldown > 0.0F) {
-            this.hitCooldown -= dt;
-            this.yaw += dt * 380.0F;
-            this.pitch += dt * 260.0F;
-         } else {
-            float lenXZ = (float) Math.sqrt(this.vx * this.vx + this.vz * this.vz);
-            float targetYaw = (float) Math.toDegrees(Math.atan2(-this.vx, this.vz));
-            float targetPitch = (float) Math.toDegrees(Math.atan2(-this.vy, lenXZ));
-            this.yaw += (targetYaw - this.yaw) * Math.min(1.0F, dt * 6.0F);
-            this.pitch += (targetPitch - this.pitch) * Math.min(1.0F, dt * 6.0F);
-         }
-         this.x += this.vx * dt;
-         this.y += this.vy * dt;
-         this.z += this.vz * dt;
-
-         float dist = (float) Math.sqrt(this.x * this.x + this.y * this.y + this.z * this.z);
-         if (dist > 300.0F || (dist < 8.0F && this.hitCooldown > 0.0F)) {
-            this.reset(activeTheme);
-         }
-      }
+      float rotX, rotY, rotZ;
+      float vRotX, vRotY, vRotZ;
+      float size;
+      float alpha;
+      int color;
    }
-   private static final List<MenuPet3D> GLOBAL_MENU_PETS = new ArrayList<>();
-   private final List<MenuPet3D> menuPets = GLOBAL_MENU_PETS;
+   private final List<LogoParticle> logoParticles = new ArrayList<>();
 
-   public static int getPetThemeForCurrentWallpaper() {
-      IiiIIiiIi_Class206 wp = getWallpaperManager();
-      int idx = wp != null ? wp.getCurrentWallpaperIndex() : 0;
-      return switch (idx) {
-         case 4, 11, 12 -> 2; // Ancient Nether, Crimson Forest, End Void -> FPV Drone
-         case 0, 3, 15 -> 3;  // Twilight Lagoon, Coral Abyss, Abyssal Trench -> Fish
-         case 2, 14 -> 1;     // Amber Windmill, Autumn Sanctuary -> Autumn Leaves
-         default -> 0;        // Sakura, Caves, Campfire, Blossom, etc. -> Butterflies
-      };
-   }
 
    private static final List<Node3D> GLOBAL_NODES_3D = new ArrayList<>();
 
@@ -252,14 +181,6 @@ public class IiiIIiIii_Class204 extends ii_Class4 implements iIIiIIiIi_Class294 
             Node3D n = new Node3D();
             n.reset(260.0F);
             this.nodes3D.add(n);
-         }
-      }
-      if (this.menuPets.isEmpty()) {
-         int curTheme = getPetThemeForCurrentWallpaper();
-         for (int i = 0; i < 20; i++) {
-            MenuPet3D pet = new MenuPet3D();
-            pet.reset(curTheme);
-            this.menuPets.add(pet);
          }
       }
       this.assembleProgress = 0.0F;
@@ -614,17 +535,25 @@ public class IiiIIiIii_Class204 extends ii_Class4 implements iIIiIIiIi_Class294 
                this.shockwaveAlpha = 1.0F;
                this.coreSquish = 0.58F;
                this.shockwaveSparks.clear();
-               for (int s = 0; s < 40; s++) {
-                  ShockwaveSpark sp = new ShockwaveSpark();
+               this.logoParticles.clear();
+               for (int s = 0; s < 48; s++) {
+                  LogoParticle lp = new LogoParticle();
                   double theta = Math.random() * Math.PI * 2.0;
                   double phi = (Math.random() - 0.5) * Math.PI;
-                  float spd = (float)(90.0 + Math.random() * 160.0);
-                  sp.vx = (float)(Math.cos(phi) * Math.cos(theta) * spd);
-                  sp.vy = (float)(Math.sin(phi) * spd);
-                  sp.vz = (float)(Math.cos(phi) * Math.sin(theta) * spd);
-                  sp.size = (float)(2.2 + Math.random() * 3.5);
-                  sp.alpha = 1.0F;
-                  this.shockwaveSparks.add(sp);
+                  float spd = (float)(85.0 + Math.random() * 220.0);
+                  lp.vx = (float)(Math.cos(phi) * Math.cos(theta) * spd);
+                  lp.vy = (float)(Math.sin(phi) * spd) - (float)(Math.random() * 70.0F);
+                  lp.vz = (float)(Math.cos(phi) * Math.sin(theta) * spd);
+                  lp.size = (float)(7.0 + Math.random() * 12.0);
+                  lp.alpha = 1.0F;
+                  lp.rotX = (float)(Math.random() * 360.0);
+                  lp.rotY = (float)(Math.random() * 360.0);
+                  lp.rotZ = (float)(Math.random() * 360.0);
+                  lp.vRotX = (float)((Math.random() - 0.5) * 600.0);
+                  lp.vRotY = (float)((Math.random() - 0.5) * 600.0);
+                  lp.vRotZ = (float)((Math.random() - 0.5) * 600.0);
+                  lp.color = (Math.random() > 0.4) ? 0xFFFFFFFF : 0xFF38E5FF;
+                  this.logoParticles.add(lp);
                }
                return;
             }
@@ -787,60 +716,36 @@ public class IiiIIiIii_Class204 extends ii_Class4 implements iIIiIIiIi_Class294 
          if (sbb != null) BufferRenderer.drawWithGlobalProgram(sbb);
       }
 
-      // --- 2. THEMED 3D PETS COLLIDING WITH 3D LETTER A ---
-      int activePetTheme = getPetThemeForCurrentWallpaper();
-      float letterARadius = 44.0F * this.coreSquish;
-
-      // Update & Draw Pets in 3D Space
-      for (MenuPet3D pet : this.menuPets) {
-         pet.update(dt, activePetTheme);
-
-         // Distance to center in 3D
-         float pDist = (float) Math.sqrt(pet.x * pet.x + pet.y * pet.y + pet.z * pet.z);
-         if (pDist < letterARadius + 8.0F && pet.hitCooldown <= 0.0F) {
-            // Collision with the 3D letter "A"!
-            pet.hitCooldown = 0.85F;
-            float nx = pet.x / Math.max(1.0F, pDist);
-            float ny = pet.y / Math.max(1.0F, pDist);
-            float nz = pet.z / Math.max(1.0F, pDist);
-            float dot = pet.vx * nx + pet.vy * ny + pet.vz * nz;
-
-            // Elastic bounce recoil
-            pet.vx = (pet.vx - 2.2F * dot * nx) + (float)(Math.random() - 0.5) * 35.0F;
-            pet.vy = (pet.vy - 2.2F * dot * ny) + (float)(Math.random() - 0.5) * 35.0F;
-            pet.vz = (pet.vz - 2.2F * dot * nz) + (float)(Math.random() - 0.5) * 35.0F;
-
-            // Impact recoil on letter "A"
-            this.spinVelocityY += (pet.vx > 0 ? 110.0F : -110.0F);
-            this.spinVelocityX += (pet.vy > 0 ? 80.0F : -80.0F);
-            this.coreSquish = 0.88F;
-
-            // Spawn collision spark particles
-            for (int s = 0; s < 7; s++) {
-               ShockwaveSpark sp = new ShockwaveSpark();
-               sp.x = pet.x; sp.y = pet.y; sp.z = pet.z;
-               sp.vx = nx * 85.0F + (float)(Math.random() - 0.5) * 60.0F;
-               sp.vy = ny * 85.0F + (float)(Math.random() - 0.5) * 60.0F;
-               sp.vz = nz * 85.0F + (float)(Math.random() - 0.5) * 60.0F;
-               sp.size = (float)(2.0 + Math.random() * 2.8);
-               sp.alpha = 1.0F;
-               this.shockwaveSparks.add(sp);
+      // --- 2. 3D INTERACTIVE DROPPING LOGO PARTICLES ---
+      if (!this.logoParticles.isEmpty()) {
+         for (int i = this.logoParticles.size() - 1; i >= 0; i--) {
+            LogoParticle lp = this.logoParticles.get(i);
+            lp.x += lp.vx * dt;
+            lp.y += lp.vy * dt;
+            lp.z += lp.vz * dt;
+            lp.vy += 140.0F * dt;
+            lp.vx *= (float) Math.pow(0.85, dt);
+            lp.vz *= (float) Math.pow(0.85, dt);
+            lp.rotX += lp.vRotX * dt;
+            lp.rotY += lp.vRotY * dt;
+            lp.rotZ += lp.vRotZ * dt;
+            lp.alpha -= dt * 0.85F;
+            if (lp.alpha <= 0.0F) {
+               this.logoParticles.remove(i);
+               continue;
             }
+
+            matrices.push();
+            matrices.translate(lp.x, lp.y, lp.z);
+            matrices.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(lp.rotY));
+            matrices.multiply(RotationAxis.POSITIVE_X.rotationDegrees(lp.rotX));
+            matrices.multiply(RotationAxis.POSITIVE_Z.rotationDegrees(lp.rotZ));
+            drawMiniLogoParticle(matrices, lp.size, lp.alpha * alpha, wallAccent, lp.color);
+            matrices.pop();
          }
-
-         // Draw Pet
-         matrices.push();
-         matrices.translate(pet.x, pet.y, pet.z);
-         matrices.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(pet.yaw));
-         matrices.multiply(RotationAxis.POSITIVE_X.rotationDegrees(pet.pitch));
-         matrices.multiply(RotationAxis.POSITIVE_Z.rotationDegrees(pet.roll));
-         matrices.scale(pet.scale, pet.scale, pet.scale);
-
-         drawSingle3DPet(matrices.peek().getPositionMatrix(), pet, activePetTheme, wallAccent, alpha);
-         matrices.pop();
       }
 
-      // --- 3. 3D MINIMALIST CLIENT LOGO (ROCKSTAR CHEVRON / DELTA EMBLEM) ---
+      // --- 3. 3D SMOOTH MINIMALIST CLIENT LOGO (AGRAVITY CHEVRON EMBLEM) ---
       float coreR = 54.0F * this.coreSquish * (1.0F + 0.04F * pulse);
       drawFaceted3DLogo(matrices, coreR, timeSec, wallAccent, alpha, prim, acc);
 
@@ -873,126 +778,46 @@ public class IiiIIiIii_Class204 extends ii_Class4 implements iIIiIIiIi_Class294 
    public static void render3DSceneGlobal(CustomDrawContext var1, float cx, float cy, float dt, float timeSec, float mouseXOffset, float mouseYOffset, ColorRGBA wallAccent, float alpha) {
    }
 
-   private static void drawSingle3DPet(Matrix4f mat, MenuPet3D pet, int theme, ColorRGBA wallAccent, float alpha) {
+   private static void drawMiniLogoParticle(MatrixStack matrices, float r, float pAlpha, ColorRGBA wallAccent, int color) {
+      if (pAlpha <= 0.01F) return;
+      Matrix4f mat = matrices.peek().getPositionMatrix();
       BufferBuilder buf = RenderSystem.renderThreadTesselator().begin(DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR);
-      int aInt = (int)(230.0F * alpha);
+      int a = (int)(255.0F * pAlpha);
+      int col = (color & 0x00FFFFFF) | (a << 24);
+      int sideCol = (wallAccent.getRGB() & 0x00FFFFFF) | ((int)(200.0F * pAlpha) << 24);
 
-      switch (theme) {
-         case 0 -> { // Бабочки (Butterflies with large flapping wings)
-            float flap = (float) Math.sin(pet.phase) * 0.75F;
-            int bodyCol = 0xFF222228;
-            int wingCol1 = (wallAccent.getRGB() & 0x00FFFFFF) | (aInt << 24);
-            int wingCol2 = 0xFFFFFFFF;
+      float z = r * 0.22F;
+      float topY = -r * 1.05F;
+      float wingR_X = r * 0.85F;
+      float wingR_Y = r * 0.75F;
+      float wingL_X = -r * 0.85F;
+      float wingL_Y = r * 0.75F;
+      float midY = -r * 0.10F;
+      float botY = r * 0.35F;
 
-            // Large Body
-            buf.vertex(mat, 0.0F, 0.0F, 11.0F).color(bodyCol);
-            buf.vertex(mat, -2.0F, 0.0F, 0.0F).color(bodyCol);
-            buf.vertex(mat, 2.0F, 0.0F, 0.0F).color(bodyCol);
+      // Front Chevron Faces
+      buf.vertex(mat, 0.0F, topY, z).color(col);
+      buf.vertex(mat, wingR_X, wingR_Y, z).color(col);
+      buf.vertex(mat, 0.0F, botY, z).color(col);
 
-            buf.vertex(mat, 0.0F, 0.0F, -11.0F).color(bodyCol);
-            buf.vertex(mat, 2.0F, 0.0F, 0.0F).color(bodyCol);
-            buf.vertex(mat, -2.0F, 0.0F, 0.0F).color(bodyCol);
+      buf.vertex(mat, 0.0F, topY, z).color(col);
+      buf.vertex(mat, 0.0F, botY, z).color(col);
+      buf.vertex(mat, wingL_X, wingL_Y, z).color(col);
 
-            // Left Wing (Enlarged)
-            float lx = -18.5F * (float)Math.cos(flap);
-            float ly = -18.5F * (float)Math.sin(flap);
-            buf.vertex(mat, 0.0F, 0.0F, 4.0F).color(wingCol1);
-            buf.vertex(mat, lx, ly, 13.0F).color(wingCol2);
-            buf.vertex(mat, lx * 0.9F, ly, -6.0F).color(wingCol1);
+      // Back Chevron Faces
+      buf.vertex(mat, 0.0F, topY, -z).color(sideCol);
+      buf.vertex(mat, 0.0F, botY, -z).color(sideCol);
+      buf.vertex(mat, wingR_X, wingR_Y, -z).color(sideCol);
 
-            buf.vertex(mat, 0.0F, 0.0F, -6.0F).color(wingCol1);
-            buf.vertex(mat, lx * 0.9F, ly, -6.0F).color(wingCol2);
-            buf.vertex(mat, lx * 0.6F, ly, -15.0F).color(wingCol1);
+      buf.vertex(mat, 0.0F, topY, -z).color(sideCol);
+      buf.vertex(mat, wingL_X, wingL_Y, -z).color(sideCol);
+      buf.vertex(mat, 0.0F, botY, -z).color(sideCol);
 
-            // Right Wing (Enlarged)
-            float rx = 18.5F * (float)Math.cos(flap);
-            float ry = -18.5F * (float)Math.sin(flap);
-            buf.vertex(mat, 0.0F, 0.0F, 4.0F).color(wingCol1);
-            buf.vertex(mat, rx * 0.9F, ry, -6.0F).color(wingCol1);
-            buf.vertex(mat, rx, ry, 13.0F).color(wingCol2);
-
-            buf.vertex(mat, 0.0F, 0.0F, -6.0F).color(wingCol1);
-            buf.vertex(mat, rx * 0.6F, ry, -15.0F).color(wingCol1);
-            buf.vertex(mat, rx * 0.9F, ry, -6.0F).color(wingCol2);
-         }
-         case 1 -> { // Листья (Enlarged Autumn Leaves tumbling in wind)
-            int leafAmber = 0xFFFFA028;
-            int leafCrimson = 0xFFFF4520;
-            int leafGold = 0xFFFFCC33;
-
-            buf.vertex(mat, 0.0F, 0.0F, 16.0F).color(leafGold);
-            buf.vertex(mat, -10.0F, 3.0F, 2.0F).color(leafAmber);
-            buf.vertex(mat, 0.0F, 0.0F, -14.0F).color(leafCrimson);
-
-            buf.vertex(mat, 0.0F, 0.0F, 16.0F).color(leafGold);
-            buf.vertex(mat, 0.0F, 0.0F, -14.0F).color(leafCrimson);
-            buf.vertex(mat, 10.0F, 3.0F, 2.0F).color(leafAmber);
-         }
-         case 2 -> { // FPV Дроны (Large Quadcopters with dual spinning rotors & LEDs)
-            int frameCol = 0xFF2A2D34;
-            int ledCol1 = (0x00FF3333) | (aInt << 24);
-            int ledCol2 = (0x0033E0FF) | (aInt << 24);
-            int propCol = (0x0088CCFF) | ((int)(170.0F * alpha) << 24);
-
-            // Center fuselage pod
-            buf.vertex(mat, -5.5F, -3.0F, 7.0F).color(frameCol);
-            buf.vertex(mat, 5.5F, -3.0F, 7.0F).color(frameCol);
-            buf.vertex(mat, 0.0F, 3.0F, -7.0F).color(frameCol);
-
-            // Forward LED eye
-            buf.vertex(mat, -2.5F, -2.0F, 7.4F).color(ledCol1);
-            buf.vertex(mat, 2.5F, -2.0F, 7.4F).color(ledCol1);
-            buf.vertex(mat, 0.0F, 1.2F, 7.4F).color(ledCol1);
-
-            // Rear LED indicator
-            buf.vertex(mat, -2.0F, 0.0F, -7.2F).color(ledCol2);
-            buf.vertex(mat, 2.0F, 0.0F, -7.2F).color(ledCol2);
-            buf.vertex(mat, 0.0F, 2.2F, -7.2F).color(ledCol2);
-
-            // 4 Long Carbon Arms & Rotor Propellers
-            float[][] arms = new float[][]{
-               {-14.0F, 12.0F}, {14.0F, 12.0F}, {-14.0F, -12.0F}, {14.0F, -12.0F}
-            };
-            float propSpin = pet.phase * 4.5F;
-            float pR = 8.0F;
-            for (float[] arm : arms) {
-               float ax = arm[0], az = arm[1];
-               buf.vertex(mat, 0.0F, 0.0F, 0.0F).color(frameCol);
-               buf.vertex(mat, ax, 0.0F, az).color(frameCol);
-               buf.vertex(mat, ax * 0.85F, -1.8F, az * 0.85F).color(frameCol);
-
-               float px1 = ax + (float)Math.cos(propSpin) * pR;
-               float pz1 = az + (float)Math.sin(propSpin) * pR;
-               float px2 = ax - (float)Math.cos(propSpin) * pR;
-               float pz2 = az - (float)Math.sin(propSpin) * pR;
-               buf.vertex(mat, ax, 1.2F, az).color(propCol);
-               buf.vertex(mat, px1, 1.2F, pz1).color(propCol);
-               buf.vertex(mat, px2, 1.2F, pz2).color(propCol);
-            }
-         }
-         case 3 -> { // Рыбки (Large Neon bioluminescent fish)
-            float tailWiggle = (float) Math.sin(pet.phase) * 0.60F;
-            int fishCyan = (0x0033E0FF) | (aInt << 24);
-            int fishDeep = (0x000A5588) | (aInt << 24);
-            int finCol = (0x0070FFFF) | ((int)(210.0F * alpha) << 24);
-
-            // Fish head & main body
-            buf.vertex(mat, 0.0F, 0.0F, 15.0F).color(fishCyan);
-            buf.vertex(mat, -6.0F, 0.0F, 3.0F).color(fishDeep);
-            buf.vertex(mat, 6.0F, 0.0F, 3.0F).color(fishDeep);
-
-            // Dorsal fin
-            buf.vertex(mat, 0.0F, 6.5F, 3.0F).color(finCol);
-            buf.vertex(mat, -6.0F, 0.0F, 3.0F).color(fishDeep);
-            buf.vertex(mat, 6.0F, 0.0F, 3.0F).color(fishDeep);
-
-            // Undulating tail fin
-            float tx = (float) Math.sin(tailWiggle) * 11.0F;
-            buf.vertex(mat, 0.0F, 0.0F, 3.0F).color(fishDeep);
-            buf.vertex(mat, tx - 3.5F, 6.5F, -15.0F).color(finCol);
-            buf.vertex(mat, tx + 3.5F, -6.5F, -15.0F).color(finCol);
-         }
-      }
+      // Sides
+      drawExtrusionQuad(buf, mat, 0.0F, topY, wingR_X, wingR_Y, z, sideCol);
+      drawExtrusionQuad(buf, mat, wingR_X, wingR_Y, 0.0F, botY, z, sideCol);
+      drawExtrusionQuad(buf, mat, 0.0F, botY, wingL_X, wingL_Y, z, sideCol);
+      drawExtrusionQuad(buf, mat, wingL_X, wingL_Y, 0.0F, topY, z, sideCol);
 
       BuiltBuffer b = buf.endNullable();
       if (b != null) BufferRenderer.drawWithGlobalProgram(b);
@@ -1002,81 +827,88 @@ public class IiiIIiIii_Class204 extends ii_Class4 implements iIIiIIiIi_Class294 
       Matrix4f mat = matrices.peek().getPositionMatrix();
       BufferBuilder buf = RenderSystem.renderThreadTesselator().begin(DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR);
 
-      // Minimalist Client Logo (Rockstar / Chevron Delta Vector Emblem)
+      // 24-point Ultra-Smooth Subdivided Curved Logo Geometry (Smooth Agravity Chevron)
       float[][] pts = new float[][]{
-         { 0.0F, -r * 1.15F },         // 0: Top Apex Tip
-         { r * 0.58F, -r * 0.15F },     // 1: Right Upper Shoulder
-         { r * 0.88F, r * 0.72F },      // 2: Right Wingtip Outer
-         { r * 0.85F, r * 0.90F },      // 3: Right Fin Outer Corner
-         { r * 0.58F, r * 0.95F },      // 4: Right Fin Bottom Curve
-         { r * 0.32F, r * 0.18F },      // 5: Right Inner Swept Flank
-         { 0.0F, -r * 0.18F },          // 6: Center Inner Arch Apex
-         { -r * 0.32F, r * 0.18F },     // 7: Left Inner Swept Flank
-         { -r * 0.58F, r * 0.95F },     // 8: Left Fin Bottom Curve
-         { -r * 0.85F, r * 0.90F },     // 9: Left Fin Outer Corner
-         { -r * 0.88F, r * 0.72F },     // 10: Left Wingtip Outer
-         { -r * 0.58F, -r * 0.15F }     // 11: Left Upper Shoulder
+         { 0.0F, -r * 1.16F },         // 0: Apex tip
+         { r * 0.18F, -r * 0.90F },     // 1
+         { r * 0.36F, -r * 0.58F },     // 2
+         { r * 0.54F, -r * 0.22F },     // 3
+         { r * 0.70F, r * 0.18F },      // 4
+         { r * 0.84F, r * 0.54F },      // 5
+         { r * 0.92F, r * 0.78F },      // 6: Outer Wingtip
+         { r * 0.86F, r * 0.94F },      // 7: Bottom outer curl
+         { r * 0.70F, r * 0.98F },      // 8: Bottom curve
+         { r * 0.54F, r * 0.82F },      // 9: Inner corner
+         { r * 0.38F, r * 0.52F },      // 10
+         { r * 0.22F, r * 0.20F },      // 11
+         { 0.0F, -r * 0.20F },          // 12: Inner Arch Apex
+         { -r * 0.22F, r * 0.20F },     // 13: Mirrored Left
+         { -r * 0.38F, r * 0.52F },     // 14
+         { -r * 0.54F, r * 0.82F },     // 15
+         { -r * 0.70F, r * 0.98F },     // 16
+         { -r * 0.86F, r * 0.94F },     // 17
+         { -r * 0.92F, r * 0.78F },     // 18: Left Wingtip
+         { -r * 0.84F, r * 0.54F },     // 19
+         { -r * 0.70F, r * 0.18F },     // 20
+         { -r * 0.54F, -r * 0.22F },    // 21
+         { -r * 0.36F, -r * 0.58F },    // 22
+         { -r * 0.18F, -r * 0.90F }     // 23
       };
       float z = r * 0.22F;
 
-      int fCol = ColorRGBA.WHITE.mix(wallAccent, 0.70F).withAlpha(235.0F * alpha).getRGB();
+      int fCol = ColorRGBA.WHITE.mix(wallAccent, 0.75F).withAlpha(240.0F * alpha).getRGB();
+      int fHighlight = ColorRGBA.WHITE.withAlpha(255.0F * alpha).getRGB();
       int bCol = wallAccent.withAlpha(160.0F * alpha).getRGB();
 
+      // Right Wing Triangles (smooth fan from inner spine 0, 12)
       int[][] tris = new int[][]{
-         // Right Wing
-         { 0, 1, 6 },
-         { 1, 5, 6 },
-         { 1, 2, 5 },
-         { 2, 3, 5 },
-         { 3, 4, 5 },
-         // Left Wing
-         { 0, 6, 11 },
-         { 11, 6, 7 },
-         { 11, 7, 10 },
-         { 10, 7, 9 },
-         { 9, 7, 8 }
+         { 0, 1, 12 }, { 1, 2, 12 }, { 2, 3, 12 }, { 3, 11, 12 },
+         { 3, 4, 11 }, { 4, 10, 11 }, { 4, 5, 10 }, { 5, 9, 10 },
+         { 5, 6, 9 }, { 6, 7, 9 }, { 7, 8, 9 },
+         // Left Wing Triangles
+         { 0, 12, 23 }, { 23, 12, 22 }, { 22, 12, 21 }, { 21, 12, 13 },
+         { 21, 13, 20 }, { 20, 13, 14 }, { 20, 14, 19 }, { 19, 14, 15 },
+         { 19, 15, 18 }, { 18, 15, 17 }, { 17, 15, 16 }
       };
 
-      // Front Face (+z)
+      // Smooth Front Face (+z) with Specular Shading
       for (int[] t : tris) {
-         buf.vertex(mat, pts[t[0]][0], pts[t[0]][1], z).color(fCol);
-         buf.vertex(mat, pts[t[1]][0], pts[t[1]][1], z).color(fCol);
-         buf.vertex(mat, pts[t[2]][0], pts[t[2]][1], z).color(fCol);
+         buf.vertex(mat, pts[t[0]][0], pts[t[0]][1], z).color(t[0] < 3 || t[0] > 21 ? fHighlight : fCol);
+         buf.vertex(mat, pts[t[1]][0], pts[t[1]][1], z).color(t[1] < 3 || t[1] > 21 ? fHighlight : fCol);
+         buf.vertex(mat, pts[t[2]][0], pts[t[2]][1], z).color(t[2] < 3 || t[2] > 21 ? fHighlight : fCol);
       }
 
-      // Back Face (-z)
+      // Smooth Back Face (-z)
       for (int[] t : tris) {
          buf.vertex(mat, pts[t[0]][0], pts[t[0]][1], -z).color(bCol);
          buf.vertex(mat, pts[t[2]][0], pts[t[2]][1], -z).color(bCol);
          buf.vertex(mat, pts[t[1]][0], pts[t[1]][1], -z).color(bCol);
       }
 
-      // Extrusion Side Wall Facets (+z to -z)
-      int sCol1 = wallAccent.withAlpha(200.0F * alpha).getRGB();
+      // Smooth Extrusion Side Wall Bevels (24 segments)
+      int sCol1 = wallAccent.withAlpha(210.0F * alpha).getRGB();
       int sCol2 = wallAccent.withAlpha(140.0F * alpha).getRGB();
-      for (int i = 0; i < 12; i++) {
-         int next = (i + 1) % 12;
-         int col = (i >= 5 && i <= 7) ? sCol2 : sCol1;
+      for (int i = 0; i < 24; i++) {
+         int next = (i + 1) % 24;
+         int col = (i >= 9 && i <= 15) ? sCol2 : sCol1;
          drawExtrusionQuad(buf, mat, pts[i][0], pts[i][1], pts[next][0], pts[next][1], z, col);
       }
 
       BuiltBuffer bBuilt = buf.endNullable();
       if (bBuilt != null) BufferRenderer.drawWithGlobalProgram(bBuilt);
 
-      // Glowing Edge Wireframe Lines
+      // Glowing Edge Wireframe Lines with Specular Bloom
       BufferBuilder lineBuf = RenderSystem.renderThreadTesselator().begin(DrawMode.DEBUG_LINES, VertexFormats.POSITION_COLOR);
       int edgeCol = (acc & 0x00FFFFFF) | ((int)(245.0F * alpha) << 24);
 
-      // Front and Back Perimeter Loop
-      for (int i = 0; i < 12; i++) {
-         int next = (i + 1) % 12;
+      for (int i = 0; i < 24; i++) {
+         int next = (i + 1) % 24;
          lineBuf.vertex(mat, pts[i][0], pts[i][1], z).color(edgeCol);
          lineBuf.vertex(mat, pts[next][0], pts[next][1], z).color(edgeCol);
 
          lineBuf.vertex(mat, pts[i][0], pts[i][1], -z).color(edgeCol);
          lineBuf.vertex(mat, pts[next][0], pts[next][1], -z).color(edgeCol);
 
-         // Connect Front to Back at each corner vertex
          lineBuf.vertex(mat, pts[i][0], pts[i][1], z).color(edgeCol);
          lineBuf.vertex(mat, pts[i][0], pts[i][1], -z).color(edgeCol);
       }
