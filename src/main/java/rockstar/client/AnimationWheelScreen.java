@@ -15,34 +15,80 @@ import pyrock.utility.render.ColorRGBA;
 
 public class AnimationWheelScreen extends ii_Class4 {
 
-    private static final AnimationWheelModule.CustomAnimation[] SLOTS = {
-        AnimationWheelModule.CustomAnimation.FLOSS,
-        AnimationWheelModule.CustomAnimation.TAKE_THE_L,
-        AnimationWheelModule.CustomAnimation.DEFAULT_DANCE,
-        AnimationWheelModule.CustomAnimation.ORANGE_JUSTICE,
-        AnimationWheelModule.CustomAnimation.GRIDDY,
-        AnimationWheelModule.CustomAnimation.HYPE,
-        AnimationWheelModule.CustomAnimation.WAVE,
-        AnimationWheelModule.CustomAnimation.T_POSE
+    private static final AnimationWheelModule.CustomAnimation[][] PAGES = {
+        {
+            AnimationWheelModule.CustomAnimation.FLOSS,
+            AnimationWheelModule.CustomAnimation.TAKE_THE_L,
+            AnimationWheelModule.CustomAnimation.DEFAULT_DANCE,
+            AnimationWheelModule.CustomAnimation.ORANGE_JUSTICE,
+            AnimationWheelModule.CustomAnimation.GRIDDY,
+            AnimationWheelModule.CustomAnimation.HYPE,
+            AnimationWheelModule.CustomAnimation.BACKFLIP,
+            AnimationWheelModule.CustomAnimation.WAVE,
+            AnimationWheelModule.CustomAnimation.CLAP,
+            AnimationWheelModule.CustomAnimation.T_POSE
+        },
+        {
+            AnimationWheelModule.CustomAnimation.FLEX,
+            AnimationWheelModule.CustomAnimation.FACEPALM,
+            AnimationWheelModule.CustomAnimation.SALUTE,
+            AnimationWheelModule.CustomAnimation.BOW,
+            AnimationWheelModule.CustomAnimation.LAUGH,
+            AnimationWheelModule.CustomAnimation.SHRUG,
+            AnimationWheelModule.CustomAnimation.DAB,
+            AnimationWheelModule.CustomAnimation.SIT,
+            AnimationWheelModule.CustomAnimation.SPIN,
+            AnimationWheelModule.CustomAnimation.NONE
+        }
     };
 
-    private static final String[] SLOT_RARITIES = {
-        "Эпический танец",
-        "Легендарный танец",
-        "Классический танец",
-        "Редкий танец",
-        "Эпический танец",
-        "Эпический танец",
-        "Эмоция",
-        "Особая поза"
+    private static final String[][] PAGE_RARITIES = {
+        {
+            "Эпический танец",
+            "Легендарный танец",
+            "Классический танец",
+            "Редкий танец",
+            "Эпический танец",
+            "Эпический танец",
+            "Акробатика",
+            "Приветствие",
+            "Аплодисменты",
+            "Особая поза"
+        },
+        {
+            "Флекс мышцами",
+            "Фейспалм жест",
+            "Воинское приветствие",
+            "Глубокий поклон",
+            "Искренний смех",
+            "Пожатие плечами",
+            "Дэб движение",
+            "Релакс поза",
+            "Сальто-вертушка",
+            "Сбросить анимацию"
+        }
     };
 
+    private static final String[] PAGE_TITLES = {
+        "Танцы & Движения",
+        "Эмоции & Позы"
+    };
+
+    private static int currentPage = 0;
     private float openAnim = 0.0F;
     private int hoveredIndex = -1;
     private int lastSoundSlot = -1;
-    private final float[] hoverAnims = new float[SLOTS.length];
+    private final float[] hoverAnims = new float[10];
 
     public AnimationWheelScreen() {
+    }
+
+    public static void nextPage() {
+        currentPage = (currentPage + 1) % PAGES.length;
+    }
+
+    public static void prevPage() {
+        currentPage = (currentPage - 1 + PAGES.length) % PAGES.length;
     }
 
     @Override
@@ -72,14 +118,17 @@ public class AnimationWheelScreen extends ii_Class4 {
         double dist = Math.sqrt(dx * dx + dy * dy);
         double mouseAngle = Math.atan2(dy, dx);
 
+        AnimationWheelModule.CustomAnimation[] activeSlots = PAGES[currentPage];
+        String[] activeRarities = PAGE_RARITIES[currentPage];
+
         // Determine hovered slot in radial coordinate space
         // Top slot (index 0) starts straight up at -90 degrees (-PI/2)
         this.hoveredIndex = -1;
         if (dist > 45.0 && dist < 170.0) {
             double normAngle = mouseAngle + Math.PI / 2.0;
             if (normAngle < 0) normAngle += Math.PI * 2.0;
-            double sectorSize = (Math.PI * 2.0) / SLOTS.length;
-            int idx = (int) Math.round(normAngle / sectorSize) % SLOTS.length;
+            double sectorSize = (Math.PI * 2.0) / activeSlots.length;
+            int idx = (int) Math.round(normAngle / sectorSize) % activeSlots.length;
             this.hoveredIndex = idx;
         }
 
@@ -94,7 +143,7 @@ public class AnimationWheelScreen extends ii_Class4 {
         }
 
         // Update smooth hover animations for each sector
-        for (int i = 0; i < SLOTS.length; i++) {
+        for (int i = 0; i < activeSlots.length; i++) {
             float target = (i == this.hoveredIndex) ? 1.0F : 0.0F;
             this.hoverAnims[i] += (target - this.hoverAnims[i]) * 0.28F;
         }
@@ -104,9 +153,25 @@ public class AnimationWheelScreen extends ii_Class4 {
         var1.getMatrices().scale(this.openAnim, this.openAnim, 1.0F);
         var1.getMatrices().translate(-cx, -cy, 0.0F);
 
+        // Page switcher header above the wheel
+        float pageBarW = 190.0F;
+        float pageBarH = 24.0F;
+        float pageBarX = cx - pageBarW / 2.0F;
+        float pageBarY = cy - 182.0F;
+        var1.drawRoundedRect(pageBarX, pageBarY, pageBarW, pageBarH, IIiii_Class8.I_method_893b2757(pageBarH / 2.0F), new ColorRGBA(14.0F, 17.0F, 26.0F, 220.0F));
+        var1.drawRoundedBorder(pageBarX, pageBarY, pageBarW, pageBarH, 1.0F, IIiii_Class8.I_method_893b2757(pageBarH / 2.0F), theme.withAlpha(120.0F));
+
+        String pageLabel = "◀  " + PAGE_TITLES[currentPage] + " (" + (currentPage + 1) + "/" + PAGES.length + ")  ▶";
+        float plW = subFont.I_method_2c375926(pageLabel);
+        var1.drawText(subFont, pageLabel, cx - plW / 2.0F, pageBarY + 8.0F, ColorRGBA.WHITE);
+
+        String pageHint = "[ Q / E или Колёсико мыши для смены страницы ]";
+        float phW = tagFont.I_method_2c375926(pageHint);
+        var1.drawText(tagFont, pageHint, cx - phW / 2.0F, pageBarY - 11.0F, new ColorRGBA(160.0F, 170.0F, 190.0F, 180.0F));
+
         // Ambient outer glow behind hovered wedge
         if (this.hoveredIndex >= 0) {
-            double activeAngle = (this.hoveredIndex * (Math.PI * 2.0 / SLOTS.length)) - Math.PI / 2.0;
+            double activeAngle = (this.hoveredIndex * (Math.PI * 2.0 / activeSlots.length)) - Math.PI / 2.0;
             float glowX = cx + (float) Math.cos(activeAngle) * 115.0F;
             float glowY = cy + (float) Math.sin(activeAngle) * 115.0F;
             var1.drawBlurredRect(glowX - 45.0F, glowY - 30.0F, 90.0F, 60.0F, 28.0F, 5.0F, IIiii_Class8.I_method_893b2757(16.0F), theme.withAlpha(120.0F * this.hoverAnims[this.hoveredIndex]));
@@ -117,7 +182,7 @@ public class AnimationWheelScreen extends ii_Class4 {
         // ========================================================
         float baseRIn = 52.0F;
         float baseROut = 142.0F;
-        double sectorSpan = (Math.PI * 2.0) / SLOTS.length;
+        double sectorSpan = (Math.PI * 2.0) / activeSlots.length;
         double gapRad = Math.toRadians(3.2); // Sleek divider gap between sectors
 
         var1.draw(); // Flush 2D batch
@@ -128,13 +193,13 @@ public class AnimationWheelScreen extends ii_Class4 {
         BufferBuilder buf = Tessellator.getInstance().begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_COLOR);
         Matrix4f mat = var1.getMatrices().peek().getPositionMatrix();
 
-        for (int i = 0; i < SLOTS.length; i++) {
+        for (int i = 0; i < activeSlots.length; i++) {
             double midA = (i * sectorSpan) - Math.PI / 2.0;
             double startA = midA - (sectorSpan / 2.0) + (gapRad / 2.0);
             double endA = midA + (sectorSpan / 2.0) - (gapRad / 2.0);
 
             float hProg = this.hoverAnims[i];
-            boolean isCurActive = (AnimationWheelModule.getActiveAnimation() == SLOTS[i]);
+            boolean isCurActive = (AnimationWheelModule.getActiveAnimation() == activeSlots[i]);
 
             float curRIn = baseRIn - 2.0F * hProg;
             float curROut = baseROut + 8.0F * hProg;
@@ -184,10 +249,10 @@ public class AnimationWheelScreen extends ii_Class4 {
         // ========================================================
         // 2. RENDER LABELS & BADGES INSIDE EACH SECTOR
         // ========================================================
-        for (int i = 0; i < SLOTS.length; i++) {
+        for (int i = 0; i < activeSlots.length; i++) {
             double midA = (i * sectorSpan) - Math.PI / 2.0;
             float hProg = this.hoverAnims[i];
-            boolean isCurActive = (AnimationWheelModule.getActiveAnimation() == SLOTS[i]);
+            boolean isCurActive = (AnimationWheelModule.getActiveAnimation() == activeSlots[i]);
 
             float curROut = baseROut + 8.0F * hProg;
             float midR = (baseRIn + curROut) / 2.0F + 4.0F * hProg;
@@ -209,7 +274,7 @@ public class AnimationWheelScreen extends ii_Class4 {
             var1.drawText(badgeFont, slotNumStr, bX - snW / 2.0F, bY - 4.0F, bText);
 
             // Emote Name in center of sector
-            String slotTitle = SLOTS[i].getTitle();
+            String slotTitle = activeSlots[i].getTitle();
             float textW = font.I_method_2c375926(slotTitle);
             float textH = font.I_method_a649725c();
 
@@ -217,7 +282,7 @@ public class AnimationWheelScreen extends ii_Class4 {
             var1.drawText(font, slotTitle, secX - textW / 2.0F, secY - textH / 2.0F, textCol);
 
             // Category tag under name
-            String catText = SLOTS[i].getCategory();
+            String catText = activeSlots[i].getCategory();
             float catW = tagFont.I_method_2c375926(catText);
             ColorRGBA catCol = (hProg > 0.05F) ? ColorRGBA.WHITE.withAlpha(200.0F) : new ColorRGBA(160.0F, 170.0F, 195.0F, 160.0F);
             var1.drawText(tagFont, catText, secX - catW / 2.0F, secY + textH / 2.0F + 1.0F, catCol);
@@ -239,8 +304,8 @@ public class AnimationWheelScreen extends ii_Class4 {
         var1.drawRoundedBorder(cx - innerRingR, cy - innerRingR, innerRingR * 2.0F, innerRingR * 2.0F, 0.8F, IIiii_Class8.I_method_893b2757(innerRingR), new ColorRGBA(255.0F, 255.0F, 255.0F, 25.0F));
 
         // Center hub display content
-        if (this.hoveredIndex >= 0 && this.hoveredIndex < SLOTS.length) {
-            AnimationWheelModule.CustomAnimation hoveredAnim = SLOTS[this.hoveredIndex];
+        if (this.hoveredIndex >= 0 && this.hoveredIndex < activeSlots.length) {
+            AnimationWheelModule.CustomAnimation hoveredAnim = activeSlots[this.hoveredIndex];
 
             // Slot badge indicator (e.g. "СЛОТ #1")
             String slotLabel = "СЛОТ #" + (this.hoveredIndex + 1);
@@ -253,7 +318,7 @@ public class AnimationWheelScreen extends ii_Class4 {
             var1.drawText(boldFont, title, cx - titleW / 2.0F, cy - 12.0F, ColorRGBA.WHITE);
 
             // Rarity / Description pill
-            String rarity = SLOT_RARITIES[this.hoveredIndex];
+            String rarity = activeRarities[this.hoveredIndex];
             float rw = tagFont.I_method_2c375926(rarity);
             float pillW = rw + 12.0F;
             float pillH = 13.0F;
@@ -275,11 +340,11 @@ public class AnimationWheelScreen extends ii_Class4 {
             float mtW = boldFont.I_method_2c375926(mainTitle);
             var1.drawText(boldFont, mainTitle, cx - mtW / 2.0F, cy - 8.0F, ColorRGBA.WHITE);
 
-            String sub = "8 танцев";
+            String sub = "20 движений";
             float subW = tagFont.I_method_2c375926(sub);
             var1.drawText(tagFont, sub, cx - subW / 2.0F, cy + 7.0F, theme.withAlpha(200.0F));
 
-            String guide = "Наведите мышь";
+            String guide = "Стр. " + (currentPage + 1) + " / " + PAGES.length;
             float guideW = subFont.I_method_2c375926(guide);
             var1.drawText(subFont, guide, cx - guideW / 2.0F, cy + 21.0F, new ColorRGBA(160.0F, 170.0F, 190.0F, 170.0F));
         }
@@ -432,18 +497,57 @@ public class AnimationWheelScreen extends ii_Class4 {
 
     @Override
     public void onMouseClicked(double mouseX, double mouseY, IiIII_Class9 button) {
-        if (this.hoveredIndex >= 0 && this.hoveredIndex < SLOTS.length) {
-            AnimationWheelModule.playAnimation(SLOTS[this.hoveredIndex]);
+        float cx = this.width / 2.0F;
+        float cy = this.height / 2.0F;
+        float pageBarW = 190.0F;
+        float pageBarH = 24.0F;
+        float pageBarX = cx - pageBarW / 2.0F;
+        float pageBarY = cy - 182.0F;
+
+        if (mouseX >= pageBarX && mouseX <= pageBarX + pageBarW && mouseY >= pageBarY && mouseY <= pageBarY + pageBarH) {
+            if (mouseX < cx) {
+                prevPage();
+            } else {
+                nextPage();
+            }
+            if (MinecraftClient.getInstance().player != null) {
+                MinecraftClient.getInstance().player.playSound(SoundEvents.UI_BUTTON_CLICK.value(), 0.5F, 1.2F);
+            }
+            return;
+        }
+
+        AnimationWheelModule.CustomAnimation[] activeSlots = PAGES[currentPage];
+        if (this.hoveredIndex >= 0 && this.hoveredIndex < activeSlots.length) {
+            AnimationWheelModule.playAnimation(activeSlots[this.hoveredIndex]);
             this.close();
         }
     }
 
     @Override
     public void onMouseReleased(double mouseX, double mouseY, IiIII_Class9 button) {
-        if (this.hoveredIndex >= 0 && this.hoveredIndex < SLOTS.length) {
-            AnimationWheelModule.playAnimation(SLOTS[this.hoveredIndex]);
+        AnimationWheelModule.CustomAnimation[] activeSlots = PAGES[currentPage];
+        if (this.hoveredIndex >= 0 && this.hoveredIndex < activeSlots.length) {
+            AnimationWheelModule.playAnimation(activeSlots[this.hoveredIndex]);
             this.close();
         }
+    }
+
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmount, double verticalAmount) {
+        if (verticalAmount > 0) {
+            prevPage();
+            if (MinecraftClient.getInstance().player != null) {
+                MinecraftClient.getInstance().player.playSound(SoundEvents.UI_BUTTON_CLICK.value(), 0.35F, 1.4F);
+            }
+            return true;
+        } else if (verticalAmount < 0) {
+            nextPage();
+            if (MinecraftClient.getInstance().player != null) {
+                MinecraftClient.getInstance().player.playSound(SoundEvents.UI_BUTTON_CLICK.value(), 0.35F, 1.4F);
+            }
+            return true;
+        }
+        return super.mouseScrolled(mouseX, mouseY, horizontalAmount, verticalAmount);
     }
 
     @Override
@@ -451,6 +555,14 @@ public class AnimationWheelScreen extends ii_Class4 {
         int wheelKey = AnimationWheelModule.getInstance() != null ? AnimationWheelModule.getInstance().getWheelKey() : GLFW.GLFW_KEY_B;
         if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
             this.close();
+            return true;
+        }
+        if (keyCode == GLFW.GLFW_KEY_A || keyCode == GLFW.GLFW_KEY_LEFT || keyCode == GLFW.GLFW_KEY_Q) {
+            prevPage();
+            return true;
+        }
+        if (keyCode == GLFW.GLFW_KEY_D || keyCode == GLFW.GLFW_KEY_RIGHT || keyCode == GLFW.GLFW_KEY_E) {
+            nextPage();
             return true;
         }
         return super.keyPressed(keyCode, scanCode, modifiers);
@@ -461,8 +573,9 @@ public class AnimationWheelScreen extends ii_Class4 {
         int wheelKey = AnimationWheelModule.getInstance() != null ? AnimationWheelModule.getInstance().getWheelKey() : GLFW.GLFW_KEY_B;
         // Releasing the animation wheel key (B) executes the currently hovered emote (Fortnite style!)
         if (wheelKey > 0 && keyCode == wheelKey) {
-            if (this.hoveredIndex >= 0 && this.hoveredIndex < SLOTS.length) {
-                AnimationWheelModule.playAnimation(SLOTS[this.hoveredIndex]);
+            AnimationWheelModule.CustomAnimation[] activeSlots = PAGES[currentPage];
+            if (this.hoveredIndex >= 0 && this.hoveredIndex < activeSlots.length) {
+                AnimationWheelModule.playAnimation(activeSlots[this.hoveredIndex]);
             }
             this.close();
             return true;

@@ -22,6 +22,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import rockstar.client.IiIiIIII_Class81;
 import rockstar.client.RockstarClient;
+import rockstar.client.IiiIIiIii_Class204;
 import rockstar.client.iIIIiiIii_Class284;
 import rockstar.client.iIIIiiiII_Class285;
 import rockstar.client.iIIiIIiIi_Class294;
@@ -89,11 +90,12 @@ implements iIIiIIiIi_Class294 {
         ServerInfo serverInfo = I_field_3a9bda27.getCurrentServerEntry();
         GameMenuScreenMixin.I_field_3a9bda27.world.disconnect();
         I_field_3a9bda27.disconnect();
+        IiiIIiIii_Class204.triggerReturnAnimation = true;
         TitleScreen titleScreen = new TitleScreen();
         if (serverInfo != null && serverInfo.isRealm()) {
             I_field_3a9bda27.setScreen((Screen)new RealmsMainScreen((Screen)titleScreen));
         } else {
-            I_field_3a9bda27.setScreen((Screen)new MultiplayerScreen((Screen)titleScreen));
+            I_field_3a9bda27.setScreen((Screen)new IiiIIiIii_Class204());
         }
     }
 }

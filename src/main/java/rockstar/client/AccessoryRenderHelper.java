@@ -22,64 +22,68 @@ public class AccessoryRenderHelper {
     public static final Identifier TEX_SHURIKEN = RockstarClient.id("textures/accessories/shuriken.png");
 
     public static void applyHeadAnchor(MatrixStack m, ClientPlayerEntity player, double ix, double iy, double iz, float headYaw, float headPitch, float bodyYaw, float scale, float yOffset) {
-        double headX = ix;
-        double headY = iy + player.getEyeHeight(player.getPose()) - 0.10;
-        double headZ = iz;
-        if (player.isSneaking()) {
-            headX -= Math.sin(Math.toRadians(bodyYaw)) * 0.16;
-            headZ += Math.cos(Math.toRadians(bodyYaw)) * 0.16;
-            headY -= 0.04;
-        }
+        boolean sneak = player.isSneaking();
+        double forward = sneak ? 0.24 : 0.0;
+        double radYaw = Math.toRadians(bodyYaw);
+        double headX = ix - Math.sin(radYaw) * forward;
+        double headZ = iz + Math.cos(radYaw) * forward;
+        double headY = iy + (sneak ? 1.34 : 1.66) + yOffset;
+
         m.translate(headX, headY, headZ);
         m.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(180.0F - headYaw));
         m.multiply(RotationAxis.POSITIVE_X.rotationDegrees(-headPitch));
-        m.translate(0.0, 0.18 + yOffset, 0.0);
+        m.translate(0.0, 0.14, 0.0);
         m.scale(scale, scale, scale);
     }
 
     public static void applyFaceAnchor(MatrixStack m, ClientPlayerEntity player, double ix, double iy, double iz, float headYaw, float headPitch, float bodyYaw, float scale, float yOffset) {
-        double headX = ix;
-        double headY = iy + player.getEyeHeight(player.getPose()) - 0.10;
-        double headZ = iz;
-        if (player.isSneaking()) {
-            headX -= Math.sin(Math.toRadians(bodyYaw)) * 0.16;
-            headZ += Math.cos(Math.toRadians(bodyYaw)) * 0.16;
-            headY -= 0.04;
-        }
+        boolean sneak = player.isSneaking();
+        double forward = sneak ? 0.24 : 0.0;
+        double radYaw = Math.toRadians(bodyYaw);
+        double headX = ix - Math.sin(radYaw) * forward;
+        double headZ = iz + Math.cos(radYaw) * forward;
+        double headY = iy + (sneak ? 1.34 : 1.66) + yOffset;
+
         m.translate(headX, headY, headZ);
         m.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(180.0F - headYaw));
         m.multiply(RotationAxis.POSITIVE_X.rotationDegrees(-headPitch));
-        m.translate(0.0, 0.02 + yOffset, 0.0);
+        m.translate(0.0, 0.0, 0.0);
         m.scale(scale, scale, scale);
     }
 
     public static void applyTorsoAnchor(MatrixStack m, ClientPlayerEntity player, double ix, double iy, double iz, float bodyYaw, float scale, float yOffset) {
-        float torsoHeight = player.getHeight() * 0.58F;
-        m.translate(ix, iy + torsoHeight, iz);
+        boolean sneak = player.isSneaking();
+        double torsoY = iy + (sneak ? 0.76 : 1.02);
+        m.translate(ix, torsoY, iz);
         m.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(180.0F - bodyYaw));
-        if (player.isSneaking()) {
-            m.translate(0.0, -0.16, 0.22);
-            m.multiply(RotationAxis.POSITIVE_X.rotationDegrees(28.0F));
+        if (sneak) {
+            m.multiply(RotationAxis.POSITIVE_X.rotationDegrees(28.6F));
+            m.translate(0.0, 0.0, 0.06);
         }
         m.translate(0.0, yOffset, 0.0);
         m.scale(scale, scale, scale);
     }
 
     public static void applyOrbitAnchor(MatrixStack m, ClientPlayerEntity player, double ix, double iy, double iz, float bodyYaw, float scale, float radius, float yOffset) {
-        float waistHeight = player.getHeight() * 0.45F;
-        m.translate(ix, iy + waistHeight, iz);
+        boolean sneak = player.isSneaking();
+        double waistY = iy + (sneak ? 0.62 : 0.82);
+        m.translate(ix, waistY, iz);
         m.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(180.0F - bodyYaw));
-        if (player.isSneaking()) {
-            m.translate(0.0, -0.10, 0.12);
+        if (sneak) {
+            m.translate(0.0, 0.0, 0.10);
         }
         m.translate(0.0, yOffset, 0.0);
         m.scale(scale * radius, scale, scale * radius);
     }
 
     public static void applyPetAnchor(MatrixStack m, ClientPlayerEntity player, double ix, double iy, double iz, float bodyYaw, float scale, float dist, float yOffset) {
-        float shoulderHeight = player.getHeight() * 0.65F;
-        m.translate(ix, iy + shoulderHeight, iz);
+        boolean sneak = player.isSneaking();
+        double shoulderY = iy + (sneak ? 0.88 : 1.18);
+        m.translate(ix, shoulderY, iz);
         m.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(180.0F - bodyYaw));
+        if (sneak) {
+            m.translate(0.0, 0.0, 0.08);
+        }
         m.translate(-0.35 * (dist - 1.0), yOffset, -0.20 * (dist - 1.0));
         m.scale(scale, scale, scale);
     }

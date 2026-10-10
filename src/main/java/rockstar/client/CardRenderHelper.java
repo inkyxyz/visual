@@ -17,6 +17,8 @@ public class CardRenderHelper {
 
     public static boolean globalCardGlow = false;
     public static ColorRGBA globalGlowColor = null;
+    public static float globalGlowAlpha = 1.0F;
+    public static float globalGlowSpread = 0.25F;
     public static final Identifier BLOOM_TEXTURE = RockstarClient.id("textures/bloom.png");
 
     // 4 ACES
@@ -218,7 +220,7 @@ public class CardRenderHelper {
         // 1. Backlight Illumination: Smooth Radial Gradient Bloom & Edge Falloff (no harsh outlines)
         if (glow || globalCardGlow) {
             ColorRGBA gCol = glowColor != null ? glowColor : (globalGlowColor != null ? globalGlowColor : IiiiiIIIi_Class242.I_method_7df8e08e());
-            float gAlpha = Math.min(1.0F, Math.max(0.0F, alpha));
+            float gAlpha = Math.min(1.0F, Math.max(0.0F, alpha * globalGlowAlpha));
             if (gAlpha > 0.01F) {
                 RenderSystem.enableBlend();
                 RenderSystem.blendFunc(GlStateManager.SrcFactor.SRC_ALPHA, GlStateManager.DstFactor.ONE);
@@ -264,7 +266,7 @@ public class CardRenderHelper {
 
                 // 1B. Seamless 9-Slice Rounded Corner Glow (4 edge quads + 4 radial corner fans)
                 RenderSystem.setShader(ShaderProgramKeys.POSITION_COLOR);
-                float spread = maxDim * 0.25F;
+                float spread = maxDim * Math.max(0.05F, Math.min(0.8F, globalGlowSpread));
                 int edgeInner = gCol.withAlpha((int)(gAlpha * 140.0F)).getRGB();
                 int edgeOuter = gCol.withAlpha(0).getRGB();
                 float glowZ = -0.001F;

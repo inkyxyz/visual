@@ -23,38 +23,50 @@ public abstract class GameOptionsScreenMixin extends Screen {
         if (this.client == null) return;
 
         List<Element> children = ((ScreenAccessor) this).getChildren();
-        ClickableWidget doneBtn = null;
-        ClickableWidget cancelBtn = null;
+        List<ClickableWidget> bottomWidgets = new java.util.ArrayList<>();
 
         for (Element elem : children) {
-            if (elem instanceof ClickableWidget widget) {
-                String txt = widget.getMessage().getString().toLowerCase();
-                if (txt.contains("done") || txt.contains("\u0433\u043e\u0442\u043e\u0432")) {
-                    doneBtn = widget;
-                } else if (txt.contains("cancel") || txt.contains("\u043e\u0442\u043c\u0435\u043d") || txt.contains("back") || txt.contains("\u043d\u0430\u0437\u0430\u0434")) {
-                    cancelBtn = widget;
+            if (elem instanceof ClickableWidget widget && widget.visible) {
+                if (widget.getY() >= this.height - 45) {
+                    bottomWidgets.add(widget);
                 }
             }
         }
 
-        if (doneBtn != null && cancelBtn != null) {
-            int btnW = Math.min(150, (this.width - 32 - 12) / 2);
-            int startX = (this.width - (btnW * 2 + 12)) / 2;
-            cancelBtn.setWidth(btnW);
-            cancelBtn.setHeight(24);
-            cancelBtn.setX(startX);
-            cancelBtn.setY(this.height - 32);
+        if (bottomWidgets.isEmpty()) {
+            return;
+        }
 
-            doneBtn.setWidth(btnW);
-            doneBtn.setHeight(24);
-            doneBtn.setX(startX + btnW + 12);
-            doneBtn.setY(this.height - 32);
-        } else if (doneBtn != null) {
-            int doneW = Math.min(200, this.width - 32);
-            doneBtn.setWidth(doneW);
-            doneBtn.setHeight(24);
-            doneBtn.setX((this.width - doneW) / 2);
-            doneBtn.setY(this.height - 32);
+        // Sort by X coordinate to preserve left-to-right logical ordering
+        bottomWidgets.sort(java.util.Comparator.comparingInt(ClickableWidget::getX));
+
+        int count = bottomWidgets.size();
+        int gap = 10;
+        int btnH = 24;
+        int btnY = this.height - 32;
+
+        if (count == 1) {
+            ClickableWidget single = bottomWidgets.get(0);
+            int btnW = Math.min(200, this.width - 32);
+            single.setWidth(btnW);
+            single.setHeight(btnH);
+            single.setX((this.width - btnW) / 2);
+            single.setY(btnY);
+        } else {
+            int maxTotalW = this.width - 32;
+            int totalGaps = gap * (count - 1);
+            int idealBtnW = 150;
+            int btnW = Math.min(idealBtnW, (maxTotalW - totalGaps) / count);
+            int totalW = btnW * count + totalGaps;
+            int startX = (this.width - totalW) / 2;
+
+            for (int i = 0; i < count; i++) {
+                ClickableWidget w = bottomWidgets.get(i);
+                w.setWidth(btnW);
+                w.setHeight(btnH);
+                w.setX(startX + i * (btnW + gap));
+                w.setY(btnY);
+            }
         }
     }
 }

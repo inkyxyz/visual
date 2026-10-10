@@ -43,6 +43,19 @@ public class AltManagerScreen extends ii_Class4 {
     private static PlayerEntityModel PLAYER_MODEL;
     private static boolean loaded = false;
 
+    public static PlayerEntityModel getPlayerModel() {
+        if (PLAYER_MODEL == null) {
+            PLAYER_MODEL = new PlayerEntityModel(MinecraftClient.getInstance().getLoadedEntityModels().getModelPart(EntityModelLayers.PLAYER), false);
+        }
+        return PLAYER_MODEL;
+    }
+
+    public static final String[] POSE_NAMES = {
+        "Приветствие", "Уверенность", "Мыслитель", "Герой", "Чилл",
+        "Присед", "Прицел", "Блок мечом", "Дэб", "Т-Поза"
+    };
+    public static int currentPoseIndex = 0;
+
     private final Screen parent;
     private String inputText = "";
     private boolean inputFocused = false;
@@ -471,8 +484,19 @@ public class AltManagerScreen extends ii_Class4 {
 
 
 
-        // Carousel Dots Indicator (below model)
+        // Pose Switcher Glass Button
         float dotsY = cardY + cardH - 62.0F;
+        float poseW = 120.0F, poseH = 17.0F;
+        float poseX = carouselCX - poseW / 2.0F;
+        float poseY = dotsY - 22.0F;
+        boolean poseHov = iIIiIIIiI_Class291.I_method_c3f86263(poseX, poseY, poseW, poseH, mx, my);
+        IIiii_Class8 poseRad = IIiii_Class8.I_method_893b2757(poseH / 2.0F);
+        var1.drawRoundedRect(poseX, poseY, poseW, poseH, poseRad, poseHov ? themeAccent.withAlpha(70.0F * screenAlpha) : new ColorRGBA(255.0F, 255.0F, 255.0F, 14.0F * screenAlpha));
+        var1.drawRoundedBorder(poseX, poseY, poseW, poseH, 0.8F, poseRad, poseHov ? themeAccent.withAlpha(180.0F * screenAlpha) : new ColorRGBA(255.0F, 255.0F, 255.0F, 25.0F * screenAlpha));
+        String poseText = "Поза: " + POSE_NAMES[currentPoseIndex % POSE_NAMES.length];
+        var1.drawCenteredText(smallFont, poseText, carouselCX, poseY + 4.0F, ColorRGBA.WHITE.withAlpha(poseHov ? 255.0F * screenAlpha : 210.0F * screenAlpha));
+
+        // Carousel Dots Indicator (below model)
         int dotCount = Math.min(10, ACCOUNTS.size());
         if (dotCount > 1) {
             float dotGap = 8.0F;
@@ -610,21 +634,19 @@ public class AltManagerScreen extends ii_Class4 {
     private void applySmoothPose(int accountIdx, boolean isSelected, float timeSec) {
         resetModelRotations();
 
-        int pose = Math.abs(accountIdx) % 5;
+        int pose = isSelected ? (currentPoseIndex % POSE_NAMES.length) : (Math.abs(accountIdx) % POSE_NAMES.length);
         float breath = (float) Math.sin(timeSec * 2.2F) * 0.03F;
 
         if (isSelected) {
             switch (pose) {
-                case 0 -> { // Friendly Wave (Gentle smooth wave + natural posture)
+                case 0 -> { // Friendly Wave
                     float wave = (float) Math.sin(timeSec * 4.2F) * 0.22F;
                     PLAYER_MODEL.rightArm.pitch = -2.35F;
                     PLAYER_MODEL.rightArm.yaw = -0.15F;
                     PLAYER_MODEL.rightArm.roll = 0.45F + wave;
-
                     PLAYER_MODEL.head.pitch = -0.06F + breath;
                     PLAYER_MODEL.head.roll = 0.08F;
                     PLAYER_MODEL.head.yaw = wave * 0.20F;
-
                     PLAYER_MODEL.leftArm.pitch = 0.15F + breath;
                     PLAYER_MODEL.leftArm.roll = -0.20F;
                     PLAYER_MODEL.leftLeg.pitch = 0.05F;
@@ -632,65 +654,100 @@ public class AltManagerScreen extends ii_Class4 {
                     PLAYER_MODEL.leftLeg.roll = -0.05F;
                     PLAYER_MODEL.rightLeg.roll = 0.05F;
                 }
-                case 1 -> { // Confident Stance (Hands on hips, smooth weight sway)
+                case 1 -> { // Confident Stance
                     float sway = (float) Math.sin(timeSec * 1.8F) * 0.04F;
                     PLAYER_MODEL.body.roll = sway;
                     PLAYER_MODEL.head.yaw = -sway * 1.5F;
                     PLAYER_MODEL.head.pitch = -0.04F + breath;
-
                     PLAYER_MODEL.rightArm.pitch = 0.25F;
                     PLAYER_MODEL.rightArm.roll = 0.40F;
                     PLAYER_MODEL.rightArm.yaw = 0.12F;
-
                     PLAYER_MODEL.leftArm.pitch = 0.25F;
                     PLAYER_MODEL.leftArm.roll = -0.40F;
                     PLAYER_MODEL.leftArm.yaw = -0.12F;
-
                     PLAYER_MODEL.leftLeg.roll = -0.08F;
                     PLAYER_MODEL.rightLeg.roll = 0.08F;
                 }
-                case 2 -> { // The Thinker (Hand thoughtfully to chin)
+                case 2 -> { // The Thinker
                     float thinkBob = (float) Math.sin(timeSec * 1.5F) * 0.03F;
                     PLAYER_MODEL.head.pitch = 0.12F + thinkBob;
                     PLAYER_MODEL.head.yaw = -0.16F;
                     PLAYER_MODEL.head.roll = 0.06F;
-
                     PLAYER_MODEL.rightArm.pitch = -1.75F;
                     PLAYER_MODEL.rightArm.roll = -0.20F;
                     PLAYER_MODEL.rightArm.yaw = -0.32F;
-
                     PLAYER_MODEL.leftArm.pitch = 0.35F;
                     PLAYER_MODEL.leftArm.roll = -0.38F;
                     PLAYER_MODEL.leftArm.yaw = -0.15F;
-
                     PLAYER_MODEL.leftLeg.roll = -0.06F;
                     PLAYER_MODEL.rightLeg.roll = 0.06F;
                 }
-                case 3 -> { // Heroic Champion (Fist raised in triumph)
+                case 3 -> { // Heroic Champion
                     float victoryBob = (float) Math.sin(timeSec * 2.0F) * 0.06F;
                     PLAYER_MODEL.rightArm.pitch = -2.60F + victoryBob;
                     PLAYER_MODEL.rightArm.roll = 0.18F;
                     PLAYER_MODEL.head.pitch = -0.18F;
-
                     PLAYER_MODEL.leftArm.pitch = 0.25F;
                     PLAYER_MODEL.leftArm.roll = -0.22F;
                     PLAYER_MODEL.body.pitch = -0.04F;
-
                     PLAYER_MODEL.leftLeg.roll = -0.07F;
                     PLAYER_MODEL.rightLeg.roll = 0.07F;
                 }
-                case 4 -> { // Relaxed Swagger (Gentle arm swing rhythm)
+                case 4 -> { // Relaxed Swagger
                     float swing = (float) Math.sin(timeSec * 2.2F) * 0.22F;
                     PLAYER_MODEL.rightArm.pitch = swing;
                     PLAYER_MODEL.leftArm.pitch = -swing;
                     PLAYER_MODEL.rightArm.roll = 0.10F;
                     PLAYER_MODEL.leftArm.roll = -0.10F;
-
                     PLAYER_MODEL.head.roll = (float) Math.sin(timeSec * 1.1F) * 0.06F;
                     PLAYER_MODEL.head.pitch = -0.04F + breath;
-
                     PLAYER_MODEL.leftLeg.roll = -0.06F;
                     PLAYER_MODEL.rightLeg.roll = 0.06F;
+                }
+                case 5 -> { // Sneaking Combat Stance
+                    PLAYER_MODEL.body.pitch = 0.45F;
+                    PLAYER_MODEL.head.pitch = -0.40F + breath;
+                    PLAYER_MODEL.rightArm.pitch = -0.35F;
+                    PLAYER_MODEL.rightArm.roll = 0.25F;
+                    PLAYER_MODEL.leftArm.pitch = 0.35F;
+                    PLAYER_MODEL.leftArm.roll = -0.25F;
+                    PLAYER_MODEL.leftLeg.pitch = -0.45F;
+                    PLAYER_MODEL.rightLeg.pitch = 0.45F;
+                }
+                case 6 -> { // Bow Aim
+                    PLAYER_MODEL.head.yaw = -0.45F;
+                    PLAYER_MODEL.head.pitch = -0.10F;
+                    PLAYER_MODEL.rightArm.pitch = -1.55F;
+                    PLAYER_MODEL.rightArm.yaw = -0.45F;
+                    PLAYER_MODEL.rightArm.roll = 0.10F;
+                    PLAYER_MODEL.leftArm.pitch = -1.55F;
+                    PLAYER_MODEL.leftArm.yaw = 0.45F;
+                    PLAYER_MODEL.leftArm.roll = -0.10F;
+                }
+                case 7 -> { // Sword Guard
+                    PLAYER_MODEL.rightArm.pitch = -0.90F;
+                    PLAYER_MODEL.rightArm.yaw = -0.35F;
+                    PLAYER_MODEL.rightArm.roll = -0.35F;
+                    PLAYER_MODEL.leftArm.pitch = -0.45F;
+                    PLAYER_MODEL.leftArm.roll = 0.35F;
+                    PLAYER_MODEL.head.pitch = 0.08F;
+                    PLAYER_MODEL.leftLeg.pitch = 0.15F;
+                    PLAYER_MODEL.rightLeg.pitch = -0.15F;
+                }
+                case 8 -> { // Dab
+                    PLAYER_MODEL.head.pitch = 0.45F;
+                    PLAYER_MODEL.head.yaw = 0.65F;
+                    PLAYER_MODEL.leftArm.pitch = -1.45F;
+                    PLAYER_MODEL.leftArm.roll = -1.25F;
+                    PLAYER_MODEL.rightArm.pitch = -1.55F;
+                    PLAYER_MODEL.rightArm.roll = -1.55F;
+                }
+                case 9 -> { // T-Pose
+                    PLAYER_MODEL.rightArm.pitch = 0.0F;
+                    PLAYER_MODEL.rightArm.roll = 1.57F;
+                    PLAYER_MODEL.leftArm.pitch = 0.0F;
+                    PLAYER_MODEL.leftArm.roll = -1.57F;
+                    PLAYER_MODEL.head.pitch = breath;
                 }
             }
         } else {
@@ -769,6 +826,17 @@ public class AltManagerScreen extends ii_Class4 {
                 }
                 return;
             }
+        }
+
+        // Pose Switcher Button Click
+        float dotsY = cardY + cardH - 62.0F;
+        float poseW = 120.0F, poseH = 17.0F;
+        float poseX = carouselCX - poseW / 2.0F;
+        float poseY = dotsY - 22.0F;
+        if (iIIiIIIiI_Class291.I_method_c3f86263(poseX, poseY, poseW, poseH, mouseX, mouseY)) {
+            currentPoseIndex = (currentPoseIndex + 1) % POSE_NAMES.length;
+            UISoundManager.playButtonClick();
+            return;
         }
 
         // Centered Bottom Controls

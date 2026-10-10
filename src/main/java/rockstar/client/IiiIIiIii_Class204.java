@@ -28,6 +28,8 @@ import net.minecraft.util.math.RotationAxis;
 import org.joml.Matrix4f;
 
 public class IiiIIiIii_Class204 extends ii_Class4 implements iIIiIIiIi_Class294 {
+   public static boolean triggerReturnAnimation = false;
+   private float returnAnimProgress = 0.0F;
    private static boolean I_field_5a;
    private static final List<IiiIIiIiI_Class203> I_field_7865b31 = new ArrayList<>();
    private static IiiIIiiIi_Class206 I_field_710ea66c;
@@ -428,6 +430,41 @@ public class IiiIIiIii_Class204 extends ii_Class4 implements iIIiIIiIi_Class294 
       I_method_f0183f35().I_method_1146ee07(var1, this.width, this.height);
       I_method_f0183b55().I_method_3e377827(var1, this.width, this.height, var5, 1.0F);
 
+      if (triggerReturnAnimation) {
+         this.returnAnimProgress += (1.0F - this.returnAnimProgress) * 0.12F;
+         if (this.returnAnimProgress > 0.98F) {
+            triggerReturnAnimation = false;
+            this.returnAnimProgress = 1.0F;
+         }
+         float t = this.returnAnimProgress;
+         float frameScale = 1.0F - 0.55F * t;
+         float frameY = -this.height * 0.75F * t;
+         float frameAlpha = (1.0F - t);
+
+         float cx = this.width / 2.0F;
+         float cy = this.height / 2.0F;
+
+         var1.getMatrices().push();
+         var1.getMatrices().translate(cx, cy + frameY, 0.0F);
+         var1.getMatrices().scale(frameScale, frameScale, 1.0F);
+         var1.getMatrices().translate(-cx, -cy, 0.0F);
+
+         float frameW = this.width - 48.0F;
+         float frameH = this.height - 48.0F;
+         float frameX = 24.0F;
+         float fY = 24.0F;
+
+         var1.drawShadow(frameX, fY, frameW, frameH, 30.0F, IIiii_Class8.I_method_893b2757(12.0F), ColorRGBA.BLACK.withAlpha(200.0F * frameAlpha));
+         var1.drawRoundedRect(frameX, fY, frameW, frameH, IIiii_Class8.I_method_893b2757(12.0F), new ColorRGBA(8.0F, 10.0F, 16.0F, 230.0F * frameAlpha));
+         var1.drawRoundedBorder(frameX, fY, frameW, frameH, 1.5F, IIiii_Class8.I_method_893b2757(12.0F), IiiiiIIIi_Class242.I_method_7df8e08e().withAlpha(180.0F * frameAlpha));
+
+         IIiIIi_Class10 bFont = IIiIiI_Class11.i_field_857c0621.I_method_3a2d5e3(12.0F);
+         String exitTxt = "Возвращение в главное меню...";
+         float ew = bFont.I_method_2c375926(exitTxt);
+         var1.drawText(bFont, exitTxt, cx - ew / 2.0F, cy - 8.0F, ColorRGBA.WHITE.withAlpha(255.0F * frameAlpha));
+
+         var1.getMatrices().pop();
+      }
    }
 
    private void I_method_fca6301b(long var1, float var3) {

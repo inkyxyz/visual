@@ -24,6 +24,7 @@ extends Module {
     private static final IiiIiIIII_Class209 I_field_a5d83a6c = new IiiIiIIII_Class209();
     private KeybindSetting I_field_ba20522c;
     private SliderSetting guiScale;
+    private SliderSetting toastDuration;
     private BooleanSetting hitSoundsSetting;
     private BooleanSetting uiSoundsSetting;
     private Screen I_field_bf52cf84;
@@ -41,6 +42,12 @@ extends Module {
             .i_method_65e2aff7(1.4F)
             .II_method_b0f56334(0.05F)
             .Ii_method_4e0e6b54(1.0F);
+
+        this.toastDuration = new SliderSetting(this, "Время подсказок")
+            .I_method_c8c9a7d7(1.0F)
+            .i_method_65e2aff7(10.0F)
+            .II_method_b0f56334(0.5F)
+            .Ii_method_4e0e6b54(4.0F);
 
         this.hitSoundsSetting = new BooleanSetting(this, "Hit Sounds") {
             @Override
@@ -128,6 +135,10 @@ extends Module {
     }
     public float getGuiScale() {
         return this.guiScale != null ? this.guiScale.Ii_method_a20abcd2() : 1.0F;
+    }
+
+    public float getToastDuration() {
+        return this.toastDuration != null ? this.toastDuration.Ii_method_a20abcd2() : 4.0F;
     }
 
     public SliderSetting getGuiScaleSetting() {

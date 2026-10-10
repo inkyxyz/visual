@@ -92,7 +92,70 @@ public abstract class PressableWidgetMixin extends ClickableWidget {
             custom.drawShadow(bx + 1.0F, animY + bh - 1.0F, bw - 2.0F, 5.0F, 12.0F, radObj, new ColorRGBA(0.0F, 0.0F, 0.0F, shadowAlpha));
         }
 
-        // 2. iOS Liquid Frosted Glass Base Body
+        // 2. Determine layout: Separate icon pod vs button pill
+        String rawText = this.getMessage().getString();
+        String lower = rawText.toLowerCase().trim();
+        BadgeStyle badge = BadgeStyle.getBadgeStyle(lower);
+
+        int colonIdx = rawText.indexOf(':');
+        boolean isToggle = lower.contains(": on") || lower.contains(": off") ||
+                           lower.contains(": \u0432\u043a\u043b") || lower.contains(": \u0432\u044b\u043a\u043b") ||
+                           lower.endsWith(" on") || lower.endsWith(" off");
+        boolean isToggleOn = lower.contains(": on") || lower.contains(": \u0432\u043a\u043b") || lower.endsWith(" on");
+        boolean isKeyValue = colonIdx > 0 && !isToggle;
+        boolean isNav = rawText.trim().endsWith("...") || (lower.contains("setting") && !isKeyValue) || (lower.contains("\u043d\u0430\u0441\u0442\u0440\u043e\u0439\u043a") && !isKeyValue);
+        boolean isCenteredAction = bw < 88.0F || lower.equals("done") || lower.equals("\u0433\u043e\u0442\u043e\u0432\u043e") ||
+                                   lower.equals("cancel") || lower.equals("\u043e\u0442\u043c\u0435\u043d\u0430") ||
+                                   lower.equals("back") || lower.equals("\u043d\u0430\u0437\u0430\u0434") ||
+                                   lower.equals("reset") || lower.equals("\u0441\u0431\u0440\u043e\u0441");
+
+        boolean showBadge = !isCenteredAction && bw >= 90.0F && bh >= 18.0F;
+
+        // Decoupled icon pod position and main button body bounds
+        float podSize = Math.max(16.0F, Math.min(bh - 4.0F, 22.0F));
+        float podX = bx + 2.0F;
+        float podY = animY + (bh - podSize) / 2.0F;
+
+        float pillX = showBadge ? (podX + podSize + 5.0F) : bx;
+        float pillW = showBadge ? (bw - (pillX - bx) - 2.0F) : bw;
+
+        IIiii_Class8 topRad = new IIiii_Class8(rad, rad, 1.0F, 1.0F);
+
+        // --- Render Separated Standalone Icon Pod ---
+        if (showBadge) {
+            IIiii_Class8 podRad = IIiii_Class8.I_method_893b2757(Math.min(7.0F, podSize / 2.8F));
+
+            // Pod Drop Shadow & Frosted Glass Base
+            if (this.rockstar$hoverAnim > 0.01F) {
+                custom.drawShadow(podX, podY + podSize - 2.0F, podSize, 4.0F, 8.0F, podRad, new ColorRGBA(0.0F, 0.0F, 0.0F, 65.0F * this.rockstar$hoverAnim * btnAlpha));
+            }
+            ColorRGBA podBase = this.active ?
+                new ColorRGBA(24.0F, 28.0F, 38.0F, (120.0F + 35.0F * this.rockstar$hoverAnim) * btnAlpha) :
+                new ColorRGBA(16.0F, 18.0F, 24.0F, 75.0F * btnAlpha);
+            custom.drawRoundedRect(podX, podY, podSize, podSize, podRad, podBase);
+
+            // Icon Accent Sheen
+            custom.drawRoundedRect(podX + 1.0F, podY + 1.0F, podSize - 2.0F, podSize * 0.40F, podRad, new ColorRGBA(255.0F, 255.0F, 255.0F, 18.0F * btnAlpha));
+
+            // Pod Border
+            ColorRGBA podBorder = this.active ?
+                (this.rockstar$hoverAnim > 0.01F ? themeAccent.withAlpha((90.0F + 60.0F * this.rockstar$hoverAnim) * btnAlpha) : new ColorRGBA(255.0F, 255.0F, 255.0F, 30.0F * btnAlpha)) :
+                new ColorRGBA(255.0F, 255.0F, 255.0F, 14.0F * btnAlpha);
+            custom.drawRoundedBorder(podX, podY, podSize, podSize, 1.0F, podRad, podBorder);
+
+            // Inner Gradient Glyph Icon
+            float glyphSz = Math.max(7.0F, podSize - 7.0F);
+            float glyphX = podX + (podSize - glyphSz) / 2.0F;
+            float glyphY = podY + (podSize - glyphSz) / 2.0F;
+            custom.drawIcon(badge.icon, glyphX, glyphY, glyphSz, this.active ? (this.rockstar$hoverAnim > 0.01F ? ColorRGBA.WHITE : new ColorRGBA(235.0F, 240.0F, 252.0F, 235.0F * btnAlpha)) : new ColorRGBA(140.0F, 145.0F, 155.0F, 140.0F * btnAlpha));
+        }
+
+        // --- Render Main Button Liquid Glass Pill ---
+        if (this.rockstar$hoverAnim > 0.01F) {
+            float shadowAlpha = (35.0F + 75.0F * this.rockstar$hoverAnim) * btnAlpha;
+            custom.drawShadow(pillX + 1.0F, animY + bh - 1.0F, pillW - 2.0F, 5.0F, 12.0F, radObj, new ColorRGBA(0.0F, 0.0F, 0.0F, shadowAlpha));
+        }
+
         ColorRGBA glassBase;
         if (this.active) {
             float baseA = (105.0F + 30.0F * this.rockstar$hoverAnim) * btnAlpha;
@@ -100,36 +163,29 @@ public abstract class PressableWidgetMixin extends ClickableWidget {
         } else {
             glassBase = new ColorRGBA(16.0F, 18.0F, 24.0F, 65.0F * btnAlpha);
         }
-        custom.drawRoundedRect(bx, animY, bw, bh, radObj, glassBase);
+        custom.drawRoundedRect(pillX, animY, pillW, bh, radObj, glassBase);
 
-        // 3. Hover Accent Glow
+        // Hover Glow Sheen
         if (this.active && this.rockstar$hoverAnim > 0.01F) {
-            custom.drawRoundedRect(bx, animY, bw, bh, radObj, themeAccent.withAlpha(35.0F * this.rockstar$hoverAnim * btnAlpha));
+            custom.drawRoundedRect(pillX, animY, pillW, bh, radObj, themeAccent.withAlpha(35.0F * this.rockstar$hoverAnim * btnAlpha));
         }
 
-        // 4. Specular Glass Highlight Sheen (iOS Liquid Glass reflection)
-        IIiii_Class8 topRad = new IIiii_Class8(rad, rad, 1.0F, 1.0F);
+        // Specular Top Sheen
         float glossAlpha = (this.active ? (14.0F + 14.0F * this.rockstar$hoverAnim) : 5.0F) * btnAlpha;
-        custom.drawRoundedRect(bx + 1.0F, animY + 1.0F, bw - 2.0F, bh * 0.40F, topRad, new ColorRGBA(255.0F, 255.0F, 255.0F, glossAlpha));
+        custom.drawRoundedRect(pillX + 1.0F, animY + 1.0F, pillW - 2.0F, bh * 0.40F, topRad, new ColorRGBA(255.0F, 255.0F, 255.0F, glossAlpha));
 
-        // 5. Liquid Glass Frosted Border
+        // Frosted Border
         ColorRGBA borderCol;
         if (this.active) {
-            if (this.rockstar$hoverAnim > 0.01F) {
-                borderCol = themeAccent.withAlpha((70.0F + 70.0F * this.rockstar$hoverAnim) * btnAlpha);
-            } else {
-                borderCol = new ColorRGBA(255.0F, 255.0F, 255.0F, 26.0F * btnAlpha);
-            }
+            borderCol = this.rockstar$hoverAnim > 0.01F ?
+                themeAccent.withAlpha((70.0F + 70.0F * this.rockstar$hoverAnim) * btnAlpha) :
+                new ColorRGBA(255.0F, 255.0F, 255.0F, 26.0F * btnAlpha);
         } else {
             borderCol = new ColorRGBA(255.0F, 255.0F, 255.0F, 12.0F * btnAlpha);
         }
-        custom.drawRoundedBorder(bx, animY, bw, bh, 1.0F, radObj, borderCol);
+        custom.drawRoundedBorder(pillX, animY, pillW, bh, 1.0F, radObj, borderCol);
 
-        // 6. iOS Inset Grouped Cell: Squircle Icon Badge, Label, Toggle/Chevron
-        String rawText = this.getMessage().getString();
-        String lower = rawText.toLowerCase().trim();
-        BadgeStyle badge = BadgeStyle.getBadgeStyle(lower);
-
+        // --- Render Label & Controls with Zero Overlap Clamping ---
         IIiIIi_Class10 font = null;
         try {
             if (IIiIiI_Class11.i_field_857c0621 != null) {
@@ -138,90 +194,86 @@ public abstract class PressableWidgetMixin extends ClickableWidget {
         } catch (Throwable ignored) {
         }
 
-        boolean isToggle = lower.contains(": on") || lower.contains(": off") ||
-                           lower.contains(": \u0432\u043a\u043b") || lower.contains(": \u0432\u044b\u043a\u043b") ||
-                           lower.endsWith(" on") || lower.endsWith(" off");
-        boolean isToggleOn = lower.contains(": on") || lower.contains(": \u0432\u043a\u043b") || lower.endsWith(" on");
-        int colonIdx = rawText.indexOf(':');
-        boolean isKeyValue = colonIdx > 0 && !isToggle;
-        boolean isNav = rawText.trim().endsWith("...") || (lower.contains("setting") && !isKeyValue) || (lower.contains("\u043d\u0430\u0441\u0442\u0440\u043e\u0439\u043a") && !isKeyValue);
-        boolean isCenteredAction = bw < 88.0F || lower.equals("done") || lower.equals("\u0433\u043e\u0442\u043e\u0432\u043e") ||
-                                   lower.equals("cancel") || lower.equals("\u043e\u0442\u043c\u0435\u043d\u0430") ||
-                                   lower.equals("back") || lower.equals("\u043d\u0430\u0437\u0430\u0434") ||
-                                   lower.equals("reset") || lower.equals("\u0441\u0431\u0440\u043e\u0441");
-
-        float badgeSize = Math.max(10.0F, Math.min(bh - 8.0F, 16.0F));
-        IIiii_Class8 badgeRad = IIiii_Class8.I_method_893b2757(Math.min(4.0F, badgeSize / 3.0F));
-        boolean showBadge = !isCenteredAction && bw >= 75.0F && bh >= 18.0F;
-
         if (font != null) {
             if (isCenteredAction) {
-                // Centered button for action buttons (Done, Cancel, Back, Reset, etc.)
                 float textW = font.I_method_2c375926(rawText);
-                float textX = bx + (bw - textW) / 2.0F;
+                float textX = pillX + (pillW - textW) / 2.0F;
                 ColorRGBA textCol = this.active ?
                     (this.rockstar$hoverAnim > 0.01F ? ColorRGBA.WHITE : new ColorRGBA(235.0F, 240.0F, 250.0F, 245.0F * btnAlpha)) :
                     new ColorRGBA(130.0F, 135.0F, 145.0F, 140.0F * btnAlpha);
                 custom.drawText(font, rawText, textX, animY + (bh - font.I_method_a649725c()) / 2.0F + 1.0F, textCol);
             } else {
-                // iOS Inset Row: Badge on left, label, and right-side toggle / value / chevron
-                float labelX = bx + 8.0F;
-                if (showBadge) {
-                    float badgeX = bx + 6.0F;
-                    float badgeY = animY + (bh - badgeSize) / 2.0F;
-
-                    // Draw Apple iOS Squircle Badge
-                    custom.drawRoundedRect(badgeX, badgeY, badgeSize, badgeSize, badgeRad, new IiiII_Class13(badge.top.mulAlpha(btnAlpha * 0.9F), badge.bot.mulAlpha(btnAlpha * 0.9F)));
-                    float iconSz = Math.max(6.0F, badgeSize - 5.0F);
-                    custom.drawIcon(badge.icon, badgeX + (badgeSize - iconSz) / 2.0F, badgeY + (badgeSize - iconSz) / 2.0F, iconSz, ColorRGBA.WHITE.mulAlpha(btnAlpha));
-                    labelX = badgeX + badgeSize + 7.0F;
-                }
-
+                float labelX = pillX + 10.0F;
                 ColorRGBA textCol = this.active ?
                     (this.rockstar$hoverAnim > 0.01F ? ColorRGBA.WHITE : new ColorRGBA(240.0F, 244.0F, 252.0F, 245.0F * btnAlpha)) :
                     new ColorRGBA(130.0F, 135.0F, 145.0F, 140.0F * btnAlpha);
 
                 if (isToggle) {
-                    // Extract title before colon
+                    float togglePillW = 28.0F, togglePillH = 15.0F;
+                    float togglePillX = pillX + pillW - togglePillW - 7.0F;
+                    float togglePillY = animY + (bh - togglePillH) / 2.0F;
+
+                    // Text width protection: truncate with ellipsis so text NEVER passes behind toggle
                     String title = (colonIdx > 0) ? rawText.substring(0, colonIdx).trim() : rawText.trim();
+                    float maxTitleW = togglePillX - labelX - 8.0F;
+                    if (maxTitleW > 12.0F && font.I_method_2c375926(title) > maxTitleW) {
+                        while (title.length() > 2 && font.I_method_2c375926(title + "...") > maxTitleW) {
+                            title = title.substring(0, title.length() - 1);
+                        }
+                        title = title + "...";
+                    }
                     custom.drawText(font, title, labelX, animY + (bh - font.I_method_a649725c()) / 2.0F + 1.0F, textCol);
 
-                    // Draw authentic iOS Pill Toggle Switch
-                    float pillW = 26.0F, pillH = 14.0F;
-                    float pillX = bx + bw - pillW - 7.0F;
-                    float pillY = animY + (bh - pillH) / 2.0F;
-                    IIiii_Class8 pillRad = IIiii_Class8.I_method_893b2757(pillH / 2.0F);
-                    ColorRGBA pillBg = isToggleOn ?
-                        new ColorRGBA(52.0F, 199.0F, 89.0F, 235.0F * btnAlpha) :
-                        new ColorRGBA(58.0F, 62.0F, 72.0F, 200.0F * btnAlpha);
-                    custom.drawRoundedRect(pillX, pillY, pillW, pillH, pillRad, pillBg);
-                    float thumbSz = pillH - 3.0F;
-                    float thumbX = isToggleOn ? (pillX + pillW - thumbSz - 1.5F) : (pillX + 1.5F);
-                    custom.drawRoundedRect(thumbX, pillY + 1.5F, thumbSz, thumbSz, IIiii_Class8.I_method_893b2757(thumbSz / 2.0F), ColorRGBA.WHITE.mulAlpha(btnAlpha));
+                    // Authentic Apple iOS Control Center Green Pill Toggle
+                    IIiii_Class8 toggleRad = IIiii_Class8.I_method_893b2757(togglePillH / 2.0F);
+                    ColorRGBA toggleBg = isToggleOn ?
+                        new ColorRGBA(52.0F, 199.0F, 89.0F, 245.0F * btnAlpha) :
+                        new ColorRGBA(55.0F, 60.0F, 72.0F, 220.0F * btnAlpha);
+                    custom.drawRoundedRect(togglePillX, togglePillY, togglePillW, togglePillH, toggleRad, toggleBg);
+
+                    // Knob thumb
+                    float thumbSz = togglePillH - 3.0F;
+                    float thumbX = isToggleOn ? (togglePillX + togglePillW - thumbSz - 1.5F) : (togglePillX + 1.5F);
+                    custom.drawShadow(thumbX, togglePillY + 1.5F, thumbSz, thumbSz, 3.0F, IIiii_Class8.I_method_893b2757(thumbSz / 2.0F), new ColorRGBA(0.0F, 0.0F, 0.0F, 70.0F * btnAlpha));
+                    custom.drawRoundedRect(thumbX, togglePillY + 1.5F, thumbSz, thumbSz, IIiii_Class8.I_method_893b2757(thumbSz / 2.0F), ColorRGBA.WHITE.mulAlpha(btnAlpha));
                 } else if (isKeyValue) {
-                    // Split Title and Value like iOS Settings
                     String title = rawText.substring(0, colonIdx).trim();
                     String val = rawText.substring(colonIdx + 1).trim();
-                    custom.drawText(font, title, labelX, animY + (bh - font.I_method_a649725c()) / 2.0F + 1.0F, textCol);
 
                     float valW = font.I_method_2c375926(val);
-                    float valX = bx + bw - valW - 9.0F;
+                    float valX = pillX + pillW - valW - 9.0F;
+                    float maxTitleW = valX - labelX - 8.0F;
+                    if (maxTitleW > 12.0F && font.I_method_2c375926(title) > maxTitleW) {
+                        while (title.length() > 2 && font.I_method_2c375926(title + "...") > maxTitleW) {
+                            title = title.substring(0, title.length() - 1);
+                        }
+                        title = title + "...";
+                    }
+
+                    custom.drawText(font, title, labelX, animY + (bh - font.I_method_a649725c()) / 2.0F + 1.0F, textCol);
                     ColorRGBA valCol = new ColorRGBA(165.0F, 175.0F, 195.0F, 220.0F * btnAlpha);
                     custom.drawText(font, val, valX, animY + (bh - font.I_method_a649725c()) / 2.0F + 1.0F, valCol);
                 } else {
-                    custom.drawText(font, rawText, labelX, animY + (bh - font.I_method_a649725c()) / 2.0F + 1.0F, textCol);
+                    float maxTitleW = (isNav ? (pillX + pillW - 18.0F) : (pillX + pillW - 10.0F)) - labelX;
+                    String title = rawText;
+                    if (maxTitleW > 12.0F && font.I_method_2c375926(title) > maxTitleW) {
+                        while (title.length() > 2 && font.I_method_2c375926(title + "...") > maxTitleW) {
+                            title = title.substring(0, title.length() - 1);
+                        }
+                        title = title + "...";
+                    }
+                    custom.drawText(font, title, labelX, animY + (bh - font.I_method_a649725c()) / 2.0F + 1.0F, textCol);
 
                     if (isNav) {
-                        // iOS Chevron Arrow '›' on the right
                         ColorRGBA chevronCol = new ColorRGBA(165.0F, 172.0F, 188.0F, 170.0F * btnAlpha);
-                        custom.drawText(font, ">", bx + bw - 12.0F, animY + (bh - font.I_method_a649725c()) / 2.0F + 1.0F, chevronCol);
+                        custom.drawText(font, ">", pillX + pillW - 12.0F, animY + (bh - font.I_method_a649725c()) / 2.0F + 1.0F, chevronCol);
                     }
                 }
             }
         } else {
             TextRenderer tr = MinecraftClient.getInstance().textRenderer;
             int textY = (int) (animY + (bh - 8.0F) / 2.0F);
-            context.drawCenteredTextWithShadow(tr, this.getMessage(), (int) (bx + bw / 2.0F), textY, this.active ? 0xFFFFFF : 0x888888);
+            context.drawCenteredTextWithShadow(tr, this.getMessage(), (int) (pillX + pillW / 2.0F), textY, this.active ? 0xFFFFFF : 0x888888);
         }
 
         if (pressedTransform) {

@@ -165,14 +165,32 @@ public abstract class SliderWidgetMixin extends ClickableWidget {
             if (colonIdx > 0) {
                 String label = rawText.substring(0, colonIdx).trim();
                 String val = rawText.substring(colonIdx + 1).trim();
-                custom.drawText(font, label, labelX, textY, labelCol);
 
                 float valW = font.I_method_2c375926(val);
                 float valX = bx + bw - valW - 8.0F;
+
+                float maxLabelW = valX - labelX - 8.0F;
+                if (maxLabelW > 12.0F && font.I_method_2c375926(label) > maxLabelW) {
+                    while (label.length() > 2 && font.I_method_2c375926(label + "...") > maxLabelW) {
+                        label = label.substring(0, label.length() - 1);
+                    }
+                    label = label + "...";
+                }
+
+                custom.drawText(font, label, labelX, textY, labelCol);
+
                 ColorRGBA valCol = new ColorRGBA(180.0F, 192.0F, 215.0F, 235.0F * widgetAlpha);
                 custom.drawText(font, val, valX, textY, valCol);
             } else {
-                custom.drawText(font, rawText, labelX, textY, labelCol);
+                float maxLabelW = bx + bw - labelX - 8.0F;
+                String label = rawText;
+                if (maxLabelW > 12.0F && font.I_method_2c375926(label) > maxLabelW) {
+                    while (label.length() > 2 && font.I_method_2c375926(label + "...") > maxLabelW) {
+                        label = label.substring(0, label.length() - 1);
+                    }
+                    label = label + "...";
+                }
+                custom.drawText(font, label, labelX, textY, labelCol);
             }
         } else {
             TextRenderer tr = MinecraftClient.getInstance().textRenderer;

@@ -28,7 +28,15 @@ public class AnimationWheelModule extends Module {
         WAVE("Приветствие", "modules.animations.wave", "Эмоция"),
         CLAP("Аплодисменты", "modules.animations.clap", "Эмоция"),
         T_POSE("Т-Поза", "modules.animations.t_pose", "Эмоция"),
-        FLEX("Флекс", "modules.animations.flex", "Эмоция");
+        FLEX("Флекс", "modules.animations.flex", "Эмоция"),
+        FACEPALM("Фейспалм", "modules.animations.facepalm", "Эмоция"),
+        SALUTE("Салют", "modules.animations.salute", "Эмоция"),
+        BOW("Поклон", "modules.animations.bow", "Эмоция"),
+        LAUGH("Смех", "modules.animations.laugh", "Эмоция"),
+        SHRUG("Пожатие плечами", "modules.animations.shrug", "Эмоция"),
+        DAB("Дэб", "modules.animations.dab", "Танец"),
+        SIT("Сидение", "modules.animations.sit", "Поза"),
+        SPIN("Вращение", "modules.animations.spin", "Акробатика");
 
         private final String title;
         private final String desc;
@@ -55,6 +63,8 @@ public class AnimationWheelModule extends Module {
     private final SliderSetting animSpeed = new SliderSetting(this, "Скорость")
         .I_method_c8c9a7d7(0.5F).i_method_65e2aff7(2.5F).II_method_b0f56334(0.1F).Ii_method_4e0e6b54(1.0F);
 
+    private final ModeSetting emoteSelect = new ModeSetting(this, "Выбор эмоции");
+
     private static AnimationWheelModule INSTANCE;
     private static CustomAnimation activeAnimation = CustomAnimation.NONE;
     private static long animationStartTime = 0L;
@@ -72,6 +82,12 @@ public class AnimationWheelModule extends Module {
 
     public AnimationWheelModule() {
         INSTANCE = this;
+        for (CustomAnimation anim : CustomAnimation.values()) {
+            ModeSetting.Nested1_42765c60 opt = new ModeSetting.Nested1_42765c60(this.emoteSelect, anim.getTitle());
+            if (anim == CustomAnimation.FLOSS) {
+                opt.select();
+            }
+        }
     }
 
     public static AnimationWheelModule getInstance() {
@@ -326,6 +342,66 @@ public class AnimationWheelModule extends Module {
                 accessor.rockstar$getLeftArm().roll = (float) Math.toRadians(-65.0);
 
                 accessor.rockstar$getHead().pitch = -0.15F;
+            }
+            case FACEPALM -> {
+                accessor.rockstar$getRightArm().pitch = -1.90F;
+                accessor.rockstar$getRightArm().yaw = -0.35F;
+                accessor.rockstar$getRightArm().roll = 0.55F;
+                accessor.rockstar$getHead().pitch = 0.35F;
+                accessor.rockstar$getHead().yaw = 0.15F;
+            }
+            case SALUTE -> {
+                accessor.rockstar$getRightArm().pitch = -2.35F;
+                accessor.rockstar$getRightArm().yaw = -0.45F;
+                accessor.rockstar$getRightArm().roll = 0.65F;
+                accessor.rockstar$getHead().pitch = -0.10F;
+                accessor.rockstar$getBody().pitch = -0.05F;
+            }
+            case BOW -> {
+                accessor.rockstar$getBody().pitch = 0.65F;
+                accessor.rockstar$getHead().pitch = 0.35F;
+                accessor.rockstar$getRightArm().pitch = 0.35F;
+                accessor.rockstar$getRightArm().roll = 0.25F;
+                accessor.rockstar$getLeftArm().pitch = 0.35F;
+                accessor.rockstar$getLeftArm().roll = -0.25F;
+            }
+            case LAUGH -> {
+                float laugh = (float) Math.sin(t * 14.0) * 0.18F;
+                accessor.rockstar$getHead().pitch = -0.35F + laugh;
+                accessor.rockstar$getBody().pitch = laugh * 0.6F;
+                accessor.rockstar$getRightArm().pitch = -0.6F + laugh;
+                accessor.rockstar$getLeftArm().pitch = -0.6F + laugh;
+            }
+            case SHRUG -> {
+                accessor.rockstar$getRightArm().pitch = -0.7F;
+                accessor.rockstar$getRightArm().roll = 0.9F;
+                accessor.rockstar$getRightArm().yaw = 0.4F;
+                accessor.rockstar$getLeftArm().pitch = -0.7F;
+                accessor.rockstar$getLeftArm().roll = -0.9F;
+                accessor.rockstar$getLeftArm().yaw = -0.4F;
+                accessor.rockstar$getHead().roll = 0.22F;
+            }
+            case DAB -> {
+                accessor.rockstar$getHead().pitch = 0.45F;
+                accessor.rockstar$getHead().yaw = 0.65F;
+                accessor.rockstar$getLeftArm().pitch = -1.45F;
+                accessor.rockstar$getLeftArm().roll = -1.25F;
+                accessor.rockstar$getRightArm().pitch = -1.55F;
+                accessor.rockstar$getRightArm().roll = -1.55F;
+            }
+            case SIT -> {
+                accessor.rockstar$getLeftLeg().pitch = -1.57F;
+                accessor.rockstar$getRightLeg().pitch = -1.57F;
+                accessor.rockstar$getLeftLeg().yaw = -0.2F;
+                accessor.rockstar$getRightLeg().yaw = 0.2F;
+                accessor.rockstar$getBody().pitch = 0.1F;
+            }
+            case SPIN -> {
+                float spinCycle = (t * 6.0F) % ((float) Math.PI * 2.0F);
+                accessor.rockstar$getBody().yaw = spinCycle;
+                accessor.rockstar$getHead().yaw = spinCycle;
+                accessor.rockstar$getRightArm().roll = 1.3F;
+                accessor.rockstar$getLeftArm().roll = -1.3F;
             }
         }
     }

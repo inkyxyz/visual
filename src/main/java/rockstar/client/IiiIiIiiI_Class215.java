@@ -15,8 +15,14 @@ import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.render.BufferBuilder;
 import net.minecraft.client.render.BufferRenderer;
 import net.minecraft.client.render.Camera;
+import net.minecraft.client.render.OverlayTexture;
+import net.minecraft.client.render.RenderLayer;
+import net.minecraft.client.render.VertexConsumer;
+import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.render.VertexFormats;
 import net.minecraft.client.render.VertexFormat.DrawMode;
+import net.minecraft.client.util.SkinTextures;
+import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.math.RotationAxis;
 import net.minecraft.util.math.Vec3d;
 import org.joml.Matrix4f;
@@ -129,6 +135,25 @@ public class IiiIiIiiI_Class215 extends IiiIIiiiI_Class207 implements IiiIiIIiI_
    private float guiDragOffsetX = 0.0F;
    private float guiDragOffsetY = 0.0F;
    private final ClickBubbleEffect clickBubbleEffect = new ClickBubbleEffect();
+
+   private String toastTitle = null;
+   private String toastDesc = null;
+   private long toastStartTime = 0L;
+   private float toastAnimProgress = 0.0F;
+
+   private static float previewYaw = 0.0F;
+   private static float previewZoom = 38.0F;
+   private static boolean previewAutoSpin = true;
+   private static long lastPreviewTime = 0L;
+
+   public void showToastNotification(String title, String desc) {
+      this.toastTitle = title;
+      this.toastDesc = desc != null && !desc.isEmpty() ? desc : "Описание отсутствует";
+      this.toastStartTime = System.currentTimeMillis();
+      if (MinecraftClient.getInstance().player != null) {
+         MinecraftClient.getInstance().player.playSound(net.minecraft.sound.SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, 0.4F, 1.3F);
+      }
+   }
 
 
 
@@ -546,8 +571,8 @@ public class IiiIiIiiI_Class215 extends IiiIIiiiI_Class207 implements IiiIiIIiI_
          .I_method_8361fbbd(iIi_Class6.i_field_b583ea6c);
       var4.snapSize();
       Iii_Class4 var5 = new Iii_Class4()
-         .height(12.0F)
-         .text(IIiIiI_Class11.i_field_857c0621.I_method_3a2d5e3(12.0F), this::i_method_a5af7881, var1x -> this.I_method_af54788e())
+         .height(13.0F)
+         .text(IIiIiI_Class11.i_field_857c0621.I_method_3a2d5e3(13.0F), this::i_method_a5af7881, var1x -> this.I_method_af54788e())
          .interactive(false);
       this.I_field_fb07f0e1 = new iiiI_Class15(IIiIiI_Class11.II_field_857c0621.I_method_3a2d5e3(7.0F), this::I_method_94594e12, this::I_method_f6d0e8c4);
       iii_Class8 var6 = new iii_Class8()
@@ -558,12 +583,35 @@ public class IiiIiIiiI_Class215 extends IiiIIiiiI_Class207 implements IiiIiIIiI_
          .I_method_9680b4fd(iIIIiIIIi_Class274.i_field_aa52e62c)
          .I_method_8939bffd(this.I_field_fb07f0e1)
          .i_method_5db1deeb(this.I_field_fb07f0e1::I_method_10341dfa);
+
+      Iii_Class4 infoBtn = new Iii_Class4()
+         .size(13.0F, 13.0F)
+         .radius(6.5F)
+         .cursor(iIIIiIIIi_Class274.i_field_aa52e62c)
+         .visibleWhen(() -> this.I_field_75e36361 != null)
+         .onClick(() -> {
+            if (this.I_field_75e36361 != null) {
+               showToastNotification(this.I_field_75e36361.getName(), this.I_field_75e36361.i_method_bf522194());
+            }
+         })
+         .paint((ctx, rect) -> {
+            float hov = rect.hover();
+            ColorRGBA accent = IiiiiIIIi_Class242.I_method_7df8e08e();
+            ctx.drawRoundedRect(rect.x(), rect.y(), rect.w(), rect.h(), IIiii_Class8.I_method_893b2757(rect.w() / 2.0F), accent.withAlpha(45.0F + 55.0F * hov));
+            ctx.drawRoundedBorder(rect.x(), rect.y(), rect.w(), rect.h(), 0.9F, IIiii_Class8.I_method_893b2757(rect.w() / 2.0F), accent.withAlpha(180.0F + 75.0F * hov));
+            IIiIIi_Class10 iFont = IIiIiI_Class11.i_field_857c0621.I_method_3a2d5e3(7.5F);
+            String iChar = "i";
+            float iw = iFont.I_method_2c375926(iChar);
+            ctx.drawText(iFont, iChar, rect.x() + (rect.w() - iw) / 2.0F, rect.y() + 2.5F, ColorRGBA.WHITE);
+         });
+
       iii_Class8 var7 = new iii_Class8()
          .i_method_c88da8d5()
          .I_method_483797dd(IIi_Class2.i_field_b5755e8c)
-         .I_method_70a38517(3.0F)
+         .I_method_70a38517(4.0F)
          .IiI_method_23cb1575()
          .I_method_8939bffd(var5)
+         .I_method_8939bffd(infoBtn)
          .I_method_8939bffd(var6);
       Iii_Class4 var8 = new Iii_Class4()
          .size(16.0F, 16.0F)
@@ -845,7 +893,156 @@ public class IiiIiIiiI_Class215 extends IiiIIiiiI_Class207 implements IiiIiIIiI_
       if (this.floatingSearchOpen) {
          this.renderFloatingSearch(var1, (int)var1.I_method_b1c3e152(), (int)var1.i_method_b1d26d32());
       }
+      this.renderToastNotification(var1);
       this.clickBubbleEffect.render(var1);
+   }
+
+   private void renderToastNotification(III ctx) {
+      if (this.toastTitle == null) return;
+      MenuModule menuMod = RockstarClient.getInstance().getModuleManager().getModule(MenuModule.class);
+      float durationSec = menuMod != null ? menuMod.getToastDuration() : 4.0F;
+      long elapsed = System.currentTimeMillis() - this.toastStartTime;
+      long totalMs = (long) (durationSec * 1000.0F);
+
+      if (elapsed > totalMs + 400L) {
+         this.toastTitle = null;
+         this.toastDesc = null;
+         return;
+      }
+
+      float enterExit = 1.0F;
+      if (elapsed < 300L) {
+         enterExit = (float) elapsed / 300.0F;
+      } else if (elapsed > totalMs) {
+         enterExit = 1.0F - (float)(elapsed - totalMs) / 400.0F;
+      }
+      this.toastAnimProgress += (enterExit - this.toastAnimProgress) * 0.3F;
+
+      float toastW = 240.0F;
+      float toastH = 46.0F;
+      float toastX = this.width - toastW - 16.0F;
+      float toastY = 16.0F + (1.0F - this.toastAnimProgress) * -50.0F;
+
+      ColorRGBA theme = IiiiiIIIi_Class242.I_method_7df8e08e();
+      IIiii_Class8 rad8 = IIiii_Class8.I_method_893b2757(8.0F);
+
+      ctx.drawBlurredRect(toastX, toastY, toastW, toastH, 18.0F, 4.0F, rad8, theme.withAlpha(90.0F * this.toastAnimProgress));
+      ctx.drawRoundedRect(toastX, toastY, toastW, toastH, rad8, new ColorRGBA(12.0F, 14.0F, 22.0F, 235.0F * this.toastAnimProgress));
+      ctx.drawRoundedBorder(toastX, toastY, toastW, toastH, 1.2F, rad8, theme.withAlpha(180.0F * this.toastAnimProgress));
+
+      float iconSize = 18.0F;
+      float iconX = toastX + 9.0F;
+      float iconY = toastY + 9.0F;
+      ctx.drawRoundedRect(iconX, iconY, iconSize, iconSize, IIiii_Class8.I_method_893b2757(iconSize / 2.0F), theme.withAlpha(60.0F * this.toastAnimProgress));
+      ctx.drawRoundedBorder(iconX, iconY, iconSize, iconSize, 1.0F, IIiii_Class8.I_method_893b2757(iconSize / 2.0F), theme.withAlpha(200.0F * this.toastAnimProgress));
+      IIiIIi_Class10 bFont = IIiIiI_Class11.i_field_857c0621.I_method_3a2d5e3(10.0F);
+      float iw = bFont.I_method_2c375926("ℹ");
+      ctx.drawText(bFont, "ℹ", iconX + (iconSize - iw) / 2.0F, iconY + 3.0F, ColorRGBA.WHITE.withAlpha(255.0F * this.toastAnimProgress));
+
+      IIiIIi_Class10 titleFont = IIiIiI_Class11.i_field_857c0621.I_method_3a2d5e3(8.5F);
+      IIiIIi_Class10 descFont = IIiIiI_Class11.II_field_857c0621.I_method_3a2d5e3(6.5F);
+      ctx.drawText(titleFont, this.toastTitle, toastX + 34.0F, toastY + 8.0F, ColorRGBA.WHITE.withAlpha(255.0F * this.toastAnimProgress));
+
+      String desc = this.toastDesc;
+      if (descFont.I_method_2c375926(desc) > toastW - 42.0F) {
+         while (desc.length() > 3 && descFont.I_method_2c375926(desc + "...") > toastW - 42.0F) {
+            desc = desc.substring(0, desc.length() - 1);
+         }
+         desc = desc + "...";
+      }
+      ctx.drawText(descFont, desc, toastX + 34.0F, toastY + 22.0F, new ColorRGBA(200.0F, 205.0F, 220.0F, 220.0F * this.toastAnimProgress));
+
+      float pBarW = (toastW - 16.0F) * Math.max(0.0F, 1.0F - (float)elapsed / (float)totalMs);
+      float pBarH = 2.0F;
+      float pBarX = toastX + 8.0F;
+      float pBarY = toastY + toastH - 5.0F;
+      ctx.drawRoundedRect(pBarX, pBarY, pBarW, pBarH, IIiii_Class8.I_method_893b2757(1.0F), theme.withAlpha(220.0F * this.toastAnimProgress));
+   }
+
+   private static boolean isAccessoryModule(ModuleEntry mod) {
+      if (mod == null) return false;
+      String n = mod.getName().toLowerCase();
+      return n.contains("headwear") || n.contains("body accessories") || n.contains("pets") || n.contains("magic orbiters") || n.contains("card orbit");
+   }
+
+   private iii_Class8 createAccessory3DPreview(ModuleEntry mod) {
+      IIiii_Class8 rad6 = IIiii_Class8.I_method_893b2757(6.0F);
+      float boxW = this.iIIII_field_46 - 22.0F;
+      float boxH = 92.0F;
+
+      Iii_Class4 previewArea = new Iii_Class4()
+         .size(boxW, boxH)
+         .cursor(iIIIiIIIi_Class274.i_field_aa52e62c)
+         .paint((ctx, rect) -> {
+            long now = System.currentTimeMillis();
+            if (lastPreviewTime == 0L) lastPreviewTime = now;
+            float dt = Math.min(0.05F, (float)(now - lastPreviewTime) / 1000.0F);
+            lastPreviewTime = now;
+
+            if (previewAutoSpin) {
+               previewYaw = (previewYaw + dt * 45.0F) % 360.0F;
+            }
+
+            ColorRGBA theme = IiiiiIIIi_Class242.I_method_7df8e08e();
+            ctx.drawBlurredRect(rect.x(), rect.y(), rect.w(), rect.h(), 16.0F, 3.0F, rad6, theme.withAlpha(45.0F));
+            ctx.drawRoundedRect(rect.x(), rect.y(), rect.w(), rect.h(), rad6, new ColorRGBA(16.0F, 18.0F, 26.0F, 215.0F));
+            ctx.drawRoundedBorder(rect.x(), rect.y(), rect.w(), rect.h(), 0.9F, rad6, theme.withAlpha(140.0F));
+
+            IIiIIi_Class10 headFont = IIiIiI_Class11.i_field_857c0621.I_method_3a2d5e3(7.0F);
+            ctx.drawText(headFont, "3D ПРЕДПРОСМОТР АКСЕССУАРА", rect.x() + 8.0F, rect.y() + 6.0F, theme);
+
+            IIiIIi_Class10 ctrlFont = IIiIiI_Class11.II_field_857c0621.I_method_3a2d5e3(6.5F);
+            String zoomTxt = String.format("Зум: %.0f%%  [+/-]", (previewZoom / 38.0F) * 100.0F);
+            float zw = ctrlFont.I_method_2c375926(zoomTxt);
+            ctx.drawText(ctrlFont, zoomTxt, rect.x() + rect.w() - zw - 8.0F, rect.y() + 6.0F, new ColorRGBA(180.0F, 190.0F, 210.0F, 220.0F));
+
+            float pCX = rect.x() + rect.w() / 2.0F;
+            float pCY = rect.y() + rect.h() - 14.0F;
+
+            MinecraftClient mc = MinecraftClient.getInstance();
+            if (mc.player != null) {
+               ctx.draw();
+               RenderSystem.enableDepthTest();
+               RenderSystem.depthMask(true);
+               RenderSystem.disableCull();
+
+               MatrixStack m = ctx.getMatrices();
+               m.push();
+               m.translate(pCX, pCY, 100.0F);
+               m.scale(previewZoom, -previewZoom, previewZoom);
+               m.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(previewYaw));
+
+               VertexConsumerProvider.Immediate vc = mc.getBufferBuilders().getEntityVertexConsumers();
+               SkinTextures skin = mc.player.getSkinTextures();
+               try {
+                  AltManagerScreen.getPlayerModel().render(m, vc.getBuffer(RenderLayer.getEntityTranslucent(skin.texture())), 15728880, OverlayTexture.DEFAULT_UV, -1);
+               } catch (Throwable ignored) {}
+               vc.draw();
+
+               m.pop();
+               RenderSystem.enableCull();
+               RenderSystem.disableDepthTest();
+            }
+
+            IIiIIi_Class10 hintFont = IIiIiI_Class11.II_field_857c0621.I_method_3a2d5e3(6.0F);
+            String dragHint = "[ ЛКМ: поворот  |  ПКМ: " + (previewAutoSpin ? "пауза" : "вращение") + " ]";
+            float dhw = hintFont.I_method_2c375926(dragHint);
+            ctx.drawText(hintFont, dragHint, rect.x() + (rect.w() - dhw) / 2.0F, rect.y() + rect.h() - 10.0F, new ColorRGBA(140.0F, 150.0F, 175.0F, 170.0F));
+         })
+         .onClick((button, mouseX, mouseY) -> {
+            if (button == IiIII_Class9.I_field_2f4c8d6c) {
+               previewYaw = (previewYaw + 45.0F) % 360.0F;
+            } else if (button == IiIII_Class9.i_field_2f4c8d6c) {
+               previewAutoSpin = !previewAutoSpin;
+            }
+         });
+
+      return new iii_Class8()
+         .I_method_485bccf5()
+         .IIi_method_4dfc88d7(boxW)
+         .IiI_method_31d4c97(boxH)
+         .I_method_7e2bb176(IIII.I_method_12c9a0cb(2.0F, 0.0F, 5.0F, 0.0F))
+         .I_method_8939bffd(previewArea);
    }
 
    @Compile(
@@ -1182,6 +1379,9 @@ public class IiiIiIiiI_Class215 extends IiiIIiiiI_Class207 implements IiiIiIIiI_
             }
 
             ArrayList var10 = new ArrayList();
+            if (this.I_field_75e36361 != null && isAccessoryModule(this.I_field_75e36361)) {
+               var10.add(createAccessory3DPreview(this.I_field_75e36361));
+            }
             ArrayList var12 = new ArrayList();
             ArrayList var14 = new ArrayList();
             ArrayList var6 = new ArrayList();
@@ -1642,6 +1842,13 @@ public class IiiIiIiiI_Class215 extends IiiIIiiiI_Class207 implements IiiIiIIiI_
 
    @Override
    public boolean mouseScrolled(double origMouseX, double origMouseY, double horizontalAmount, double verticalAmount) {
+      if (this.I_field_75e36361 != null && isAccessoryModule(this.I_field_75e36361)) {
+         if (verticalAmount > 0) {
+            previewZoom = Math.min(65.0F, previewZoom + 3.0F);
+         } else if (verticalAmount < 0) {
+            previewZoom = Math.max(20.0F, previewZoom - 3.0F);
+         }
+      }
 
       if (this.floatingSearchOpen) {
          if (origMouseX >= this.floatingSearchX && origMouseX <= this.floatingSearchX + this.floatingSearchW

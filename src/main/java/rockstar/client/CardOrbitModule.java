@@ -47,6 +47,8 @@ public class CardOrbitModule extends Module {
     private SliderSetting scaleSetting;
     private BooleanSetting spinCardsSetting;
     private BooleanSetting cardGlowSetting;
+    private SliderSetting glowIntensity;
+    private SliderSetting glowSpread;
 
     private final IiIIIiII_Class69<Render3DEvent> renderEvent = this::onRender3D;
 
@@ -91,6 +93,10 @@ public class CardOrbitModule extends Module {
 
         this.spinCardsSetting = new BooleanSetting(this, "Spin Cards").I_method_decd82b5();
         this.cardGlowSetting = new BooleanSetting(this, "Card Glow").I_method_decd82b5();
+        this.glowIntensity = new SliderSetting(this, "Glow Intensity")
+            .I_method_c8c9a7d7(0.2F).i_method_65e2aff7(2.0F).II_method_b0f56334(0.05F).Ii_method_4e0e6b54(1.0F);
+        this.glowSpread = new SliderSetting(this, "Glow Radius")
+            .I_method_c8c9a7d7(0.1F).i_method_65e2aff7(0.6F).II_method_b0f56334(0.05F).Ii_method_4e0e6b54(0.25F);
     }
 
     private Identifier[] getActiveDeck() {
@@ -154,7 +160,11 @@ public class CardOrbitModule extends Module {
         Identifier[] deck = getActiveDeck();
         Identifier back = getActiveBack();
         boolean oldGlow = CardRenderHelper.globalCardGlow;
+        float oldAlpha = CardRenderHelper.globalGlowAlpha;
+        float oldSpread = CardRenderHelper.globalGlowSpread;
         CardRenderHelper.globalCardGlow = this.cardGlowSetting != null && this.cardGlowSetting.i_method_9b12da03();
+        if (this.glowIntensity != null) CardRenderHelper.globalGlowAlpha = this.glowIntensity.Ii_method_a20abcd2();
+        if (this.glowSpread != null) CardRenderHelper.globalGlowSpread = this.glowSpread.Ii_method_a20abcd2();
 
         MatrixStack m = event.getMatrices();
         m.push();
@@ -250,6 +260,8 @@ public class CardOrbitModule extends Module {
         }
 
         m.pop();
+        CardRenderHelper.globalGlowAlpha = oldAlpha;
+        CardRenderHelper.globalGlowSpread = oldSpread;
         CardRenderHelper.globalCardGlow = oldGlow;
     }
 }
