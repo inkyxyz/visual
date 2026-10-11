@@ -2,10 +2,14 @@ package rockstar.client;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import java.io.File;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.text.SimpleDateFormat;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -20,6 +24,8 @@ import net.minecraft.client.network.MultiplayerServerListPinger;
 import net.minecraft.client.network.ServerAddress;
 import net.minecraft.client.network.ServerInfo;
 import net.minecraft.client.option.ServerList;
+import net.minecraft.client.texture.NativeImage;
+import net.minecraft.client.texture.NativeImageBackedTexture;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import net.minecraft.world.level.storage.LevelStorage;
@@ -52,6 +58,8 @@ public class IOSDesktopScreen extends Screen {
         public final long lastPlayed;
         public final boolean hardcore;
         public final String version;
+        public Identifier iconTextureId = null;
+        private NativeImageBackedTexture iconTexture = null;
 
         public WorldItem(LevelSummary summary) {
             this.summary = summary;
@@ -62,6 +70,34 @@ public class IOSDesktopScreen extends Screen {
             this.lastPlayed = summary.getLastPlayed();
             this.hardcore = summary.isHardcore();
             this.version = summary.getVersion() != null ? summary.getVersion().getString() : "1.21.4";
+            this.loadIconTexture();
+        }
+
+        public void loadIconTexture() {
+            if (this.iconTextureId != null || this.summary == null) return;
+            try {
+                Path iconPath = this.summary.getIconPath();
+                if (iconPath != null && Files.isRegularFile(iconPath)) {
+                    try (InputStream stream = Files.newInputStream(iconPath)) {
+                        NativeImage img = NativeImage.read(stream);
+                        if (img != null) {
+                            this.iconTexture = new NativeImageBackedTexture(img);
+                            Identifier id = Identifier.of("rockstar", "ios_wld_" + Math.abs(this.name.hashCode()));
+                            MinecraftClient.getInstance().getTextureManager().registerTexture(id, this.iconTexture);
+                            this.iconTextureId = id;
+                        }
+                    }
+                }
+            } catch (Throwable ignored) {}
+        }
+
+        public void destroy() {
+            if (this.iconTexture != null) {
+                try {
+                    this.iconTexture.close();
+                } catch (Throwable ignored) {}
+                this.iconTexture = null;
+            }
         }
     }
 
@@ -73,31 +109,75 @@ public class IOSDesktopScreen extends Screen {
         public int ping = -1;
         public String playerCount = "";
         public boolean pinged = false;
+        public boolean online = false;
         private byte[] lastFavicon = null;
         public Identifier faviconTextureId = null;
+        private NativeImageBackedTexture faviconTexture = null;
 
         public ServerItem(ServerInfo info) {
             this.info = info;
             this.name = info.name != null && !info.name.isEmpty() ? info.name : "Minecraft Server";
             this.address = info.address != null ? info.address : "localhost";
-            this.motd = info.label != null ? info.label.getString() : "";
-            this.playerCount = info.playerCountLabel != null ? info.playerCountLabel.getString() : "";
-            this.ping = (int) info.ping;
+            this.updateFromInfo();
+            this.updateFaviconTexture();
+        }
+
+        public void updateFromInfo() {
+            if (this.info == null) return;
+            if (this.info.ping > 0) {
+                this.ping = (int) this.info.ping;
+                this.online = true;
+                this.pinged = true;
+            }
+            if (this.info.label != null) {
+                this.motd = this.info.label.getString();
+            }
+            if (this.info.players != null) {
+                this.playerCount = this.info.players.online() + "/" + this.info.players.max();
+                this.online = true;
+                this.pinged = true;
+            } else if (this.info.playerCountLabel != null && !this.info.playerCountLabel.getString().isEmpty()) {
+                this.playerCount = this.info.playerCountLabel.getString();
+                this.online = true;
+                this.pinged = true;
+            }
+            if (this.info.getStatus() == ServerInfo.Status.SUCCESSFUL) {
+                this.online = true;
+                this.pinged = true;
+            } else if (this.info.getStatus() == ServerInfo.Status.UNREACHABLE) {
+                this.online = false;
+                this.pinged = true;
+                this.ping = -1;
+            }
         }
 
         public void updateFaviconTexture() {
             if (this.info == null) return;
             try {
                 byte[] fav = this.info.getFavicon();
-                if (fav != null && fav.length > 0 && !java.util.Arrays.equals(fav, this.lastFavicon)) {
+                if (fav != null && fav.length > 0 && !Arrays.equals(fav, this.lastFavicon)) {
                     this.lastFavicon = fav;
-                    net.minecraft.client.texture.NativeImage img = net.minecraft.client.texture.NativeImage.read(fav);
-                    net.minecraft.client.texture.NativeImageBackedTexture tex = new net.minecraft.client.texture.NativeImageBackedTexture(img);
-                    Identifier id = Identifier.of("rockstar", "ios_srv_" + Math.abs(this.address.hashCode()));
-                    MinecraftClient.getInstance().getTextureManager().registerTexture(id, tex);
-                    this.faviconTextureId = id;
+                    NativeImage img = NativeImage.read(fav);
+                    if (img != null) {
+                        if (this.faviconTexture != null) {
+                            try { this.faviconTexture.close(); } catch (Throwable ignored) {}
+                        }
+                        this.faviconTexture = new NativeImageBackedTexture(img);
+                        Identifier id = Identifier.of("rockstar", "ios_srv_" + Math.abs(this.address.hashCode()));
+                        MinecraftClient.getInstance().getTextureManager().registerTexture(id, this.faviconTexture);
+                        this.faviconTextureId = id;
+                    }
                 }
             } catch (Throwable ignored) {}
+        }
+
+        public void destroy() {
+            if (this.faviconTexture != null) {
+                try {
+                    this.faviconTexture.close();
+                } catch (Throwable ignored) {}
+                this.faviconTexture = null;
+            }
         }
     }
 
@@ -177,13 +257,19 @@ public class IOSDesktopScreen extends Screen {
                     // Ping server asynchronously
                     try {
                         this.pinger.add(info, () -> {
-                            item.pinged = true;
-                            item.ping = (int) info.ping;
-                            item.motd = info.label != null ? info.label.getString() : "";
-                            item.playerCount = info.playerCountLabel != null ? info.playerCountLabel.getString() : "";
+                            if (this.client != null) {
+                                this.client.execute(() -> {
+                                    item.updateFromInfo();
+                                    item.updateFaviconTexture();
+                                });
+                            }
                         }, () -> {
-                            item.pinged = true;
-                            item.ping = -1;
+                            if (this.client != null) {
+                                this.client.execute(() -> {
+                                    item.updateFromInfo();
+                                    item.updateFaviconTexture();
+                                });
+                            }
                         });
                     } catch (Throwable ignored) {}
                 }
@@ -201,6 +287,12 @@ public class IOSDesktopScreen extends Screen {
                 this.pinger.tick();
             } catch (Throwable ignored) {}
         }
+        for (ServerItem s : this.servers) {
+            if (s.info != null) {
+                s.updateFromInfo();
+                s.updateFaviconTexture();
+            }
+        }
     }
 
     @Override
@@ -209,6 +301,12 @@ public class IOSDesktopScreen extends Screen {
             try {
                 this.pinger.cancel();
             } catch (Throwable ignored) {}
+        }
+        for (ServerItem s : this.servers) {
+            s.destroy();
+        }
+        for (WorldItem w : this.worlds) {
+            w.destroy();
         }
         super.removed();
     }
@@ -457,16 +555,22 @@ public class IOSDesktopScreen extends Screen {
         custom.drawRoundedRect(x, y, wCard, hCard, rad, bg);
         custom.drawRoundedBorder(x, y, wCard, hCard, 0.8F, rad, hov ? IiiiiIIIi_Class242.I_method_7df8e08e().withAlpha(160.0F) : new ColorRGBA(255.0F, 255.0F, 255.0F, 24.0F));
 
-        // Squircle Icon (Singleplayer Earth / Grass Icon)
+        // Squircle Icon (Singleplayer Earth / World Screenshot Icon)
         float iconSize = 46.0F;
         float iconX = x + 10.0F;
         float iconY = y + (hCard - iconSize) / 2.0F;
         IIiii_Class8 iconRad = IIiii_Class8.I_method_893b2757(12.0F);
 
-        // Vibrant grass green gradient for worlds
-        custom.drawRoundedRect(iconX, iconY, iconSize, iconSize, iconRad, new ColorRGBA(40.0F, 120.0F, 70.0F, 220.0F));
-        custom.drawRoundedBorder(iconX, iconY, iconSize, iconSize, 0.8F, iconRad, new ColorRGBA(120.0F, 240.0F, 160.0F, 180.0F));
-        custom.drawIcon("world", iconX + (iconSize - 22.0F) / 2.0F, iconY + (iconSize - 22.0F) / 2.0F, 22.0F, ColorRGBA.WHITE);
+        w.loadIconTexture();
+        if (w.iconTextureId != null) {
+            custom.drawRoundedTexture(w.iconTextureId, iconX, iconY, iconSize, iconSize, iconRad, ColorRGBA.WHITE);
+            custom.drawRoundedBorder(iconX, iconY, iconSize, iconSize, 1.0F, iconRad, hov ? IiiiiIIIi_Class242.I_method_7df8e08e() : new ColorRGBA(255.0F, 255.0F, 255.0F, 30.0F));
+        } else {
+            // Vibrant grass green gradient for worlds without screenshot
+            custom.drawRoundedRect(iconX, iconY, iconSize, iconSize, iconRad, new ColorRGBA(40.0F, 120.0F, 70.0F, 220.0F));
+            custom.drawRoundedBorder(iconX, iconY, iconSize, iconSize, 0.8F, iconRad, new ColorRGBA(120.0F, 240.0F, 160.0F, 180.0F));
+            custom.drawIcon("world", iconX + (iconSize - 22.0F) / 2.0F, iconY + (iconSize - 22.0F) / 2.0F, 22.0F, ColorRGBA.WHITE);
+        }
 
         // World Info Text
         float textX = iconX + iconSize + 10.0F;
@@ -518,12 +622,8 @@ public class IOSDesktopScreen extends Screen {
         s.updateFaviconTexture();
 
         if (s.faviconTextureId != null) {
-            // Draw background squircle
-            custom.drawRoundedRect(iconX, iconY, iconSize, iconSize, iconRad, new ColorRGBA(18.0F, 22.0F, 32.0F, 240.0F));
             // Fill the rounded squircle with the real server favicon
-            custom.enableScissor((int)iconX, (int)iconY, (int)iconSize, (int)iconSize);
-            custom.drawTexture(s.faviconTextureId, iconX, iconY, iconSize, iconSize, ColorRGBA.WHITE);
-            custom.disableScissor();
+            custom.drawRoundedTexture(s.faviconTextureId, iconX, iconY, iconSize, iconSize, iconRad, ColorRGBA.WHITE);
             custom.drawRoundedBorder(iconX, iconY, iconSize, iconSize, 1.0F, iconRad, hov ? IiiiiIIIi_Class242.I_method_7df8e08e() : new ColorRGBA(255.0F, 255.0F, 255.0F, 30.0F));
         } else {
             // Beautiful fallback monogram initial letter
@@ -543,21 +643,26 @@ public class IOSDesktopScreen extends Screen {
         custom.drawText(IIiIiI_Class11.i_field_857c0621.I_method_3a2d5e3(6.5F), s.address, textX, y + 26.0F, new ColorRGBA(180.0F, 210.0F, 255.0F, 200.0F));
 
         // Ping badge & players count
-        String pingText;
-        ColorRGBA pingCol;
+        String statusText;
+        ColorRGBA statusCol;
         if (!s.pinged) {
-            pingText = "...";
-            pingCol = new ColorRGBA(255.0F, 255.0F, 255.0F, 140.0F);
-        } else if (s.ping >= 0) {
-            pingText = s.ping + " ms";
-            pingCol = s.ping < 70 ? new ColorRGBA(80.0F, 225.0F, 130.0F, 255.0F) : (s.ping < 160 ? new ColorRGBA(240.0F, 200.0F, 60.0F, 255.0F) : new ColorRGBA(240.0F, 70.0F, 70.0F, 255.0F));
+            statusText = "Подключение...";
+            statusCol = new ColorRGBA(255.0F, 255.0F, 255.0F, 140.0F);
+        } else if (s.online) {
+            statusCol = new ColorRGBA(80.0F, 225.0F, 130.0F, 255.0F);
+            if (!s.playerCount.isEmpty()) {
+                statusText = s.playerCount + " игроков" + (s.ping > 0 ? " • " + s.ping + " ms" : "");
+            } else if (s.ping > 0) {
+                statusText = s.ping + " ms • Онлайн";
+            } else {
+                statusText = "Онлайн";
+            }
         } else {
-            pingText = "Оффлайн";
-            pingCol = new ColorRGBA(240.0F, 70.0F, 70.0F, 255.0F);
+            statusText = "Офлайн";
+            statusCol = new ColorRGBA(240.0F, 70.0F, 70.0F, 255.0F);
         }
 
-        String countStr = !s.playerCount.isEmpty() ? " • " + s.playerCount : "";
-        custom.drawText(IIiIiI_Class11.i_field_857c0621.I_method_3a2d5e3(6.5F), pingText + countStr, textX, y + 39.0F, pingCol);
+        custom.drawText(IIiIiI_Class11.i_field_857c0621.I_method_3a2d5e3(6.5F), statusText, textX, y + 39.0F, statusCol);
 
         // Quick Launch Action Pill (Connect)
         float btnW = 54.0F;

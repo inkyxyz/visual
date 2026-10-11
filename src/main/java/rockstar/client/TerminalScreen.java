@@ -164,7 +164,7 @@ public class TerminalScreen extends Screen {
         float suggestionH = 36.0F;
         float outH = winH - titleBarH - promptH - suggestionH - 16.0F;
 
-        custom.enableScissor((int)outX, (int)outY, (int)outW, (int)outH);
+        custom.enableScissor((int)outX, (int)outY, (int)(outX + outW), (int)(outY + outH));
 
         float lineHeight = 11.5F;
         float totalLogHeight = HISTORY.size() * lineHeight;
