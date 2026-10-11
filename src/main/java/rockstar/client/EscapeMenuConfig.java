@@ -19,6 +19,8 @@ public class EscapeMenuConfig {
     public boolean showFullscreen = true;
     public boolean showVolume = true;
     public boolean showCalculator = true;
+    public boolean showWeather = true;
+    public boolean showDroneAlerts = true;
     public boolean showWeatherAlerts = true;
     public boolean showRamUsage = true;
     public boolean showAIChat = true;
@@ -56,6 +58,8 @@ public class EscapeMenuConfig {
                     this.showFullscreen = loaded.showFullscreen;
                     this.showVolume = loaded.showVolume;
                     this.showCalculator = loaded.showCalculator;
+                    this.showWeather = loaded.showWeather;
+                    this.showDroneAlerts = loaded.showDroneAlerts;
                     this.showWeatherAlerts = loaded.showWeatherAlerts;
                     this.showRamUsage = loaded.showRamUsage;
                     this.showAIChat = loaded.showAIChat;

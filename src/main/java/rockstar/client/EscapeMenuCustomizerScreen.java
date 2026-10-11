@@ -133,22 +133,23 @@ public class EscapeMenuCustomizerScreen extends ii_Class4 {
         float c1X = cardX + 16.0F;
         float c2X = c1X + colW + colGap;
 
-        // Col 1
+        // Col 1 (6 items)
         renderToggleItem(custom, c1X, itemY + 0 * (itemH + rowGap), colW, itemH, "Медиаплеер", cfg.showMediaPlayer, font, activeTheme);
         renderToggleItem(custom, c1X, itemY + 1 * (itemH + rowGap), colW, itemH, "Калькулятор", cfg.showCalculator, font, activeTheme);
         renderToggleItem(custom, c1X, itemY + 2 * (itemH + rowGap), colW, itemH, "Ползунок звука", cfg.showVolume, font, activeTheme);
         renderToggleItem(custom, c1X, itemY + 3 * (itemH + rowGap), colW, itemH, "Быстрые плитки", cfg.showCamera, font, activeTheme);
         renderToggleItem(custom, c1X, itemY + 4 * (itemH + rowGap), colW, itemH, "Свободная RAM", cfg.showRamUsage, font, activeTheme);
+        renderToggleItem(custom, c1X, itemY + 5 * (itemH + rowGap), colW, itemH, "Затемнение фона", cfg.dimBackground, font, activeTheme);
 
-        // Col 2
-        renderToggleItem(custom, c2X, itemY + 0 * (itemH + rowGap), colW, itemH, "Погода и БПЛА", cfg.showWeatherAlerts, font, activeTheme);
-        renderToggleItem(custom, c2X, itemY + 1 * (itemH + rowGap), colW, itemH, "Agravity AI", cfg.showAIChat, font, activeTheme);
-        renderToggleItem(custom, c2X, itemY + 2 * (itemH + rowGap), colW, itemH, "Заметки", cfg.showNotes, font, activeTheme);
-        renderToggleItem(custom, c2X, itemY + 3 * (itemH + rowGap), colW, itemH, "Мини-игры", cfg.showGames, font, activeTheme);
-        renderToggleItem(custom, c2X, itemY + 4 * (itemH + rowGap), colW, itemH, "Затемнение фона", cfg.dimBackground, font, activeTheme);
+        // Col 2 (5 items)
+        renderToggleItem(custom, c2X, itemY + 0 * (itemH + rowGap), colW, itemH, "Виджет Погоды", cfg.showWeather, font, activeTheme);
+        renderToggleItem(custom, c2X, itemY + 1 * (itemH + rowGap), colW, itemH, "Радар БПЛА", cfg.showDroneAlerts, font, activeTheme);
+        renderToggleItem(custom, c2X, itemY + 2 * (itemH + rowGap), colW, itemH, "Agravity AI", cfg.showAIChat, font, activeTheme);
+        renderToggleItem(custom, c2X, itemY + 3 * (itemH + rowGap), colW, itemH, "Заметки", cfg.showNotes, font, activeTheme);
+        renderToggleItem(custom, c2X, itemY + 4 * (itemH + rowGap), colW, itemH, "Мини-игры", cfg.showGames, font, activeTheme);
 
         // Section 2 Divider: Weather City Selection
-        float citySecY = itemY + 5 * (itemH + rowGap) + 8.0F;
+        float citySecY = itemY + 6 * (itemH + rowGap) + 6.0F;
         custom.drawRect(cardX + 16.0F, citySecY, cardW - 32.0F, 1.0F, new ColorRGBA(255.0F, 255.0F, 255.0F, 14.0F));
 
         citySecY += 6.0F;
@@ -302,9 +303,9 @@ public class EscapeMenuCustomizerScreen extends ii_Class4 {
         float c1X = cardX + 16.0F;
         float c2X = c1X + colW + colGap;
 
-        // Col 1 toggles (5 items)
+        // Col 1 toggles (6 items)
         if (mouseX >= c1X && mouseX <= c1X + colW) {
-            for (int r = 0; r < 5; r++) {
+            for (int r = 0; r < 6; r++) {
                 float rY = itemY + r * (itemH + rowGap);
                 if (mouseY >= rY && mouseY <= rY + itemH) {
                     if (r == 0) cfg.showMediaPlayer = !cfg.showMediaPlayer;
@@ -315,6 +316,8 @@ public class EscapeMenuCustomizerScreen extends ii_Class4 {
                         cfg.showFullscreen = cfg.showCamera;
                     } else if (r == 4) {
                         cfg.showRamUsage = !cfg.showRamUsage;
+                    } else if (r == 5) {
+                        cfg.dimBackground = !cfg.dimBackground;
                     }
                     cfg.save();
                     UISoundManager.playButtonClick();
@@ -328,11 +331,11 @@ public class EscapeMenuCustomizerScreen extends ii_Class4 {
             for (int r = 0; r < 5; r++) {
                 float rY = itemY + r * (itemH + rowGap);
                 if (mouseY >= rY && mouseY <= rY + itemH) {
-                    if (r == 0) cfg.showWeatherAlerts = !cfg.showWeatherAlerts;
-                    else if (r == 1) cfg.showAIChat = !cfg.showAIChat;
-                    else if (r == 2) cfg.showNotes = !cfg.showNotes;
-                    else if (r == 3) cfg.showGames = !cfg.showGames;
-                    else if (r == 4) cfg.dimBackground = !cfg.dimBackground;
+                    if (r == 0) cfg.showWeather = !cfg.showWeather;
+                    else if (r == 1) cfg.showDroneAlerts = !cfg.showDroneAlerts;
+                    else if (r == 2) cfg.showAIChat = !cfg.showAIChat;
+                    else if (r == 3) cfg.showNotes = !cfg.showNotes;
+                    else if (r == 4) cfg.showGames = !cfg.showGames;
                     cfg.save();
                     UISoundManager.playButtonClick();
                     return;
@@ -341,7 +344,7 @@ public class EscapeMenuCustomizerScreen extends ii_Class4 {
         }
 
         // Weather City Selection Clicks
-        float citySecY = itemY + 5 * (itemH + rowGap) + 8.0F;
+        float citySecY = itemY + 6 * (itemH + rowGap) + 6.0F;
         float cityGridY = citySecY + 16.0F;
         float cityPillH = 20.0F;
         float curCityX = cardX + 16.0F;

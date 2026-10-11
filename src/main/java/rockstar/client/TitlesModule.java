@@ -359,15 +359,18 @@ public class TitlesModule extends Module {
 
                     if (!this.currentLineChunks.isEmpty()) {
                         int totalChunks = this.currentLineChunks.size();
-                        long chunkDur = Math.max(500L, lineDur / totalChunks);
+                        // Real speech pacing: pace chunk starts naturally to match audio tempo
+                        long chunkInterval = Math.max(500L, Math.min(lineDur / totalChunks, 2000L));
                         long lineElapsed = Math.max(0L, posMs - lineStart);
-                        int chunkIdx = MathHelper.clamp((int)(lineElapsed / chunkDur), 0, totalChunks - 1);
+                        int chunkIdx = (int)(lineElapsed / chunkInterval);
 
-                        if (chunkIdx != this.lastActiveChunkIndex || this.activeChunks.isEmpty()) {
+                        // Only spawn forward chunks up to totalChunks; never endlessly repeat the last line on empty activeChunks
+                        if (chunkIdx < totalChunks && chunkIdx > this.lastActiveChunkIndex) {
                             this.lastActiveChunkIndex = chunkIdx;
                             this.chunkSpawnCounter++;
                             boolean rightSide = (this.chunkSpawnCounter % 2 == 1);
                             String[] words = this.currentLineChunks.get(chunkIdx);
+                            long chunkDur = Math.max(650L, words.length * 340L + 220L);
                             spawnChunkAtCamera(words, camera, font, spaceWidth, now, chunkDur, rightSide);
                         }
                     }

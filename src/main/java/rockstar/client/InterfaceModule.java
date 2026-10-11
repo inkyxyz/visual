@@ -46,6 +46,7 @@ extends Module {
     private SliderSetting borderGlow;
     private SliderSetting cornerRadius;
     private BooleanSetting islandVisualizer;
+    private BooleanSetting terminalMode;
     private BooleanSetting hitSoundsSetting;
     private BooleanSetting uiSoundsSetting;
     private final IiIIIiII_Class69<ClientPlayerTickEvent> tickListener = event -> this.updateTheme();
@@ -141,6 +142,7 @@ extends Module {
             .II_method_b0f56334(1.0F)
             .Ii_method_4e0e6b54(7.0F);
         this.islandVisualizer = new BooleanSetting(this, "Island Visualizer").I_method_decd82b5();
+        this.terminalMode = new BooleanSetting(this, "Терминал");
         this.fontSetting = new ModeSetting(this, "Font");
         new ModeSetting.Nested1_42765c60(this.fontSetting, "Inter").select();
         new ModeSetting.Nested1_42765c60(this.fontSetting, "Medium");
@@ -473,6 +475,20 @@ extends Module {
             }
             RockstarClient.getInstance().I_method_7a4c3f0b().i_method_af563376("client");
             return this;
+        }
+    }
+
+    public static boolean isTerminalMode() {
+        if (RockstarClient.getInstance() == null || RockstarClient.getInstance().getModuleManager() == null) return false;
+        InterfaceModule im = RockstarClient.getInstance().getModuleManager().getModule(InterfaceModule.class);
+        return im != null && im.terminalMode != null && im.terminalMode.i_method_9b12da03();
+    }
+
+    public static void setTerminalMode(boolean val) {
+        if (RockstarClient.getInstance() == null || RockstarClient.getInstance().getModuleManager() == null) return;
+        InterfaceModule im = RockstarClient.getInstance().getModuleManager().getModule(InterfaceModule.class);
+        if (im != null && im.terminalMode != null) {
+            im.terminalMode.I_method_4e1408b5(val);
         }
     }
 }

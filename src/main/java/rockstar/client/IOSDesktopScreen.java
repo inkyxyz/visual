@@ -21,6 +21,7 @@ import net.minecraft.client.network.ServerAddress;
 import net.minecraft.client.network.ServerInfo;
 import net.minecraft.client.option.ServerList;
 import net.minecraft.text.Text;
+import net.minecraft.util.Identifier;
 import net.minecraft.world.level.storage.LevelStorage;
 import net.minecraft.world.level.storage.LevelSummary;
 import org.lwjgl.glfw.GLFW;
@@ -72,6 +73,8 @@ public class IOSDesktopScreen extends Screen {
         public int ping = -1;
         public String playerCount = "";
         public boolean pinged = false;
+        private byte[] lastFavicon = null;
+        public Identifier faviconTextureId = null;
 
         public ServerItem(ServerInfo info) {
             this.info = info;
@@ -80,6 +83,21 @@ public class IOSDesktopScreen extends Screen {
             this.motd = info.label != null ? info.label.getString() : "";
             this.playerCount = info.playerCountLabel != null ? info.playerCountLabel.getString() : "";
             this.ping = (int) info.ping;
+        }
+
+        public void updateFaviconTexture() {
+            if (this.info == null) return;
+            try {
+                byte[] fav = this.info.getFavicon();
+                if (fav != null && fav.length > 0 && !java.util.Arrays.equals(fav, this.lastFavicon)) {
+                    this.lastFavicon = fav;
+                    net.minecraft.client.texture.NativeImage img = net.minecraft.client.texture.NativeImage.read(fav);
+                    net.minecraft.client.texture.NativeImageBackedTexture tex = new net.minecraft.client.texture.NativeImageBackedTexture(img);
+                    Identifier id = Identifier.of("rockstar", "ios_srv_" + Math.abs(this.address.hashCode()));
+                    MinecraftClient.getInstance().getTextureManager().registerTexture(id, tex);
+                    this.faviconTextureId = id;
+                }
+            } catch (Throwable ignored) {}
         }
     }
 
@@ -294,7 +312,7 @@ public class IOSDesktopScreen extends Screen {
         custom.drawRoundedBorder(barX, barY, barW, barH, 0.8F, rad, new ColorRGBA(255.0F, 255.0F, 255.0F, 32.0F));
 
         // Left: Logo & Clock
-        custom.drawIcon("apple", barX + 14.0F, barY + (barH - 14.0F) / 2.0F, 13.0F, ColorRGBA.WHITE);
+        custom.drawIcon("logo", barX + 14.0F, barY + (barH - 14.0F) / 2.0F, 13.0F, ColorRGBA.WHITE);
         custom.drawText(IIiIiI_Class11.II_field_857c0621.I_method_3a2d5e3(8.5F), "Desktop", barX + 32.0F, barY + (barH - 8.5F) / 2.0F, ColorRGBA.WHITE);
 
         String timeStr = LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm"));
@@ -448,7 +466,7 @@ public class IOSDesktopScreen extends Screen {
         // Vibrant grass green gradient for worlds
         custom.drawRoundedRect(iconX, iconY, iconSize, iconSize, iconRad, new ColorRGBA(40.0F, 120.0F, 70.0F, 220.0F));
         custom.drawRoundedBorder(iconX, iconY, iconSize, iconSize, 0.8F, iconRad, new ColorRGBA(120.0F, 240.0F, 160.0F, 180.0F));
-        custom.drawIcon("globe", iconX + (iconSize - 22.0F) / 2.0F, iconY + (iconSize - 22.0F) / 2.0F, 22.0F, ColorRGBA.WHITE);
+        custom.drawIcon("world", iconX + (iconSize - 22.0F) / 2.0F, iconY + (iconSize - 22.0F) / 2.0F, 22.0F, ColorRGBA.WHITE);
 
         // World Info Text
         float textX = iconX + iconSize + 10.0F;
@@ -490,16 +508,32 @@ public class IOSDesktopScreen extends Screen {
         custom.drawRoundedRect(x, y, wCard, hCard, rad, bg);
         custom.drawRoundedBorder(x, y, wCard, hCard, 0.8F, rad, hov ? IiiiiIIIi_Class242.I_method_7df8e08e().withAlpha(160.0F) : new ColorRGBA(255.0F, 255.0F, 255.0F, 24.0F));
 
-        // Squircle Icon (Multiplayer Server / Network Icon)
+        // Squircle Icon (Multiplayer Server / Network Favicon)
         float iconSize = 46.0F;
         float iconX = x + 10.0F;
         float iconY = y + (hCard - iconSize) / 2.0F;
         IIiii_Class8 iconRad = IIiii_Class8.I_method_893b2757(12.0F);
 
-        // Deep blue / cyan cyber gradient for servers
-        custom.drawRoundedRect(iconX, iconY, iconSize, iconSize, iconRad, new ColorRGBA(35.0F, 90.0F, 180.0F, 220.0F));
-        custom.drawRoundedBorder(iconX, iconY, iconSize, iconSize, 0.8F, iconRad, new ColorRGBA(90.0F, 190.0F, 255.0F, 180.0F));
-        custom.drawIcon("wifi", iconX + (iconSize - 22.0F) / 2.0F, iconY + (iconSize - 22.0F) / 2.0F, 22.0F, ColorRGBA.WHITE);
+        // Update / register dynamic favicon if server provided one
+        s.updateFaviconTexture();
+
+        if (s.faviconTextureId != null) {
+            // Draw background squircle
+            custom.drawRoundedRect(iconX, iconY, iconSize, iconSize, iconRad, new ColorRGBA(18.0F, 22.0F, 32.0F, 240.0F));
+            // Fill the rounded squircle with the real server favicon
+            custom.enableScissor((int)iconX, (int)iconY, (int)iconSize, (int)iconSize);
+            custom.drawTexture(s.faviconTextureId, iconX, iconY, iconSize, iconSize, ColorRGBA.WHITE);
+            custom.disableScissor();
+            custom.drawRoundedBorder(iconX, iconY, iconSize, iconSize, 1.0F, iconRad, hov ? IiiiiIIIi_Class242.I_method_7df8e08e() : new ColorRGBA(255.0F, 255.0F, 255.0F, 30.0F));
+        } else {
+            // Beautiful fallback monogram initial letter
+            custom.drawRoundedRect(iconX, iconY, iconSize, iconSize, iconRad, new ColorRGBA(32.0F, 42.0F, 64.0F, 220.0F));
+            custom.drawRoundedBorder(iconX, iconY, iconSize, iconSize, 0.8F, iconRad, hov ? IiiiiIIIi_Class242.I_method_7df8e08e() : new ColorRGBA(90.0F, 190.0F, 255.0F, 140.0F));
+            String initial = s.name.trim().isEmpty() ? "S" : s.name.trim().substring(0, 1).toUpperCase();
+            IIiIIi_Class10 letterFont = IIiIiI_Class11.II_field_857c0621.I_method_3a2d5e3(16.0F);
+            float lw = letterFont.I_method_2c375926(initial);
+            custom.drawText(letterFont, initial, iconX + (iconSize - lw) / 2.0F, iconY + (iconSize - 16.0F) / 2.0F + 1.0F, ColorRGBA.WHITE);
+        }
 
         // Server Info Text
         float textX = iconX + iconSize + 10.0F;

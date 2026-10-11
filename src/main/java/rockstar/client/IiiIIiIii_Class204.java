@@ -25,10 +25,40 @@ import net.minecraft.client.render.VertexFormat.DrawMode;
 import net.minecraft.client.render.VertexFormats;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.math.RotationAxis;
+import net.minecraft.client.gl.Framebuffer;
+import net.minecraft.client.util.ScreenshotRecorder;
+import net.minecraft.client.texture.NativeImage;
+import net.minecraft.client.texture.NativeImageBackedTexture;
 import org.joml.Matrix4f;
 
 public class IiiIIiIii_Class204 extends ii_Class4 implements iIIiIIiIi_Class294 {
    public static boolean triggerReturnAnimation = false;
+   public static Identifier lastGameFrameTexture = null;
+   private static NativeImageBackedTexture lastGameFrameBackedTexture = null;
+
+   public static void captureLastGameFrame() {
+      try {
+         MinecraftClient mc = MinecraftClient.getInstance();
+         if (mc == null) return;
+         Framebuffer fb = mc.getFramebuffer();
+         if (fb == null || fb.textureWidth <= 0 || fb.textureHeight <= 0) return;
+
+         NativeImage image = ScreenshotRecorder.takeScreenshot(fb);
+         if (image == null) return;
+
+         if (lastGameFrameBackedTexture != null) {
+            try {
+               lastGameFrameBackedTexture.close();
+            } catch (Throwable ignored) {}
+         }
+         lastGameFrameBackedTexture = new NativeImageBackedTexture(image);
+         Identifier id = Identifier.of("rockstar", "last_game_frame");
+         mc.getTextureManager().registerTexture(id, lastGameFrameBackedTexture);
+         lastGameFrameTexture = id;
+      } catch (Throwable t) {
+         t.printStackTrace();
+      }
+   }
    private static long returnAnimStartTime = 0L;
    private float returnAnimProgress = 0.0F;
    private static boolean I_field_5a;
@@ -474,7 +504,15 @@ public class IiiIIiIii_Class204 extends ii_Class4 implements iIIiIIiIi_Class294 
 
          var1.drawShadow(frameX, fY, frameW, frameH, 36.0F, IIiii_Class8.I_method_893b2757(14.0F), ColorRGBA.BLACK.withAlpha(220.0F * frameAlpha));
          var1.drawBlurredRect(frameX, fY, frameW, frameH, 20.0F, 4.0F, IIiii_Class8.I_method_893b2757(14.0F), new ColorRGBA(255.0F, 255.0F, 255.0F, 24.0F * frameAlpha));
-         var1.drawRoundedRect(frameX, fY, frameW, frameH, IIiii_Class8.I_method_893b2757(14.0F), new ColorRGBA(8.0F, 10.0F, 16.0F, 235.0F * frameAlpha));
+
+         // Render the actual captured last in-game frame
+         if (lastGameFrameTexture != null) {
+             var1.drawTexture(lastGameFrameTexture, frameX, fY, frameW, frameH, ColorRGBA.WHITE.withAlpha(255.0F * frameAlpha));
+             // Dark translucent glass overlay so text & progress bar pop nicely
+             var1.drawRoundedRect(frameX, fY, frameW, frameH, IIiii_Class8.I_method_893b2757(14.0F), new ColorRGBA(6.0F, 8.0F, 14.0F, 125.0F * frameAlpha));
+         } else {
+             var1.drawRoundedRect(frameX, fY, frameW, frameH, IIiii_Class8.I_method_893b2757(14.0F), new ColorRGBA(8.0F, 10.0F, 16.0F, 235.0F * frameAlpha));
+         }
          var1.drawRoundedBorder(frameX, fY, frameW, frameH, 1.5F, IIiii_Class8.I_method_893b2757(14.0F), IiiiiIIIi_Class242.I_method_7df8e08e().withAlpha(190.0F * frameAlpha));
 
          IIiIIi_Class10 bFont = IIiIiI_Class11.i_field_857c0621.I_method_3a2d5e3(13.0F);

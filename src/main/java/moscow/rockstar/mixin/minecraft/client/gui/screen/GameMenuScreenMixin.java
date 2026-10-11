@@ -179,7 +179,8 @@ implements iIIiIIiIi_Class294 {
 
         int topCardCount = 0;
         if (cfg.showMediaPlayer) topCardCount++;
-        if (cfg.showWeatherAlerts) topCardCount += 2;
+        if (cfg.showWeather) topCardCount++;
+        if (cfg.showDroneAlerts) topCardCount++;
         if (cfg.showRamUsage) topCardCount++;
         topCardCount = Math.max(1, topCardCount);
         float topTotalW = topCardCount * topW + (topCardCount - 1) * topGap;
@@ -240,7 +241,7 @@ implements iIIiIIiIi_Class294 {
         }
 
         // 1: Separate iOS Weather Widget Card
-        if (cfg.showWeatherAlerts) {
+        if (cfg.showWeather) {
             float wX = curTopX;
             float wY = topY + topFlyY;
             boolean wHov = (mouseX >= wX && mouseX <= wX + topW && mouseY >= wY && mouseY <= wY + topH);
@@ -251,7 +252,7 @@ implements iIIiIIiIi_Class294 {
         }
 
         // 2: Separate iOS Drone Threat Radar Card
-        if (cfg.showWeatherAlerts) {
+        if (cfg.showDroneAlerts) {
             float rX = curTopX;
             float rY = topY + topFlyY;
             boolean rHov = (mouseX >= rX && mouseX <= rX + topW && mouseY >= rY && mouseY <= rY + topH);
@@ -892,17 +893,20 @@ implements iIIiIIiIi_Class294 {
         float btnSz = 16.0F;
         boolean plusHov = (mx >= btnPlusX && mx <= btnPlusX + btnSz && my >= btnY && my <= btnY + btnSz);
         custom.drawRoundedRect(btnPlusX, btnY, btnSz, btnSz, IIiii_Class8.I_method_893b2757(4.0F), plusHov ? new ColorRGBA(59.0F, 130.0F, 246.0F, 180.0F) : new ColorRGBA(255.0F, 255.0F, 255.0F, 20.0F));
-        if (tinyFont != null) {
-            custom.drawText(tinyFont, "+", btnPlusX + 5.0F, btnY + 4.5F, ColorRGBA.WHITE);
-        }
+        // Perfect centered procedural + icon (subpixel accurate)
+        float plusCx = btnPlusX + btnSz / 2.0F;
+        float plusCy = btnY + btnSz / 2.0F;
+        custom.drawRoundedRect(plusCx - 3.5F, plusCy - 0.75F, 7.0F, 1.5F, IIiii_Class8.I_method_893b2757(0.75F), ColorRGBA.WHITE);
+        custom.drawRoundedRect(plusCx - 0.75F, plusCy - 3.5F, 1.5F, 7.0F, IIiii_Class8.I_method_893b2757(0.75F), ColorRGBA.WHITE);
 
         // Action button 2: [📍] Insert Player Coordinates
         float btnCoordX = x + w - 22.0F;
         boolean coordHov = (mx >= btnCoordX && mx <= btnCoordX + btnSz && my >= btnY && my <= btnY + btnSz);
         custom.drawRoundedRect(btnCoordX, btnY, btnSz, btnSz, IIiii_Class8.I_method_893b2757(4.0F), coordHov ? new ColorRGBA(16.0F, 185.0F, 129.0F, 180.0F) : new ColorRGBA(255.0F, 255.0F, 255.0F, 20.0F));
-        if (tinyFont != null) {
-            custom.drawText(tinyFont, "📍", btnCoordX + 2.0F, btnY + 4.0F, ColorRGBA.WHITE);
-        }
+        // Vector location pin icon (procedural, always rendered and crisp in any font)
+        custom.drawRoundedRect(btnCoordX + 5.0F, btnY + 2.5F, 6.0F, 6.0F, IIiii_Class8.I_method_893b2757(3.0F), ColorRGBA.WHITE);
+        custom.drawRoundedRect(btnCoordX + 6.75F, btnY + 4.25F, 2.5F, 2.5F, IIiii_Class8.I_method_893b2757(1.25F), coordHov ? new ColorRGBA(16.0F, 185.0F, 129.0F, 255.0F) : new ColorRGBA(30.0F, 34.0F, 46.0F, 255.0F));
+        custom.drawRoundedRect(btnCoordX + 7.25F, btnY + 7.5F, 1.5F, 4.0F, IIiii_Class8.I_method_893b2757(0.75F), ColorRGBA.WHITE);
 
         // Apple Notes yellow top divider line
         custom.drawRect(x + 10.0F, y + 25.0F, w - 20.0F, 1.0F, new ColorRGBA(245.0F, 158.0F, 11.0F, 120.0F));
@@ -1227,7 +1231,8 @@ implements iIIiIIiIi_Class294 {
         float topGap = 8.0F;
         int topCardCount = 0;
         if (cfg.showMediaPlayer) topCardCount++;
-        if (cfg.showWeatherAlerts) topCardCount += 2;
+        if (cfg.showWeather) topCardCount++;
+        if (cfg.showDroneAlerts) topCardCount++;
         if (cfg.showRamUsage) topCardCount++;
         topCardCount = Math.max(1, topCardCount);
         float topTotalW = topCardCount * topW + (topCardCount - 1) * topGap;
@@ -1269,7 +1274,7 @@ implements iIIiIIiIi_Class294 {
         }
 
         // Weather Card Click (Cycles City!)
-        if (cfg.showWeatherAlerts) {
+        if (cfg.showWeather) {
             float wX = curTopX;
             curTopX += topW + topGap;
             if (mouseX >= wX && mouseX <= wX + topW && mouseY >= topY && mouseY <= topY + topH) {
@@ -1294,7 +1299,7 @@ implements iIIiIIiIi_Class294 {
         }
 
         // Drone Radar Card Click (Cycles Scope!)
-        if (cfg.showWeatherAlerts) {
+        if (cfg.showDroneAlerts) {
             float rX = curTopX;
             curTopX += topW + topGap;
             if (mouseX >= rX && mouseX <= rX + topW && mouseY >= topY && mouseY <= topY + topH) {
@@ -1674,6 +1679,7 @@ implements iIIiIIiIi_Class294 {
         if (this.client == null) return;
         boolean singleplayer = this.client.isInSingleplayer();
         ServerInfo serverInfo = this.client.getCurrentServerEntry();
+        IiiIIiIii_Class204.captureLastGameFrame();
         IiiIIiIii_Class204.triggerReturnAnimation = true;
         if (this.client.world != null) {
             this.client.world.disconnect();
