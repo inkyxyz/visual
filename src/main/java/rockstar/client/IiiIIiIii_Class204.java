@@ -189,8 +189,8 @@ public class IiiIIiIii_Class204 extends ii_Class4 implements iIIiIIiIi_Class294 
       this.shatterFragments.clear();
 
       I_field_7865b31.clear();
-      I_field_7865b31.add(new IiiIIiIiI_Class203(var1 + "single.png", 12.0F, () -> I_field_3a9bda27.setScreen(new SelectWorldScreen(this))));
-      I_field_7865b31.add(new IiiIIiIiI_Class203(var1 + "multi.png", 12.0F, () -> I_field_3a9bda27.setScreen(new MultiplayerScreen(this))));
+      I_field_7865b31.add(new IiiIIiIiI_Class203(var1 + "single.png", 12.0F, () -> I_field_3a9bda27.setScreen(new IOSDesktopScreen(this, IOSDesktopScreen.Tab.WORLDS))));
+      I_field_7865b31.add(new IiiIIiIiI_Class203(var1 + "multi.png", 12.0F, () -> I_field_3a9bda27.setScreen(new IOSDesktopScreen(this, IOSDesktopScreen.Tab.SERVERS))));
       I_field_7865b31.add(new IiiIIiIiI_Class203(var1 + "alt.png", 12.0F, () -> I_field_3a9bda27.setScreen(new AltManagerScreen(this))));
       I_field_7865b31.add(
          new IiiIIiIiI_Class203(var1 + "settings.png", 12.0F, () -> I_field_3a9bda27.setScreen(new OptionsScreen(this, I_field_3a9bda27.options)))
@@ -629,11 +629,11 @@ public class IiiIIiIii_Class204 extends ii_Class4 implements iIIiIIiIi_Class294 
          }
 
          if (keyCode == 82) {
-            MinecraftClient.getInstance().setScreen(new MultiplayerScreen(this));
+            MinecraftClient.getInstance().setScreen(new IOSDesktopScreen(this, IOSDesktopScreen.Tab.SERVERS));
          }
 
          if (keyCode == 84) {
-            MinecraftClient.getInstance().setScreen(new SelectWorldScreen(this));
+            MinecraftClient.getInstance().setScreen(new IOSDesktopScreen(this, IOSDesktopScreen.Tab.WORLDS));
          }
 
          return super.keyPressed(keyCode, scanCode, modifiers);

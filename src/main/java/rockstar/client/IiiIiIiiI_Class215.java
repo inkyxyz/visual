@@ -144,12 +144,6 @@ public class IiiIiIiiI_Class215 extends IiiIIiiiI_Class207 implements IiiIiIIiI_
 
 
    public void showToastNotification(String title, String desc) {
-      this.toastTitle = title;
-      this.toastDesc = desc != null && !desc.isEmpty() ? desc : "Описание отсутствует";
-      this.toastStartTime = System.currentTimeMillis();
-      if (MinecraftClient.getInstance().player != null) {
-         MinecraftClient.getInstance().player.playSound(net.minecraft.sound.SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, 0.4F, 1.3F);
-      }
    }
 
 
@@ -581,34 +575,12 @@ public class IiiIiIiiI_Class215 extends IiiIIiiiI_Class207 implements IiiIiIIiI_
          .I_method_8939bffd(this.I_field_fb07f0e1)
          .i_method_5db1deeb(this.I_field_fb07f0e1::I_method_10341dfa);
 
-      Iii_Class4 infoBtn = new Iii_Class4()
-         .size(13.0F, 13.0F)
-         .radius(6.5F)
-         .cursor(iIIIiIIIi_Class274.i_field_aa52e62c)
-         .visibleWhen(() -> this.I_field_75e36361 != null)
-         .onClick(() -> {
-            if (this.I_field_75e36361 != null) {
-               showToastNotification(this.I_field_75e36361.getName(), this.I_field_75e36361.i_method_bf522194());
-            }
-         })
-         .paint((ctx, rect) -> {
-            float hov = rect.hover();
-            ColorRGBA accent = IiiiiIIIi_Class242.I_method_7df8e08e();
-            ctx.drawRoundedRect(rect.x(), rect.y(), rect.w(), rect.h(), IIiii_Class8.I_method_893b2757(rect.w() / 2.0F), accent.withAlpha(45.0F + 55.0F * hov));
-            ctx.drawRoundedBorder(rect.x(), rect.y(), rect.w(), rect.h(), 0.9F, IIiii_Class8.I_method_893b2757(rect.w() / 2.0F), accent.withAlpha(180.0F + 75.0F * hov));
-            IIiIIi_Class10 iFont = IIiIiI_Class11.i_field_857c0621.I_method_3a2d5e3(7.5F);
-            String iChar = "i";
-            float iw = iFont.I_method_2c375926(iChar);
-            ctx.drawText(iFont, iChar, rect.x() + (rect.w() - iw) / 2.0F, rect.y() + 2.5F, ColorRGBA.WHITE);
-         });
-
       iii_Class8 var7 = new iii_Class8()
          .i_method_c88da8d5()
          .I_method_483797dd(IIi_Class2.i_field_b5755e8c)
          .I_method_70a38517(4.0F)
          .IiI_method_23cb1575()
          .I_method_8939bffd(var5)
-         .I_method_8939bffd(infoBtn)
          .I_method_8939bffd(var6);
       Iii_Class4 var8 = new Iii_Class4()
          .size(16.0F, 16.0F)
@@ -1078,82 +1050,54 @@ public class IiiIiIiiI_Class215 extends IiiIIiiiI_Class207 implements IiiIiIIiI_
             float hov = rect.hover();
             ColorRGBA accent = IiiiiIIIi_Class242.I_method_7df8e08e();
 
-            float cx = rect.x() + rect.w() / 2.0F;
-            float cy = rect.y() + rect.h() / 2.0F;
-            boolean tilted = hov > 0.01F;
+            // Comfortable, smooth card background
+            ColorRGBA bg = selected
+               ? accent.withAlpha(55.0F)
+               : (enabled
+                  ? accent.withAlpha(30.0F + 15.0F * hov)
+                  : (hov > 0.05F ? new ColorRGBA(36.0F, 40.0F, 52.0F, 150.0F + 40.0F * hov) : new ColorRGBA(22.0F, 24.0F, 32.0F, 140.0F)));
+            ctx.drawRoundedRect(rect.x(), rect.y(), rect.w(), rect.h(), rad4, bg);
 
-            if (tilted) {
-               float mx = (float)ctx.I_method_b1c3e152() - cx;
-               float my = (float)ctx.i_method_b1d26d32() - cy;
-               float normX = Math.max(-1.0F, Math.min(1.0F, mx / (rect.w() * 0.5F)));
-               float normY = Math.max(-1.0F, Math.min(1.0F, my / (rect.h() * 0.5F)));
-               float tiltPitch = -normY * 4.5F * hov;
-               float tiltYaw = normX * 4.5F * hov;
-               float scale = 1.0F + 0.015F * hov;
-
-               ctx.pushMatrix();
-               ctx.getMatrices().translate(cx, cy, 0.0F);
-               ctx.getMatrices().multiply(RotationAxis.POSITIVE_X.rotationDegrees(tiltPitch));
-               ctx.getMatrices().multiply(RotationAxis.POSITIVE_Y.rotationDegrees(tiltYaw));
-               ctx.getMatrices().scale(scale, scale, 1.0F);
-               ctx.getMatrices().translate(-cx, -cy, 0.0F);
+            // Refined card border without any vertical strip
+            if (selected) {
+               ctx.drawRoundedBorder(rect.x(), rect.y(), rect.w(), rect.h(), 1.0F, rad4, accent);
+            } else if (enabled) {
+               ctx.drawRoundedBorder(rect.x(), rect.y(), rect.w(), rect.h(), 0.8F, rad4, accent.withAlpha(140.0F));
+            } else if (hov > 0.05F) {
+               ctx.drawRoundedBorder(rect.x(), rect.y(), rect.w(), rect.h(), 0.8F, rad4, new ColorRGBA(255.0F, 255.0F, 255.0F, 40.0F * hov));
             }
 
-            try {
-               // Card background
-               ColorRGBA bg = selected
-                  ? accent.withAlpha(55.0F)
-                  : (enabled
-                     ? accent.withAlpha(30.0F + 15.0F * hov)
-                     : (hov > 0.5F ? new ColorRGBA(36.0F, 40.0F, 52.0F, 190.0F) : new ColorRGBA(20.0F, 22.0F, 30.0F, 160.0F)));
-               ctx.drawRoundedRect(rect.x(), rect.y(), rect.w(), rect.h(), rad4, bg);
-
-               // Card border / specular highlight
-               if (selected) {
-                  ctx.drawRoundedBorder(rect.x(), rect.y(), rect.w(), rect.h(), 1.0F, rad4, accent);
-               } else if (enabled) {
-                  ctx.drawRoundedBorder(rect.x(), rect.y(), rect.w(), rect.h(), 0.8F, rad4, accent.withAlpha(120.0F));
-                  ctx.drawRect(rect.x() + 0.5F, rect.y() + 3.0F, 2.0F, rect.h() - 6.0F, accent);
-               } else if (hov > 0.05F) {
-                  ctx.drawRoundedBorder(rect.x(), rect.y(), rect.w(), rect.h(), 0.8F, rad4, new ColorRGBA(255.0F, 255.0F, 255.0F, 50.0F * hov));
-               }
-
-               // Specular glare highlight near cursor
-               if (hov > 0.05F) {
-                  float glareX = (float)ctx.I_method_b1c3e152();
-                  float glareY = (float)ctx.i_method_b1d26d32();
-                  float gSize = 14.0F;
-                  ctx.drawRoundedRect(glareX - gSize, glareY - gSize, gSize * 2.0F, gSize * 2.0F, IIiii_Class8.I_method_893b2757(gSize), new ColorRGBA(255.0F, 255.0F, 255.0F, 18.0F * hov));
-               }
-
-               // Module Name Text
-               ColorRGBA textCol = selected || enabled ? ColorRGBA.WHITE : new ColorRGBA(190.0F, 195.0F, 210.0F, 255.0F);
-               ctx.drawText(
-                  IIiIiI_Class11.i_field_857c0621.I_method_3a2d5e3(7.5F),
-                  this.I_method_f93b1e0(var1),
-                  rect.x() + 8.0F,
-                  rect.y() + (rect.h() - 8.0F) / 2.0F,
-                  textCol
-               );
-
-               // Toggle switch pill on right
-               float pillW = 14.0F;
-               float pillH = 7.5F;
-               float pillX = rect.x() + rect.w() - pillW - 6.0F;
-               float pillY = rect.y() + (rect.h() - pillH) / 2.0F;
-               float pillR = pillH / 2.0F;
-               IIiii_Class8 pillRad = IIiii_Class8.I_method_893b2757(pillR);
-
-               ctx.drawRoundedRect(pillX, pillY, pillW, pillH, pillRad, enabled ? accent.withAlpha(210.0F) : new ColorRGBA(45.0F, 50.0F, 65.0F, 190.0F));
-               float dotSize = pillH - 2.0F;
-               float dotX = enabled ? (pillX + pillW - dotSize - 1.0F) : (pillX + 1.0F);
-               float dotY = pillY + 1.0F;
-               ctx.drawRoundedRect(dotX, dotY, dotSize, dotSize, IIiii_Class8.I_method_893b2757(dotSize / 2.0F), ColorRGBA.WHITE);
-            } finally {
-               if (tilted) {
-                  ctx.popMatrix();
-               }
+            // Subtle soft cursor hover glow
+            if (hov > 0.05F) {
+               float glareX = (float)ctx.I_method_b1c3e152();
+               float glareY = (float)ctx.i_method_b1d26d32();
+               float gSize = 10.0F;
+               ctx.drawRoundedRect(glareX - gSize, glareY - gSize, gSize * 2.0F, gSize * 2.0F, IIiii_Class8.I_method_893b2757(gSize), new ColorRGBA(255.0F, 255.0F, 255.0F, 12.0F * hov));
             }
+
+            // Module Name Text
+            ColorRGBA textCol = selected || enabled ? ColorRGBA.WHITE : new ColorRGBA(195.0F, 200.0F, 215.0F, 255.0F);
+            ctx.drawText(
+               IIiIiI_Class11.i_field_857c0621.I_method_3a2d5e3(7.5F),
+               this.I_method_f93b1e0(var1),
+               rect.x() + 8.0F,
+               rect.y() + (rect.h() - 8.0F) / 2.0F,
+               textCol
+            );
+
+            // Toggle switch pill on right
+            float pillW = 15.0F;
+            float pillH = 8.0F;
+            float pillX = rect.x() + rect.w() - pillW - 6.0F;
+            float pillY = rect.y() + (rect.h() - pillH) / 2.0F;
+            float pillR = pillH / 2.0F;
+            IIiii_Class8 pillRad = IIiii_Class8.I_method_893b2757(pillR);
+
+            ctx.drawRoundedRect(pillX, pillY, pillW, pillH, pillRad, enabled ? accent.withAlpha(220.0F) : new ColorRGBA(45.0F, 50.0F, 65.0F, 190.0F));
+            float dotSize = pillH - 2.0F;
+            float dotX = enabled ? (pillX + pillW - dotSize - 1.0F) : (pillX + 1.0F);
+            float dotY = pillY + 1.0F;
+            ctx.drawRoundedRect(dotX, dotY, dotSize, dotSize, IIiii_Class8.I_method_893b2757(dotSize / 2.0F), ColorRGBA.WHITE);
          });
 
       return new iii_Class8()

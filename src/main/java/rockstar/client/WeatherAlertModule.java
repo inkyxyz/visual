@@ -13,7 +13,7 @@ import ua.mintantileak.spk.Compile;
 
 @ModuleInfo(
    name = "Weather & Alerts",
-   category = ModuleCategory.INTERFACE,
+   category = ModuleCategory.OTHER,
    iI_method_476ab839 = false,
    III_method_a89e5834 = "modules.descriptions.weather_alerts"
 )
@@ -70,6 +70,7 @@ public class WeatherAlertModule extends Module {
    public WeatherAlertModule() {
       this.initSettings();
       this.initDefaultRegions();
+      this.i_method_aefc2388(true);
    }
 
    private void initDefaultRegions() {

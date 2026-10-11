@@ -131,15 +131,15 @@ public class AnimationWheelModule extends Module {
     public AnimationWheelModule() {
         INSTANCE = this;
         // Idle
-        this.idleRoblox = new ModeSetting.Nested1_42765c60(this.idleAnimSetting, "Роблокс").select();
-        this.idleDefault = new ModeSetting.Nested1_42765c60(this.idleAnimSetting, "Обычный");
+        this.idleDefault = new ModeSetting.Nested1_42765c60(this.idleAnimSetting, "Обычный").select();
+        this.idleRoblox = new ModeSetting.Nested1_42765c60(this.idleAnimSetting, "Роблокс");
         this.idleBreathing = new ModeSetting.Nested1_42765c60(this.idleAnimSetting, "Дыхание");
         this.idleCombat = new ModeSetting.Nested1_42765c60(this.idleAnimSetting, "Боевая стойка");
         this.idleLevitation = new ModeSetting.Nested1_42765c60(this.idleAnimSetting, "Левитация");
 
         // Walk
-        this.walkRoblox = new ModeSetting.Nested1_42765c60(this.walkingAnim, "Роблокс").select();
-        this.walkDefault = new ModeSetting.Nested1_42765c60(this.walkingAnim, "Обычная");
+        this.walkDefault = new ModeSetting.Nested1_42765c60(this.walkingAnim, "Обычная").select();
+        this.walkRoblox = new ModeSetting.Nested1_42765c60(this.walkingAnim, "Роблокс");
         this.walkSkating = new ModeSetting.Nested1_42765c60(this.walkingAnim, "Коньки");
         this.walkSprint = new ModeSetting.Nested1_42765c60(this.walkingAnim, "Спринт");
         this.walkMarch = new ModeSetting.Nested1_42765c60(this.walkingAnim, "Марш");
@@ -148,15 +148,15 @@ public class AnimationWheelModule extends Module {
         this.walkLevitation = new ModeSetting.Nested1_42765c60(this.walkingAnim, "Левитация");
 
         // Jump
-        this.jumpRoblox = new ModeSetting.Nested1_42765c60(this.jumpAnimSetting, "Роблокс").select();
-        this.jumpDefault = new ModeSetting.Nested1_42765c60(this.jumpAnimSetting, "Обычный");
+        this.jumpDefault = new ModeSetting.Nested1_42765c60(this.jumpAnimSetting, "Обычный").select();
+        this.jumpRoblox = new ModeSetting.Nested1_42765c60(this.jumpAnimSetting, "Роблокс");
         this.jumpSomersault = new ModeSetting.Nested1_42765c60(this.jumpAnimSetting, "Сальто");
         this.jumpTuck = new ModeSetting.Nested1_42765c60(this.jumpAnimSetting, "Группировка");
         this.jumpHero = new ModeSetting.Nested1_42765c60(this.jumpAnimSetting, "Супергерой");
 
         // Fall
-        this.fallRoblox = new ModeSetting.Nested1_42765c60(this.fallAnimSetting, "Роблокс").select();
-        this.fallDefault = new ModeSetting.Nested1_42765c60(this.fallAnimSetting, "Обычное");
+        this.fallDefault = new ModeSetting.Nested1_42765c60(this.fallAnimSetting, "Обычное").select();
+        this.fallRoblox = new ModeSetting.Nested1_42765c60(this.fallAnimSetting, "Роблокс");
         this.fallDive = new ModeSetting.Nested1_42765c60(this.fallAnimSetting, "Пикирование");
         this.fallPanic = new ModeSetting.Nested1_42765c60(this.fallAnimSetting, "Паника");
 
@@ -279,7 +279,16 @@ public class AnimationWheelModule extends Module {
             double vy = player.getVelocity().y;
             if (vy > 0.05) {
                 // Jump Modes
-                if (INSTANCE.jumpRoblox.isSelected()) {
+                if (INSTANCE.jumpDefault.isSelected()) {
+                    // Athletic forward-leaning jump with smooth limb sync
+                    accessor.rockstar$getBody().pitch = 0.12F * bScale;
+                    accessor.rockstar$getLeftArm().pitch = -1.15F * aScale;
+                    accessor.rockstar$getRightArm().pitch = -1.15F * aScale;
+                    accessor.rockstar$getLeftArm().roll = -0.32F * aScale;
+                    accessor.rockstar$getRightArm().roll = 0.32F * aScale;
+                    accessor.rockstar$getLeftLeg().pitch = 0.42F * lScale;
+                    accessor.rockstar$getRightLeg().pitch = 0.25F * lScale;
+                } else if (INSTANCE.jumpRoblox.isSelected()) {
                     accessor.rockstar$getBody().pitch = -0.18F * bScale;
                     accessor.rockstar$getLeftArm().pitch = -2.25F * aScale;
                     accessor.rockstar$getRightArm().pitch = -2.25F * aScale;
@@ -309,7 +318,15 @@ public class AnimationWheelModule extends Module {
                 }
             } else {
                 // Fall Modes
-                if (INSTANCE.fallRoblox.isSelected()) {
+                if (INSTANCE.fallDefault.isSelected()) {
+                    accessor.rockstar$getBody().pitch = 0.08F * bScale;
+                    accessor.rockstar$getLeftArm().pitch = -0.65F * aScale;
+                    accessor.rockstar$getRightArm().pitch = -0.65F * aScale;
+                    accessor.rockstar$getLeftArm().roll = -0.38F * aScale;
+                    accessor.rockstar$getRightArm().roll = 0.38F * aScale;
+                    accessor.rockstar$getLeftLeg().pitch = -0.15F * lScale;
+                    accessor.rockstar$getRightLeg().pitch = -0.15F * lScale;
+                } else if (INSTANCE.fallRoblox.isSelected()) {
                     accessor.rockstar$getBody().pitch = 0.22F * bScale;
                     float flail = (float) Math.sin((player.age + tickDelta) * 0.45F * spd) * 0.16F;
                     accessor.rockstar$getLeftArm().pitch = (-2.55F + flail) * aScale;
@@ -344,7 +361,25 @@ public class AnimationWheelModule extends Module {
         // 4. Idle Animations
         if (!isMoving) {
             float idlePhase = (player.age + tickDelta) * 0.08F * spd;
-            if (INSTANCE.idleRoblox.isSelected()) {
+            if (INSTANCE.idleDefault.isSelected() || INSTANCE.idleBreathing.isSelected()) {
+                // Aesthetic natural breathing wave & organic idle micro-movement
+                float breath = (float) Math.sin(idlePhase * 1.6F);
+                float sway = (float) Math.sin(idlePhase * 0.8F);
+                // Torso gentle chest expansion and subtle breathing lift
+                accessor.rockstar$getBody().pivotY = breath * 0.25F;
+                accessor.rockstar$getBody().pitch = (-0.015F + breath * 0.02F) * bScale;
+                accessor.rockstar$getBody().roll = sway * 0.012F * bScale;
+                accessor.rockstar$getBody().yaw = sway * 0.015F * bScale;
+                // Arms resting naturally with subtle organic breathing swing
+                accessor.rockstar$getLeftArm().pitch = (0.04F + (float) Math.sin(idlePhase * 1.6F + 0.3F) * 0.025F) * aScale;
+                accessor.rockstar$getRightArm().pitch = (0.04F + (float) Math.sin(idlePhase * 1.6F + 0.3F) * 0.025F) * aScale;
+                accessor.rockstar$getLeftArm().roll = (-0.10F - (breath + 1.0F) * 0.02F) * aScale;
+                accessor.rockstar$getRightArm().roll = (0.10F + (breath + 1.0F) * 0.02F) * aScale;
+                // Head subtle micro-movements
+                accessor.rockstar$getHead().pitch = -breath * 0.015F;
+                accessor.rockstar$getHead().yaw = (float) Math.sin(idlePhase * 0.5F) * 0.02F;
+                accessor.rockstar$getHead().roll = (float) Math.cos(idlePhase * 0.5F) * 0.01F;
+            } else if (INSTANCE.idleRoblox.isSelected()) {
                 accessor.rockstar$getBody().pivotY = (float) Math.sin(idlePhase * 2.0F) * 0.45F;
                 accessor.rockstar$getBody().pitch = (float) Math.sin(idlePhase * 2.0F) * 0.02F * bScale;
                 accessor.rockstar$getLeftArm().pitch = (0.05F + (float) Math.sin(idlePhase) * 0.03F) * aScale;
@@ -353,12 +388,6 @@ public class AnimationWheelModule extends Module {
                 accessor.rockstar$getRightArm().roll = (0.16F + (float) Math.cos(idlePhase) * 0.02F) * aScale;
                 accessor.rockstar$getHead().yaw = (float) Math.sin(idlePhase * 0.8F) * 0.04F;
                 accessor.rockstar$getHead().pitch = (float) Math.cos(idlePhase * 0.6F) * 0.03F;
-            } else if (INSTANCE.idleBreathing.isSelected()) {
-                float breath = (float) Math.sin(idlePhase * 1.5F);
-                accessor.rockstar$getBody().pivotY = breath * 0.3F;
-                accessor.rockstar$getBody().pitch = breath * 0.04F * bScale;
-                accessor.rockstar$getLeftArm().roll = (-0.1F - breath * 0.03F) * aScale;
-                accessor.rockstar$getRightArm().roll = (0.1F + breath * 0.03F) * aScale;
             } else if (INSTANCE.idleCombat.isSelected()) {
                 float bounce = (float) Math.sin(idlePhase * 3.0F);
                 accessor.rockstar$getBody().yaw = -0.3F * bScale;
@@ -382,8 +411,26 @@ public class AnimationWheelModule extends Module {
 
         // 5. Ground Walking Animations
         float timeSec = (player.age + tickDelta) * 0.22F * spd;
-        if (INSTANCE.walkRoblox.isSelected()) {
-            // Authentic Roblox R15/R6 Procedural Walk: cubic bounce, rigid swinging arms with outward flare
+        if (INSTANCE.walkDefault.isSelected()) {
+            // Enhanced Natural Human Walk: smooth torso sway, counter-rotating shoulders, fluid stride
+            float walkPhase = (player.age + tickDelta) * 0.55F * spd;
+            float swing = (float) Math.sin(walkPhase);
+            float bob = Math.abs((float) Math.cos(walkPhase));
+
+            accessor.rockstar$getBody().yaw = swing * 0.08F * bScale;
+            accessor.rockstar$getBody().roll = swing * 0.03F * bScale;
+            accessor.rockstar$getBody().pitch = (player.isSprinting() ? 0.22F : 0.06F) * bScale;
+            accessor.rockstar$getBody().pivotY = bob * 0.65F;
+
+            accessor.rockstar$getLeftArm().pitch = -swing * 0.65F * aScale;
+            accessor.rockstar$getRightArm().pitch = swing * 0.65F * aScale;
+            accessor.rockstar$getLeftArm().roll = -0.12F * aScale;
+            accessor.rockstar$getRightArm().roll = 0.12F * aScale;
+
+            accessor.rockstar$getLeftLeg().pitch = swing * 0.65F * lScale;
+            accessor.rockstar$getRightLeg().pitch = -swing * 0.65F * lScale;
+        } else if (INSTANCE.walkRoblox.isSelected()) {
+            // Authentic Roblox R15/R6 Procedural Walk
             float walkPhase = (player.age + tickDelta) * 0.65F;
             float swing = (float) Math.sin(walkPhase);
 
@@ -400,35 +447,37 @@ public class AnimationWheelModule extends Module {
 
             accessor.rockstar$getLeftLeg().pitch = swing * 0.95F;
             accessor.rockstar$getRightLeg().pitch = -swing * 0.95F;
-        } else if (INSTANCE.walkDefault.isSelected()) {
-            // Enhanced Natural Human Walk: smooth torso sway, counter-rotating shoulders
-            float walkPhase = (player.age + tickDelta) * 0.55F;
-            float swing = (float) Math.sin(walkPhase);
-
-            accessor.rockstar$getBody().yaw = swing * 0.08F;
-            accessor.rockstar$getBody().roll = swing * 0.04F;
-            accessor.rockstar$getBody().pivotY = Math.abs((float) Math.cos(walkPhase)) * 0.8F;
-
-            accessor.rockstar$getLeftArm().pitch = -swing * 0.65F;
-            accessor.rockstar$getRightArm().pitch = swing * 0.65F;
-            accessor.rockstar$getLeftArm().roll = -0.12F;
-            accessor.rockstar$getRightArm().roll = 0.12F;
-
-            accessor.rockstar$getLeftLeg().pitch = swing * 0.65F;
-            accessor.rockstar$getRightLeg().pitch = -swing * 0.65F;
         } else if (INSTANCE.walkSkating.isSelected()) {
-            // Коньки (Skating) - wide graceful leg kicks, body roll tilt
-            float sway = (float) Math.sin(timeSec * 2.2F);
-            accessor.rockstar$getBody().roll = sway * 0.22F;
-            accessor.rockstar$getBody().pitch = 0.28F;
-            accessor.rockstar$getLeftLeg().roll = Math.max(0.0F, -sway) * 0.42F;
-            accessor.rockstar$getRightLeg().roll = Math.max(0.0F, sway) * 0.42F;
-            accessor.rockstar$getLeftLeg().yaw = -sway * 0.32F;
-            accessor.rockstar$getRightLeg().yaw = -sway * 0.32F;
-            accessor.rockstar$getLeftArm().pitch = 0.45F + sway * 0.45F;
-            accessor.rockstar$getRightArm().pitch = 0.45F - sway * 0.45F;
-            accessor.rockstar$getLeftArm().roll = -0.20F;
-            accessor.rockstar$getRightArm().roll = 0.20F;
+            // Коньки (Skating) - realistic speed skating with synchronized body weight transfer and smooth leg kicks
+            float skatePhase = timeSec * 2.5F;
+            float sway = (float) Math.sin(skatePhase);
+            float push = (float) Math.cos(skatePhase);
+
+            // Torso leans forward aerodynamic and sways in rhythm with glide leg
+            accessor.rockstar$getBody().pitch = 0.22F * bScale;
+            accessor.rockstar$getBody().roll = sway * 0.09F * bScale;  // gentle weight transfer (not 0.22F!)
+            accessor.rockstar$getBody().yaw = sway * 0.12F * bScale;   // torso points along glide path
+            accessor.rockstar$getBody().pivotY = Math.abs(push) * 0.6F; // slight spring in stride
+
+            // Head aligns with movement direction
+            accessor.rockstar$getHead().yaw = -sway * 0.08F;
+            accessor.rockstar$getHead().pitch = -0.10F;
+
+            // Legs: push off smoothly outward & back, gliding leg extends forward
+            accessor.rockstar$getLeftLeg().pitch = -sway * 0.42F * lScale;
+            accessor.rockstar$getRightLeg().pitch = sway * 0.42F * lScale;
+
+            // Outward angle for skate blades (pushing leg splays slightly outward)
+            accessor.rockstar$getLeftLeg().roll = Math.max(0.0F, -sway) * 0.16F * lScale;
+            accessor.rockstar$getRightLeg().roll = -Math.max(0.0F, sway) * 0.16F * lScale;
+            accessor.rockstar$getLeftLeg().yaw = -0.10F - Math.max(0.0F, -sway) * 0.12F;
+            accessor.rockstar$getRightLeg().yaw = 0.10F + Math.max(0.0F, sway) * 0.12F;
+
+            // Arms: rhythmic counter-balance swings in sync with torso and legs
+            accessor.rockstar$getLeftArm().pitch = sway * 0.40F * aScale + 0.12F;
+            accessor.rockstar$getRightArm().pitch = -sway * 0.40F * aScale + 0.12F;
+            accessor.rockstar$getLeftArm().roll = -0.18F - Math.abs(sway) * 0.06F;
+            accessor.rockstar$getRightArm().roll = 0.18F + Math.abs(sway) * 0.06F;
         } else if (INSTANCE.walkSprint.isSelected()) {
             // Спринт (Ninja Sprint) - deep forward lean, arms trailing back
             accessor.rockstar$getBody().pitch = 0.65F;
