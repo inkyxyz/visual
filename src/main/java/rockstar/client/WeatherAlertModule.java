@@ -167,138 +167,19 @@ public class WeatherAlertModule extends Module {
             this.currentWeatherTemp = 17;
             this.weatherCondition = "Малооблачно 🌤️";
             this.windSpeed = 3.9F;
-            this.humidity = 62;
          }
       }
    }
 
+   public int getCurrentWeatherTemp() { return this.currentWeatherTemp; }
+   public String getWeatherCondition() { return this.weatherCondition; }
+   public float getWindSpeed() { return this.windSpeed; }
+   public int getHumidity() { return this.humidity; }
+   public List<AlertRegion> getRegions() { return this.regions; }
+   public void refresh() { this.updateWeatherData(); }
+
    private final IiIIIiII_Class69<PreHudRenderEvent> hudListener = event -> {
-      MinecraftClient mc = MinecraftClient.getInstance();
-      if (mc.player == null) return;
-
+      // In-game HUD rendering disabled per user request: widgets rendered inside Escape Menu!
       this.updateWeatherData();
-
-      CustomDrawContext context = event.getContext();
-      DrawContext original = event.getContext();
-
-      float x = this.posXSetting != null ? this.posXSetting.Ii_method_a20abcd2() : 15.0F;
-      float y = this.posYSetting != null ? this.posYSetting.Ii_method_a20abcd2() : 120.0F;
-      float scale = this.scaleSetting != null ? this.scaleSetting.Ii_method_a20abcd2() : 1.0F;
-
-      ColorRGBA themeCol = (this.syncTheme != null && this.syncTheme.i_method_9b12da03())
-         ? IiiiiIIIi_Class242.i_method_5dfec6e()
-         : (this.customColor != null ? this.customColor.I_method_bde5f08e() : new ColorRGBA(0.0F, 220.0F, 255.0F, 240.0F));
-
-      boolean showWeather = this.displayWeather.isSelected() || this.displayBoth.isSelected();
-      boolean showAlerts = this.displayAlerts.isSelected() || this.displayBoth.isSelected();
-
-      float cardWidth = 195.0F * scale;
-      float weatherHeight = showWeather ? (72.0F * scale) : 0.0F;
-      float alertHeight = showAlerts ? (115.0F * scale) : 0.0F;
-      float cardHeight = weatherHeight + alertHeight + (showWeather && showAlerts ? 6.0F : 0.0F);
-
-      context.pushMatrix();
-      context.getMatrices().translate(x, y, 0.0F);
-      context.getMatrices().scale(scale, scale, 1.0F);
-
-      // Liquid glass outer card
-      context.drawClientRect(0.0F, 0.0F, 195.0F, (weatherHeight + alertHeight) / scale + (showWeather && showAlerts ? 6.0F : 0.0F), 1.0F, 1.0F, 1.0F, 9.0F, true);
-
-      float curY = 6.0F;
-
-      // 1. Weather section
-      if (showWeather) {
-         String cityName = "Киев";
-         if (this.cityMoscow.isSelected()) cityName = "Москва";
-         else if (this.cityKharkiv.isSelected()) cityName = "Харьков";
-         else if (this.citySpb.isSelected()) cityName = "СПб";
-         else if (this.cityOdesa.isSelected()) cityName = "Одесса";
-         else if (this.cityLviv.isSelected()) cityName = "Львов";
-
-         original.drawText(mc.textRenderer, "ПОГОДА • " + cityName.toUpperCase(), 8, (int)curY, themeCol.getRGB(), false);
-         curY += 12.0F;
-
-         // Large temperature & condition
-         String tempStr = (this.currentWeatherTemp > 0 ? "+" : "") + this.currentWeatherTemp + "°C";
-         original.drawText(mc.textRenderer, tempStr + "  " + this.weatherCondition, 8, (int)curY, 0xFFFFFFFF, false);
-         curY += 14.0F;
-
-         // Stats line: Wind, Humidity
-         String stats = "Ветер: " + this.windSpeed + " м/с  •  Влажность: " + this.humidity + "%";
-         original.drawText(mc.textRenderer, stats, 8, (int)curY, 0xFFA0B5D0, false);
-         curY += 12.0F;
-
-         // Mini 3-day forecast bar
-         context.drawRect(8.0F, curY, 179.0F, 1.0F, themeCol.withAlpha(50.0F));
-         curY += 5.0F;
-         String miniDays = "Завтра: +17° ⛅   Пт: +19° ☀️   Сб: +15° 🌧️";
-         original.drawText(mc.textRenderer, miniDays, 8, (int)curY, 0xFF7EA0C0, false);
-         curY += 16.0F;
-      }
-
-      // Separator if both
-      if (showWeather && showAlerts) {
-         context.drawRect(8.0F, curY, 179.0F, 1.0F, themeCol.withAlpha(70.0F));
-         curY += 6.0F;
-      }
-
-      // 2. Air Raid Alert section
-      if (showAlerts) {
-         // Header with flashing alarm indicator
-         long now = System.currentTimeMillis();
-         boolean blink = (now % 1000L) > 500L;
-         int blinkRed = blink ? 0xFFFF3333 : 0xFFAA1111;
-
-         original.drawText(mc.textRenderer, "КАРТА ТРЕВОГ • RADAR", 8, (int)curY, themeCol.getRGB(), false);
-         original.drawText(mc.textRenderer, "🚨 LIVE", 150, (int)curY, blinkRed, false);
-         curY += 12.0F;
-
-         // Animated Radar Display Circle
-         float radarCenterX = 22.0F;
-         float radarCenterY = curY + 18.0F;
-         float radarRadius = 15.0F;
-
-         // Radar ring
-         int radarBorder = themeCol.withAlpha(120.0F).getRGB();
-         context.drawRect(radarCenterX - radarRadius, radarCenterY - radarRadius, radarRadius * 2.0F, radarRadius * 2.0F, new ColorRGBA(10.0F, 20.0F, 30.0F, 140.0F));
-
-         if (this.radarScanSetting != null && this.radarScanSetting.i_method_9b12da03()) {
-            float sweepAngle = (now * 0.003F) % ((float)Math.PI * 2.0F);
-            float sx = radarCenterX + (float)Math.cos(sweepAngle) * (radarRadius - 1.0F);
-            float sy = radarCenterY + (float)Math.sin(sweepAngle) * (radarRadius - 1.0F);
-            context.drawLine(new net.minecraft.util.math.Vec2f(radarCenterX, radarCenterY), new net.minecraft.util.math.Vec2f(sx, sy), themeCol.withAlpha(220.0F));
-         }
-
-         // Filtered region list
-         String filterCountry = this.scopeUkraine.isSelected() ? "UA" : (this.scopeRF.isSelected() ? "RU" : "ALL");
-         int renderedCount = 0;
-         float itemY = curY;
-
-         for (AlertRegion r : this.regions) {
-            if (!filterCountry.equals("ALL") && !r.country.equals(filterCountry)) continue;
-            if (renderedCount >= 4) break;
-
-            int statusColor = r.isAlert ? 0xFFFF4444 : 0xFF44FF88;
-            String icon = r.isAlert ? "🔴" : "🟢";
-            String line = icon + " " + r.name + " (" + (r.isAlert ? r.alertType : "Отбой") + ")";
-
-            original.drawText(mc.textRenderer, line, 44, (int)itemY, statusColor, false);
-            itemY += 10.0F;
-            renderedCount++;
-         }
-
-         curY += 46.0F;
-
-         // Summary alert banner
-         long alertCount = this.regions.stream()
-            .filter(r -> (filterCountry.equals("ALL") || r.country.equals(filterCountry)) && r.isAlert)
-            .count();
-
-         String bannerText = alertCount > 0 ? ("⚠️ Активных тревог: " + alertCount) : "🟢 Все регионы спокойны";
-         int bannerColor = alertCount > 0 ? 0xFFFF6644 : 0xFF66EE99;
-         original.drawText(mc.textRenderer, bannerText, 8, (int)curY, bannerColor, false);
-      }
-
-      context.popMatrix();
    };
 }

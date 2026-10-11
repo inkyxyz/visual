@@ -16,12 +16,12 @@ import net.minecraft.client.gui.widget.ClickableWidget;
 import net.minecraft.client.network.ServerAddress;
 import net.minecraft.client.network.ServerInfo;
 import net.minecraft.client.realms.gui.screen.RealmsMainScreen;
-import net.minecraft.client.util.ScreenshotRecorder;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.world.Difficulty;
+import org.lwjgl.glfw.GLFW;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
@@ -29,22 +29,21 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import pyrock.utility.render.ColorRGBA;
+import rockstar.client.BrowserScreen;
 import rockstar.client.III;
 import rockstar.client.IIiIIi_Class10;
 import rockstar.client.IIiIiI_Class11;
 import rockstar.client.IIiii_Class8;
-import rockstar.client.IiiiiIIIi_Class242;
 import rockstar.client.IiiIIiIii_Class204;
+import rockstar.client.IiiiiIIIi_Class242;
+import rockstar.client.MinesweeperScreen;
 import rockstar.client.RockstarClient;
+import rockstar.client.SnakeScreen;
 import rockstar.client.UISoundManager;
 import rockstar.client.iIIIiiIii_Class284;
 import rockstar.client.iIIIiiiII_Class285;
 import rockstar.client.iIIiIIiIi_Class294;
 import rockstar.client.iiIiIIIiI_Class419;
-import org.lwjgl.glfw.GLFW;
-import rockstar.client.BrowserScreen;
-import rockstar.client.SnakeScreen;
-import rockstar.client.MinesweeperScreen;
 
 @Mixin(value={GameMenuScreen.class})
 public class GameMenuScreenMixin
@@ -72,8 +71,23 @@ implements iIIiIIiIi_Class294 {
     @Unique private static String rockstar$searchText = "";
     @Unique private static boolean rockstar$searchFocused = false;
 
-    // Per-tile hover float animations ("что бы наводишься а оно выплывает")
-    @Unique private static final float[] rockstar$tileHoverAnim = new float[6];
+    // Per-tile hover animations
+    @Unique private static final float[] rockstar$tileHoverAnim = new float[7];
+
+    // Draggable Widgets Offsets & Drag State
+    // Slots: 0: Погода, 1: Радар, 2: Арт/Картинка, 3: Медиаплеер, 4: Калькулятор, 5: Кнопки управления, 6: Поиск/Игры
+    @Unique private static final float[][] rockstar$widgetOffsets = new float[7][2];
+    @Unique private static int rockstar$draggedWidget = -1;
+    @Unique private static float rockstar$dragMouseStartX = 0.0F;
+    @Unique private static float rockstar$dragMouseStartY = 0.0F;
+    @Unique private static float rockstar$dragOrigX = 0.0F;
+    @Unique private static float rockstar$dragOrigY = 0.0F;
+
+    // Weather Cities State (Клик переключает города)
+    @Unique private static int rockstar$weatherCityIdx = 0;
+    @Unique private static final String[] rockstar$cities = new String[]{ "Москва", "Санкт-Петербург", "Киев", "Сочи", "Казань" };
+    @Unique private static final String[] rockstar$cityTemps = new String[]{ "+18°C", "+14°C", "+21°C", "+24°C", "+16°C" };
+    @Unique private static final String[] rockstar$cityConds = new String[]{ "Ясно ☀️", "Дождь 🌧️", "Малооблачно 🌤️", "Тепло ☀️", "Облачно ⛅" };
 
     protected GameMenuScreenMixin(Text text) {
         super(text);
@@ -98,7 +112,7 @@ implements iIIiIIiIi_Class294 {
         long now = System.currentTimeMillis();
 
         // Dark frosted backdrop with Liquid Glass tint
-        custom.drawRect(0.0F, 0.0F, (float)this.width, (float)this.height, new ColorRGBA(0.0F, 0.0F, 0.0F, 125.0F));
+        custom.drawRect(0.0F, 0.0F, (float)this.width, (float)this.height, new ColorRGBA(0.0F, 0.0F, 0.0F, 135.0F));
 
         IIiIIi_Class10 font = null;
         IIiIIi_Class10 boldFont = null;
@@ -113,7 +127,7 @@ implements iIIiIIiIi_Class294 {
             }
         } catch (Throwable ignored) {}
 
-        // Browser media playback status
+        // Media tracker
         iiIiIIIiI_Class419 tracker = RockstarClient.getInstance().I_method_be969482();
         iiIiIIIiI_Class419.Nested1_a961800 snap = tracker != null ? tracker.I_method_7effc530() : null;
         boolean isBrowserPlaying = (snap != null && snap.I_method_1a22ebbe());
@@ -130,104 +144,53 @@ implements iIIiIIiIi_Class294 {
             }
         }
 
-        // 6 Frozen Layout Slots (Permanent and unmovable as requested: "запрети перемещать")
-        // Balanced layout with proper heights:
-        // Slot 0: Browser Media Player (114 x 74)
-        // Slot 1: Camera Quick Tile (53 x 50)
-        // Slot 2: Fullscreen Quick Tile (53 x 50)
-        // Slot 3: Master Volume Slider Pill (53 x 108)
-        // Slot 4: Interactive iOS Calculator (150 x 192) - completely contained!
-        // Slot 5: Right Squircle Column (52 x 192) - Resume, Settings, Disconnect well separated!
-        float[][] bounds = new float[][]{
-            { cx - 180.0F, cy - 98.0F, 114.0F, 74.0F },  // 0: Media Player
-            { cx - 180.0F, cy - 16.0F, 53.0F, 50.0F },   // 1: Camera
-            { cx - 180.0F, cy + 42.0F, 53.0F, 50.0F },   // 2: Fullscreen
-            { cx - 119.0F, cy - 16.0F, 53.0F, 108.0F },  // 3: Volume Pill
-            { cx - 58.0F,  cy - 98.0F, 150.0F, 192.0F }, // 4: Calculator Card
-            { cx + 100.0F, cy - 98.0F, 52.0F,  192.0F }  // 5: Right Column Squircles
+        // --- 7 ADAPTABLE DRAGGABLE WIDGET CARDS ---
+        // 0: Погода (134 x 88)
+        // 1: Радар тревог (134 x 92)
+        // 2: Арт / Картинка (154 x 186) - без квадратных краев!
+        // 3: Медиаплеер (142 x 88)
+        // 4: Калькулятор (142 x 92)
+        // 5: Кнопки управления (52 x 186)
+        // 6: Нижняя панель поиска и мини-игр (420 x 36)
+        float[][] baseBounds = new float[][]{
+            { cx - 245.0F, cy - 98.0F, 134.0F, 88.0F },  // 0: Погода
+            { cx - 245.0F, cy - 4.0F,  134.0F, 92.0F },  // 1: Радар
+            { cx - 105.0F, cy - 98.0F, 154.0F, 186.0F }, // 2: Арт / Картинка дня
+            { cx + 55.0F,  cy - 98.0F, 142.0F, 88.0F },  // 3: Медиаплеер
+            { cx + 55.0F,  cy - 4.0F,  142.0F, 92.0F },  // 4: Калькулятор
+            { cx + 203.0F, cy - 98.0F, 52.0F,  186.0F }, // 5: Кнопки управления
+            { cx - 210.0F, cy + 96.0F, 420.0F, 36.0F }   // 6: Поиск и игры
         };
 
-        // Smooth Floating Elevation Hover Animation for all cards
-        for (int i = 0; i < 6; i++) {
-            float[] b = bounds[i];
-            boolean isHov = (mouseX >= b[0] && mouseX <= b[0] + b[2] && mouseY >= b[1] && mouseY <= b[1] + b[3]);
+        // Render each widget card with its custom drag offset & marching dashed border on hover
+        for (int i = 0; i < 7; i++) {
+            float bx = baseBounds[i][0] + rockstar$widgetOffsets[i][0];
+            float by = baseBounds[i][1] + rockstar$widgetOffsets[i][1];
+            float bw = baseBounds[i][2];
+            float bh = baseBounds[i][3];
+
+            boolean isHov = (mouseX >= bx && mouseX <= bx + bw && mouseY >= by && mouseY <= by + bh);
             float target = isHov ? 1.0F : 0.0F;
             rockstar$tileHoverAnim[i] += (target - rockstar$tileHoverAnim[i]) * 0.20F;
-        }
-
-        // Render each module in place with hover float offset
-        for (int slotIdx = 0; slotIdx < 6; slotIdx++) {
-            float[] b = bounds[slotIdx];
-            float hoverA = rockstar$tileHoverAnim[slotIdx];
-            float drawX = b[0];
-            float drawY = b[1] - hoverA * 4.5F; // Physical float-up elevation on hover!
+            float hoverA = rockstar$tileHoverAnim[i];
 
             drawContext.getMatrices().push();
-            switch (slotIdx) {
-                case 0 -> rockstar$renderMediaCard(custom, drawX, drawY, b[2], b[3], font, subFont, tinyFont, mouseX, mouseY, hoverA, snap, tracker);
-                case 1 -> rockstar$renderCameraTile(custom, drawX, drawY, b[2], b[3], mouseX, mouseY, hoverA);
-                case 2 -> rockstar$renderFullscreenTile(custom, drawX, drawY, b[2], b[3], mouseX, mouseY, hoverA);
-                case 3 -> rockstar$renderVolumePill(custom, drawX, drawY, b[2], b[3], subFont, mouseX, mouseY, hoverA);
-                case 4 -> rockstar$renderCalculatorCard(custom, drawX, drawY, b[2], b[3], boldFont, font, mouseX, mouseY, hoverA);
-                case 5 -> rockstar$renderActionSquircles(custom, drawX, drawY, b[2], b[3], mouseX, mouseY, hoverA);
+            switch (i) {
+                case 0 -> rockstar$renderWeatherCard(custom, bx, by, bw, bh, font, subFont, boldFont, mouseX, mouseY, hoverA);
+                case 1 -> rockstar$renderRadarCard(custom, bx, by, bw, bh, font, subFont, tinyFont, mouseX, mouseY, hoverA);
+                case 2 -> rockstar$renderPictureCard(custom, bx, by, bw, bh, font, subFont, boldFont, mouseX, mouseY, hoverA);
+                case 3 -> rockstar$renderMediaCard(custom, bx, by, bw, bh, font, subFont, tinyFont, mouseX, mouseY, hoverA, snap, tracker);
+                case 4 -> rockstar$renderCalculatorCard(custom, bx, by, bw, bh, boldFont, font, hoverA);
+                case 5 -> rockstar$renderActionSquircles(custom, bx, by, bw, bh, mouseX, mouseY, hoverA);
+                case 6 -> rockstar$renderBottomBar(custom, bx, by, bw, bh, font, subFont, mouseX, mouseY, hoverA);
+            }
+
+            // Marching dashed border highlight on hover ("выделялись движущимся пунктиром")
+            if (hoverA > 0.05F) {
+                ColorRGBA dashCol = new ColorRGBA(52.0F, 199.0F, 245.0F, 220.0F * hoverA);
+                rockstar$drawMarchingDashedBorder(custom, bx, by, bw, bh, 12.0F, dashCol);
             }
             drawContext.getMatrices().pop();
-        }
-
-        // --- BOTTOM SEARCH BAR & MINI-GAMES BAR ---
-        float bRowY = cy + 104.0F;
-        float bRowH = 34.0F;
-        float bStartX = cx - 180.0F;
-        float sWidth = 220.0F;
-
-        IIiii_Class8 sRad = IIiii_Class8.I_method_893b2757(10.0F);
-        boolean sHover = mouseX >= bStartX && mouseX <= bStartX + sWidth && mouseY >= bRowY && mouseY <= bRowY + bRowH;
-        custom.drawShadow(bStartX, bRowY, sWidth, bRowH, 12.0F, sRad, new ColorRGBA(0.0F, 0.0F, 0.0F, 80.0F));
-        custom.drawBlurredRect(bStartX, bRowY, sWidth, bRowH, 14.0F, 3.0F, sRad, new ColorRGBA(255.0F, 255.0F, 255.0F, 24.0F));
-        custom.drawRoundedRect(bStartX, bRowY, sWidth, bRowH, sRad, new ColorRGBA(22.0F, 26.0F, 36.0F, 215.0F));
-        custom.drawRoundedBorder(bStartX, bRowY, sWidth, bRowH, 1.2F, sRad, rockstar$searchFocused ? IiiiiIIIi_Class242.I_method_7df8e08e() : (sHover ? new ColorRGBA(255.0F, 255.0F, 255.0F, 80.0F) : new ColorRGBA(255.0F, 255.0F, 255.0F, 38.0F)));
-
-        if (font != null) {
-            String sPrompt = rockstar$searchText.isEmpty() ? (rockstar$searchFocused ? "" : "🔍 Поиск в Google... (Enter)") : rockstar$searchText;
-            if (rockstar$searchFocused && (System.currentTimeMillis() % 1000L < 500L)) sPrompt += "|";
-            ColorRGBA sCol = rockstar$searchText.isEmpty() ? new ColorRGBA(255.0F, 255.0F, 255.0F, 140.0F) : ColorRGBA.WHITE;
-            custom.drawText(font, sPrompt, bStartX + 12.0F, bRowY + 11.0F, sCol);
-        }
-
-        // Snake Button (Змейка)
-        float snakeX = bStartX + sWidth + 8.0F;
-        float gBtnW = 48.0F;
-        boolean snakeHov = mouseX >= snakeX && mouseX <= snakeX + gBtnW && mouseY >= bRowY && mouseY <= bRowY + bRowH;
-        custom.drawShadow(snakeX, bRowY, gBtnW, bRowH, 10.0F, sRad, new ColorRGBA(0.0F, 0.0F, 0.0F, 70.0F));
-        custom.drawRoundedRect(snakeX, bRowY, gBtnW, bRowH, sRad, new ColorRGBA(26.0F, 32.0F, 46.0F, snakeHov ? 255.0F : 210.0F));
-        custom.drawRoundedBorder(snakeX, bRowY, gBtnW, bRowH, 1.2F, sRad, snakeHov ? new ColorRGBA(52.0F, 199.0F, 89.0F, 220.0F) : new ColorRGBA(255.0F, 255.0F, 255.0F, 40.0F));
-        float snIconSz = 22.0F;
-        custom.drawTexture(RockstarClient.id("icons/snake.png"), snakeX + (gBtnW - snIconSz) / 2.0F, bRowY + (bRowH - snIconSz) / 2.0F, snIconSz, snIconSz, snakeHov ? ColorRGBA.WHITE : ColorRGBA.WHITE.withAlpha(220.0F));
-        if (snakeHov && subFont != null) {
-            float ttW = subFont.I_method_2c375926("Змейка") + 12.0F;
-            float ttX = snakeX + (gBtnW - ttW) / 2.0F;
-            float ttY = bRowY - 18.0F;
-            custom.drawRoundedRect(ttX, ttY, ttW, 14.0F, IIiii_Class8.I_method_893b2757(4.0F), new ColorRGBA(18.0F, 20.0F, 28.0F, 230.0F));
-            custom.drawRoundedBorder(ttX, ttY, ttW, 14.0F, 1.0F, IIiii_Class8.I_method_893b2757(4.0F), new ColorRGBA(52.0F, 199.0F, 89.0F, 180.0F));
-            custom.drawText(subFont, "Змейка", ttX + 6.0F, ttY + 3.0F, ColorRGBA.WHITE);
-        }
-
-        // Minesweeper Button (Сапёр)
-        float mineX = snakeX + gBtnW + 8.0F;
-        float mBtnW = 48.0F;
-        boolean mineHov = mouseX >= mineX && mouseX <= mineX + mBtnW && mouseY >= bRowY && mouseY <= bRowY + bRowH;
-        custom.drawShadow(mineX, bRowY, mBtnW, bRowH, 10.0F, sRad, new ColorRGBA(0.0F, 0.0F, 0.0F, 70.0F));
-        custom.drawRoundedRect(mineX, bRowY, mBtnW, bRowH, sRad, new ColorRGBA(26.0F, 32.0F, 46.0F, mineHov ? 255.0F : 210.0F));
-        custom.drawRoundedBorder(mineX, bRowY, mBtnW, bRowH, 1.2F, sRad, mineHov ? new ColorRGBA(255.0F, 59.0F, 48.0F, 220.0F) : new ColorRGBA(255.0F, 255.0F, 255.0F, 40.0F));
-        float mnIconSz = 22.0F;
-        custom.drawTexture(RockstarClient.id("icons/mine.png"), mineX + (mBtnW - mnIconSz) / 2.0F, bRowY + (bRowH - mnIconSz) / 2.0F, mnIconSz, mnIconSz, mineHov ? ColorRGBA.WHITE : ColorRGBA.WHITE.withAlpha(220.0F));
-        if (mineHov && subFont != null) {
-            float ttW = subFont.I_method_2c375926("Сапёр") + 12.0F;
-            float ttX = mineX + (mBtnW - ttW) / 2.0F;
-            float ttY = bRowY - 18.0F;
-            custom.drawRoundedRect(ttX, ttY, ttW, 14.0F, IIiii_Class8.I_method_893b2757(4.0F), new ColorRGBA(18.0F, 20.0F, 28.0F, 230.0F));
-            custom.drawRoundedBorder(ttX, ttY, ttW, 14.0F, 1.0F, IIiii_Class8.I_method_893b2757(4.0F), new ColorRGBA(255.0F, 59.0F, 48.0F, 180.0F));
-            custom.drawText(subFont, "Сапёр", ttX + 6.0F, ttY + 3.0F, ColorRGBA.WHITE);
         }
 
         // Fullscreen Shutter Flash on Screenshot
@@ -237,32 +200,150 @@ implements iIIiIIiIi_Class294 {
         }
     }
 
-    // Module 0: Functional Real Browser Media Player Card (Windows SMTC / Chrome / Spotify / VK)
+    // --- 1. ВИДЖЕТ ПОГОДЫ (WEATHER CARD - MATTE FROSTED SEMI-GLASS) ---
+    @Unique
+    private void rockstar$renderWeatherCard(III custom, float x, float y, float w, float h, IIiIIi_Class10 font, IIiIIi_Class10 subFont, IIiIIi_Class10 boldFont, int mx, int my, float hoverA) {
+        IIiii_Class8 rad = IIiii_Class8.I_method_893b2757(14.0F);
+        custom.drawShadow(x, y, w, h, 14.0F, rad, new ColorRGBA(0.0F, 0.0F, 0.0F, 90.0F));
+        custom.drawBlurredRect(x, y, w, h, 16.0F, 3.0F, rad, new ColorRGBA(255.0F, 255.0F, 255.0F, 20.0F));
+        custom.drawRoundedRect(x, y, w, h, rad, new ColorRGBA(20.0F, 24.0F, 36.0F, 215.0F));
+        custom.drawRoundedBorder(x, y, w, h, 1.1F, rad, hoverA > 0.01F ? new ColorRGBA(52.0F, 199.0F, 245.0F, 210.0F) : new ColorRGBA(255.0F, 255.0F, 255.0F, 38.0F));
+
+        // City & Status Pill (Clickable)
+        String city = rockstar$cities[rockstar$weatherCityIdx];
+        String temp = rockstar$cityTemps[rockstar$weatherCityIdx];
+        String cond = rockstar$cityConds[rockstar$weatherCityIdx];
+
+        if (subFont != null) {
+            custom.drawRoundedRect(x + 8.0F, y + 8.0F, subFont.I_method_2c375926(city) + 12.0F, 14.0F, IIiii_Class8.I_method_893b2757(4.0F), new ColorRGBA(52.0F, 199.0F, 245.0F, 50.0F));
+            custom.drawText(subFont, city, x + 14.0F, y + 11.5F, new ColorRGBA(52.0F, 199.0F, 245.0F, 255.0F));
+            custom.drawText(subFont, "Погода", x + w - 38.0F, y + 11.5F, new ColorRGBA(160.0F, 175.0F, 200.0F, 190.0F));
+        }
+
+        // Large Temperature
+        if (boldFont != null) {
+            custom.drawText(boldFont, temp, x + 10.0F, y + 27.0F, ColorRGBA.WHITE);
+        }
+
+        // Condition & Stats
+        if (font != null) {
+            custom.drawText(font, cond, x + 10.0F, y + 46.0F, new ColorRGBA(210.0F, 225.0F, 245.0F, 230.0F));
+        }
+        if (subFont != null) {
+            custom.drawText(subFont, "Ветер 3.8 м/с • Влажн. 64%", x + 10.0F, y + 62.0F, new ColorRGBA(150.0F, 165.0F, 190.0F, 190.0F));
+            custom.drawText(subFont, "Завтра: +19° ☀️  Сб: +16° ⛅", x + 10.0F, y + 74.0F, new ColorRGBA(130.0F, 145.0F, 175.0F, 170.0F));
+        }
+    }
+
+    // --- 2. ВИДЖЕТ РАДАРА ТРЕВОГ (AIR RAID RADAR WIDGET - ANIMATED SWEEP) ---
+    @Unique
+    private void rockstar$renderRadarCard(III custom, float x, float y, float w, float h, IIiIIi_Class10 font, IIiIIi_Class10 subFont, IIiIIi_Class10 tinyFont, int mx, int my, float hoverA) {
+        IIiii_Class8 rad = IIiii_Class8.I_method_893b2757(14.0F);
+        custom.drawShadow(x, y, w, h, 14.0F, rad, new ColorRGBA(0.0F, 0.0F, 0.0F, 90.0F));
+        custom.drawBlurredRect(x, y, w, h, 16.0F, 3.0F, rad, new ColorRGBA(255.0F, 255.0F, 255.0F, 20.0F));
+        custom.drawRoundedRect(x, y, w, h, rad, new ColorRGBA(20.0F, 24.0F, 36.0F, 215.0F));
+        custom.drawRoundedBorder(x, y, w, h, 1.1F, rad, hoverA > 0.01F ? new ColorRGBA(255.0F, 69.0F, 58.0F, 210.0F) : new ColorRGBA(255.0F, 255.0F, 255.0F, 38.0F));
+
+        // Radar Title & Alarm Beacon
+        long now = System.currentTimeMillis();
+        boolean blink = (now % 1000L) > 500L;
+        ColorRGBA alarmCol = blink ? new ColorRGBA(255.0F, 59.0F, 48.0F, 255.0F) : new ColorRGBA(200.0F, 30.0F, 20.0F, 200.0F);
+
+        if (subFont != null) {
+            custom.drawRoundedRect(x + 8.0F, y + 8.0F, 6.0F, 6.0F, IIiii_Class8.I_method_893b2757(3.0F), alarmCol);
+            custom.drawText(subFont, "Радар тревог", x + 18.0F, y + 8.5F, ColorRGBA.WHITE);
+            custom.drawText(subFont, "ЭФИР", x + w - 32.0F, y + 8.5F, alarmCol);
+        }
+
+        // Circular Animated Radar Screen
+        float rcx = x + 28.0F;
+        float rcy = y + 48.0F;
+        float rr = 20.0F;
+
+        custom.drawRoundedRect(rcx - rr, rcy - rr, rr * 2.0F, rr * 2.0F, IIiii_Class8.I_method_893b2757(rr), new ColorRGBA(10.0F, 14.0F, 22.0F, 240.0F));
+        custom.drawRoundedBorder(rcx - rr, rcy - rr, rr * 2.0F, rr * 2.0F, 1.0F, IIiii_Class8.I_method_893b2757(rr), new ColorRGBA(255.0F, 69.0F, 58.0F, 100.0F));
+
+        // Crosshairs
+        custom.drawRect(rcx - rr + 2.0F, rcy, rr * 2.0F - 4.0F, 0.8F, new ColorRGBA(255.0F, 255.0F, 255.0F, 40.0F));
+        custom.drawRect(rcx, rcy - rr + 2.0F, 0.8F, rr * 2.0F - 4.0F, new ColorRGBA(255.0F, 255.0F, 255.0F, 40.0F));
+
+        // Rotating Sweep Beam
+        float sweepAngle = ((now % 3000L) / 3000.0F) * (float)Math.PI * 2.0F;
+        float sx = rcx + (float)Math.cos(sweepAngle) * (rr - 2.0F);
+        float sy = rcy + (float)Math.sin(sweepAngle) * (rr - 2.0F);
+        custom.drawRect(rcx, rcy, sx - rcx, 1.2F, new ColorRGBA(255.0F, 69.0F, 58.0F, 220.0F));
+
+        // Right Threat Stats
+        if (subFont != null) {
+            custom.drawText(subFont, "Украина: 3 акт.", x + 56.0F, y + 34.0F, new ColorRGBA(255.0F, 80.0F, 70.0F, 230.0F));
+            custom.drawText(subFont, "РФ: 2 тревоги", x + 56.0F, y + 46.0F, new ColorRGBA(255.0F, 180.0F, 60.0F, 230.0F));
+            custom.drawText(subFont, "ПВО активно", x + 56.0F, y + 58.0F, new ColorRGBA(52.0F, 199.0F, 89.0F, 220.0F));
+        }
+        if (tinyFont != null) {
+            custom.drawText(tinyFont, "Мониторинг ракетных угроз", x + 10.0F, y + 76.0F, new ColorRGBA(150.0F, 165.0F, 190.0F, 180.0F));
+        }
+    }
+
+    // --- 3. АТМОСФЕРНЫЙ АРТ / КАРТИНКА ДНЯ (COVER ART PICTURE - NO SQUARE HARSH EDGES!) ---
+    @Unique
+    private void rockstar$renderPictureCard(III custom, float x, float y, float w, float h, IIiIIi_Class10 font, IIiIIi_Class10 subFont, IIiIIi_Class10 boldFont, int mx, int my, float hoverA) {
+        IIiii_Class8 rad = IIiii_Class8.I_method_893b2757(14.0F);
+        custom.drawShadow(x, y, w, h, 18.0F, rad, new ColorRGBA(0.0F, 0.0F, 0.0F, 110.0F));
+        custom.drawBlurredRect(x, y, w, h, 16.0F, 3.0F, rad, new ColorRGBA(255.0F, 255.0F, 255.0F, 20.0F));
+        custom.drawRoundedRect(x, y, w, h, rad, new ColorRGBA(18.0F, 22.0F, 32.0F, 230.0F));
+
+        // Draw Big Wallpaper Texture without harsh square edges (Smooth Mask & Gradient Blend)
+        Identifier wallTex = RockstarClient.id("image/mainmenu/wallpaper1.jpg");
+        float imgPad = 2.0F;
+        float imgX = x + imgPad;
+        float imgY = y + imgPad;
+        float imgW = w - imgPad * 2.0F;
+        float imgH = h - imgPad * 2.0F;
+
+        custom.drawTexture(wallTex, imgX, imgY, imgW, imgH, ColorRGBA.WHITE);
+
+        // Soft Gradient Overlay from top and bottom to seamlessly merge with matte glass body
+        custom.drawRoundedRect(imgX, imgY, imgW, imgH, rad, new ColorRGBA(12.0F, 16.0F, 26.0F, 90.0F));
+        // Deep bottom gradient vignette
+        float botFadeH = 68.0F;
+        custom.drawRoundedRect(imgX, y + h - botFadeH, imgW, botFadeH, rad, new ColorRGBA(14.0F, 18.0F, 28.0F, 180.0F));
+
+        // Specular Frosted Border
+        custom.drawRoundedBorder(x, y, w, h, 1.2F, rad, hoverA > 0.01F ? new ColorRGBA(168.0F, 85.0F, 247.0F, 220.0F) : new ColorRGBA(255.0F, 255.0F, 255.0F, 40.0F));
+
+        // Top Brand Pill
+        if (subFont != null) {
+            custom.drawRoundedRect(x + 10.0F, y + 10.0F, 78.0F, 15.0F, IIiii_Class8.I_method_893b2757(5.0F), new ColorRGBA(16.0F, 20.0F, 30.0F, 200.0F));
+            custom.drawText(subFont, "🌌 Атмосфера дня", x + 15.0F, y + 13.5F, ColorRGBA.WHITE);
+        }
+
+        // Bottom Title and Description
+        if (boldFont != null) {
+            custom.drawText(boldFont, "Agravity Sanctuary", x + 10.0F, y + h - 36.0F, ColorRGBA.WHITE);
+        }
+        if (subFont != null) {
+            custom.drawText(subFont, "Сезонное обновление визуалов", x + 10.0F, y + h - 20.0F, new ColorRGBA(200.0F, 215.0F, 240.0F, 210.0F));
+        }
+    }
+
+    // --- 4. МЕДИАПЛЕЕР БРАУЗЕРА (BROWSER MEDIA PLAYER) ---
     @Unique
     private void rockstar$renderMediaCard(III custom, float x, float y, float w, float h, IIiIIi_Class10 font, IIiIIi_Class10 subFont, IIiIIi_Class10 tinyFont, int mx, int my, float hoverA, @Nullable iiIiIIIiI_Class419.Nested1_a961800 snap, @Nullable iiIiIIIiI_Class419 tracker) {
         IIiii_Class8 rad = IIiii_Class8.I_method_893b2757(14.0F);
-        ColorRGBA theme = IiiiiIIIi_Class242.I_method_7df8e08e();
-        custom.drawShadow(x, y, w, h, 14.0F + 8.0F * hoverA, rad, new ColorRGBA(0.0F, 0.0F, 0.0F, 90.0F + 40.0F * hoverA));
-        custom.drawBlurredRect(x, y, w, h, 16.0F, 3.0F, rad, new ColorRGBA(255.0F, 255.0F, 255.0F, 24.0F));
-        custom.drawRoundedRect(x, y, w, h, rad, new ColorRGBA(22.0F, 26.0F, 36.0F, 205.0F));
-        custom.drawRoundedBorder(x, y, w, h, 1.0F, rad, hoverA > 0.01F ? theme.withAlpha(220.0F * hoverA) : new ColorRGBA(255.0F, 255.0F, 255.0F, 38.0F));
+        custom.drawShadow(x, y, w, h, 14.0F, rad, new ColorRGBA(0.0F, 0.0F, 0.0F, 90.0F));
+        custom.drawBlurredRect(x, y, w, h, 16.0F, 3.0F, rad, new ColorRGBA(255.0F, 255.0F, 255.0F, 20.0F));
+        custom.drawRoundedRect(x, y, w, h, rad, new ColorRGBA(20.0F, 24.0F, 36.0F, 215.0F));
+        custom.drawRoundedBorder(x, y, w, h, 1.1F, rad, hoverA > 0.01F ? new ColorRGBA(168.0F, 85.0F, 247.0F, 210.0F) : new ColorRGBA(255.0F, 255.0F, 255.0F, 38.0F));
 
         boolean hasTrack = (snap != null);
         String trackTitle = hasTrack ? snap.I_method_33e8b426() : "Музыка в браузере";
-        String artistName = hasTrack ? snap.i_method_c7076446() : "Включите трек в браузере";
+        String artistName = hasTrack ? snap.i_method_c7076446() : "Включите трек в сети";
         boolean isPlaying = hasTrack && snap.I_method_1a22ebbe();
-        double posSec = hasTrack ? snap.I_method_1a22eba8() : 0.0;
-        long durSec = hasTrack ? snap.I_method_1a22ebae() : 0L;
-        Identifier artwork = hasTrack ? snap.I_method_77a14989() : null;
 
-        // Album artwork thumbnail
+        // Thumbnail
         float thumbSz = 26.0F;
         custom.drawRoundedRect(x + 8.0F, y + 8.0F, thumbSz, thumbSz, IIiii_Class8.I_method_893b2757(6.0F), new ColorRGBA(255.0F, 255.0F, 255.0F, 24.0F));
-        if (artwork != null) {
-            custom.drawTexture(artwork, x + 8.0F, y + 8.0F, thumbSz, thumbSz, ColorRGBA.WHITE);
-        } else {
-            custom.drawIcon("music", x + 13.0F, y + 13.0F, 16.0F, ColorRGBA.WHITE.withAlpha(220.0F));
-        }
+        custom.drawIcon("music", x + 13.0F, y + 13.0F, 16.0F, ColorRGBA.WHITE.withAlpha(220.0F));
 
         // Equalizer Bars
         float eqStartX = x + 38.0F;
@@ -272,211 +353,204 @@ implements iIIiIIiIi_Class294 {
         for (int b = 0; b < rockstar$eqFrequencies.length; b++) {
             float bH = Math.max(3.0F, rockstar$eqFrequencies[b] * 16.0F);
             float bx = eqStartX + b * (barW + barGap);
-            custom.drawRoundedRect(bx, eqBaseY - bH, barW, bH, IIiii_Class8.I_method_893b2757(1.0F), new ColorRGBA(255.0F, 255.0F, 255.0F, isPlaying ? 235.0F : 80.0F));
+            custom.drawRoundedRect(bx, eqBaseY - bH, barW, bH, IIiii_Class8.I_method_893b2757(1.0F), new ColorRGBA(168.0F, 85.0F, 247.0F, isPlaying ? 245.0F : 80.0F));
         }
 
-        // Web / Browser indicator icon in top right
-        custom.drawIcon("language", x + w - 18.0F, y + 9.0F, 11.0F, new ColorRGBA(255.0F, 255.0F, 255.0F, 170.0F));
-
-        // Track title & Artist
+        // Title and Artist
         if (font != null) {
             String shortTitle = trackTitle != null ? trackTitle : "Трек";
-            if (shortTitle.length() > 16) shortTitle = shortTitle.substring(0, 15) + "…";
+            if (shortTitle.length() > 18) shortTitle = shortTitle.substring(0, 17) + "…";
             custom.drawText(font, shortTitle, x + 8.0F, y + 38.0F, ColorRGBA.WHITE);
         }
-
-        // Progress Scrubber Bar
-        float scrubY = y + 51.0F;
-        float scrubW = w - 16.0F;
-        float scrubH = 2.5F;
-        float scrubX = x + 8.0F;
-        float progRatio = (durSec > 0) ? MathHelper.clamp((float)(posSec / (double)durSec), 0.0F, 1.0F) : 0.0F;
-
-        custom.drawRoundedRect(scrubX, scrubY, scrubW, scrubH, IIiii_Class8.I_method_893b2757(1.5F), new ColorRGBA(255.0F, 255.0F, 255.0F, 35.0F));
-        if (progRatio > 0.01F) {
-            custom.drawRoundedRect(scrubX, scrubY, scrubW * progRatio, scrubH, IIiii_Class8.I_method_893b2757(1.5F), theme);
-            custom.drawRoundedRect(scrubX + scrubW * progRatio - 2.5F, scrubY - 1.5F, 5.0F, 5.5F, IIiii_Class8.I_method_893b2757(2.5F), ColorRGBA.WHITE);
-        }
-
-        // Media controls row (Previous ⏮, Play/Pause ▶/⏸, Next ⏭)
-        float ctrlY = y + 57.0F;
         if (subFont != null) {
-            boolean prevHov = mx >= x + 12.0F && mx <= x + 28.0F && my >= ctrlY - 2.0F && my <= ctrlY + 12.0F;
-            custom.drawText(subFont, "⏮", x + 14.0F, ctrlY, prevHov ? ColorRGBA.WHITE : new ColorRGBA(255.0F, 255.0F, 255.0F, 180.0F));
-
-            boolean playHov = mx >= x + w / 2.0F - 10.0F && mx <= x + w / 2.0F + 10.0F && my >= ctrlY - 2.0F && my <= ctrlY + 12.0F;
-            String playSym = isPlaying ? "⏸" : "▶";
-            custom.drawText(subFont, playSym, x + w / 2.0F - 4.0F, ctrlY, playHov ? ColorRGBA.WHITE : new ColorRGBA(255.0F, 255.0F, 255.0F, 230.0F));
-
-            boolean nextHov = mx >= x + w - 28.0F && mx <= x + w - 12.0F && my >= ctrlY - 2.0F && my <= ctrlY + 12.0F;
-            custom.drawText(subFont, "⏭", x + w - 26.0F, ctrlY, nextHov ? ColorRGBA.WHITE : new ColorRGBA(255.0F, 255.0F, 255.0F, 180.0F));
-        }
-    }
-
-    // Module 1: Camera Tile (Screenshot with Shutter Flash)
-    @Unique
-    private void rockstar$renderCameraTile(III custom, float x, float y, float w, float h, int mx, int my, float hoverA) {
-        IIiii_Class8 rad = IIiii_Class8.I_method_893b2757(14.0F);
-        boolean hov = mx >= x && mx <= x + w && my >= y && my <= y + h;
-        custom.drawShadow(x, y, w, h, 12.0F + 6.0F * hoverA, rad, new ColorRGBA(0.0F, 0.0F, 0.0F, 80.0F + 30.0F * hoverA));
-        custom.drawBlurredRect(x, y, w, h, 14.0F, 3.0F, rad, new ColorRGBA(255.0F, 255.0F, 255.0F, 24.0F));
-        custom.drawRoundedRect(x, y, w, h, rad, new ColorRGBA(22.0F, 26.0F, 36.0F, 195.0F));
-        custom.drawRoundedBorder(x, y, w, h, 1.0F, rad, hov ? new ColorRGBA(0.0F, 122.0F, 255.0F, 220.0F) : new ColorRGBA(255.0F, 255.0F, 255.0F, 35.0F));
-
-        // Squircle center icon pod
-        float podSz = 32.0F;
-        float px = x + (w - podSz) / 2.0F;
-        float py = y + (h - podSz) / 2.0F;
-        IIiii_Class8 pRad = IIiii_Class8.I_method_893b2757(10.0F);
-        custom.drawRoundedRect(px, py, podSz, podSz, pRad, new ColorRGBA(0.0F, 122.0F, 255.0F, hov ? 255.0F : 210.0F));
-        custom.drawIcon("hud/target", px + 8.0F, py + 8.0F, 16.0F, ColorRGBA.WHITE);
-    }
-
-    // Module 2: Fullscreen Quick Tile
-    @Unique
-    private void rockstar$renderFullscreenTile(III custom, float x, float y, float w, float h, int mx, int my, float hoverA) {
-        IIiii_Class8 rad = IIiii_Class8.I_method_893b2757(14.0F);
-        boolean hov = mx >= x && mx <= x + w && my >= y && my <= y + h;
-        boolean isFs = (MinecraftClient.getInstance() != null && MinecraftClient.getInstance().getWindow().isFullscreen());
-
-        custom.drawShadow(x, y, w, h, 12.0F + 6.0F * hoverA, rad, new ColorRGBA(0.0F, 0.0F, 0.0F, 80.0F + 30.0F * hoverA));
-        custom.drawBlurredRect(x, y, w, h, 14.0F, 3.0F, rad, new ColorRGBA(255.0F, 255.0F, 255.0F, 24.0F));
-        custom.drawRoundedRect(x, y, w, h, rad, new ColorRGBA(22.0F, 26.0F, 36.0F, 195.0F));
-        custom.drawRoundedBorder(x, y, w, h, 1.0F, rad, hov ? new ColorRGBA(52.0F, 199.0F, 89.0F, 220.0F) : new ColorRGBA(255.0F, 255.0F, 255.0F, 35.0F));
-
-        float podSz = 32.0F;
-        float px = x + (w - podSz) / 2.0F;
-        float py = y + (h - podSz) / 2.0F;
-        IIiii_Class8 pRad = IIiii_Class8.I_method_893b2757(10.0F);
-        custom.drawRoundedRect(px, py, podSz, podSz, pRad, isFs ? new ColorRGBA(52.0F, 199.0F, 89.0F, hov ? 255.0F : 220.0F) : new ColorRGBA(255.0F, 255.0F, 255.0F, hov ? 40.0F : 20.0F));
-        custom.drawIcon("keyboard", px + 6.0F, py + 6.0F, 20.0F, ColorRGBA.WHITE);
-    }
-
-    // Module 3: Master Volume Vertical Slider Pill
-    @Unique
-    private void rockstar$renderVolumePill(III custom, float x, float y, float w, float h, IIiIIi_Class10 subFont, int mx, int my, float hoverA) {
-        IIiii_Class8 rad = IIiii_Class8.I_method_893b2757(w / 2.0F);
-        float currentVol = (float)MinecraftClient.getInstance().options.getSoundVolume(SoundCategory.MASTER);
-
-        custom.drawShadow(x, y, w, h, 14.0F + 6.0F * hoverA, rad, new ColorRGBA(0.0F, 0.0F, 0.0F, 90.0F + 30.0F * hoverA));
-        custom.drawBlurredRect(x, y, w, h, 16.0F, 3.0F, rad, new ColorRGBA(255.0F, 255.0F, 255.0F, 24.0F));
-        custom.drawRoundedRect(x, y, w, h, rad, new ColorRGBA(22.0F, 26.0F, 36.0F, 195.0F));
-
-        // Filled white volume bar rising from bottom
-        float fillH = h * MathHelper.clamp(currentVol, 0.0F, 1.0F);
-        if (fillH > 4.0F) {
-            float fillY = y + h - fillH;
-            custom.drawRoundedRect(x, fillY, w, fillH, rad, new ColorRGBA(245.0F, 248.0F, 255.0F, 240.0F));
+            String shortArtist = artistName != null ? artistName : "";
+            if (shortArtist.length() > 20) shortArtist = shortArtist.substring(0, 19) + "…";
+            custom.drawText(subFont, shortArtist, x + 8.0F, y + 51.0F, new ColorRGBA(160.0F, 175.0F, 200.0F, 190.0F));
         }
 
-        custom.drawRoundedBorder(x, y, w, h, 1.0F, rad, new ColorRGBA(255.0F, 255.0F, 255.0F, 40.0F));
-
-        // Speaker icon at bottom of pill
-        ColorRGBA iconCol = (currentVol > 0.25F) ? new ColorRGBA(0.0F, 122.0F, 255.0F, 255.0F) : ColorRGBA.WHITE;
-        custom.drawIcon("music", x + (w - 18.0F) / 2.0F, y + h - 26.0F, 18.0F, iconCol);
-
-        // Volume percentage readout at top of pill
+        // Play / Pause Indicator
         if (subFont != null) {
-            String pct = (int)(currentVol * 100.0F) + "%";
-            float pw = subFont.I_method_2c375926(pct);
-            custom.drawText(subFont, pct, x + (w - pw) / 2.0F, y + 10.0F, (currentVol > 0.85F) ? new ColorRGBA(30.0F, 30.0F, 36.0F, 240.0F) : ColorRGBA.WHITE);
+            String stateStr = isPlaying ? "▶ Играет" : "⏸ Пауза";
+            custom.drawText(subFont, stateStr, x + w - 46.0F, y + 70.0F, isPlaying ? new ColorRGBA(52.0F, 199.0F, 89.0F, 220.0F) : new ColorRGBA(255.0F, 255.0F, 255.0F, 140.0F));
         }
     }
 
-    // Module 4: Interactive iOS Calculator - Clean layout with bottom row 100% inside card
+    // --- 5. МАТОВЫЙ КАЛЬКУЛЯТОР (MATTE GLASS CALCULATOR) ---
     @Unique
-    private void rockstar$renderCalculatorCard(III custom, float x, float y, float w, float h, IIiIIi_Class10 boldFont, IIiIIi_Class10 font, int mx, int my, float hoverA) {
-        IIiii_Class8 rad = IIiii_Class8.I_method_893b2757(16.0F);
-        custom.drawShadow(x, y, w, h, 18.0F + 8.0F * hoverA, rad, new ColorRGBA(0.0F, 0.0F, 0.0F, 110.0F + 40.0F * hoverA));
-        custom.drawBlurredRect(x, y, w, h, 18.0F, 4.0F, rad, new ColorRGBA(255.0F, 255.0F, 255.0F, 24.0F));
-        custom.drawRoundedRect(x, y, w, h, rad, new ColorRGBA(18.0F, 20.0F, 28.0F, 220.0F));
-        custom.drawRoundedBorder(x, y, w, h, 1.2F, rad, hoverA > 0.01F ? new ColorRGBA(255.0F, 255.0F, 255.0F, 140.0F) : new ColorRGBA(255.0F, 255.0F, 255.0F, 45.0F));
+    private void rockstar$renderCalculatorCard(III custom, float x, float y, float w, float h, IIiIIi_Class10 boldFont, IIiIIi_Class10 font, float hoverA) {
+        IIiii_Class8 rad = IIiii_Class8.I_method_893b2757(14.0F);
+        custom.drawShadow(x, y, w, h, 14.0F, rad, new ColorRGBA(0.0F, 0.0F, 0.0F, 90.0F));
+        custom.drawBlurredRect(x, y, w, h, 16.0F, 3.0F, rad, new ColorRGBA(255.0F, 255.0F, 255.0F, 20.0F));
+        custom.drawRoundedRect(x, y, w, h, rad, new ColorRGBA(20.0F, 24.0F, 36.0F, 215.0F));
+        custom.drawRoundedBorder(x, y, w, h, 1.1F, rad, hoverA > 0.01F ? new ColorRGBA(255.0F, 159.0F, 10.0F, 210.0F) : new ColorRGBA(255.0F, 255.0F, 255.0F, 38.0F));
 
-        // LCD Display Area
-        float lcdH = 28.0F;
-        float lcdY = y + 8.0F;
+        // LCD Display
         String disp = rockstar$calcDisplay;
-        if (disp.length() > 9) disp = disp.substring(0, 9);
+        if (disp.length() > 10) disp = disp.substring(0, 10);
         if (boldFont != null) {
-            float txtW = boldFont.I_method_2c375926(disp);
-            custom.drawText(boldFont, disp, x + w - txtW - 14.0F, lcdY + 8.0F, ColorRGBA.WHITE);
+            float tw = boldFont.I_method_2c375926(disp);
+            custom.drawText(boldFont, disp, x + w - tw - 12.0F, y + 10.0F, ColorRGBA.WHITE);
         }
 
-        // Circular Button Grid (5 rows x 4 columns)
-        String[][] btnGrid = new String[][]{
-            { "C", "+/-", "%", "÷" },
-            { "7", "8", "9", "×" },
-            { "4", "5", "6", "-" },
-            { "1", "2", "3", "+" },
-            { "0", ".", "=" }
+        // Circular Button Grid (3 rows compact)
+        String[][] grid = new String[][]{
+            { "7", "8", "9", "÷" },
+            { "4", "5", "6", "×" },
+            { "1", "2", "3", "=" }
         };
+        float btnSz = 20.0F;
+        float gap = 5.0F;
+        float startY = y + 26.0F;
 
-        float gridStartY = lcdY + lcdH + 4.0F;
-        float btnSz = 25.0F;
-        float gap = 4.5F;
+        for (int r = 0; r < 3; r++) {
+            for (int c = 0; c < 4; c++) {
+                String lbl = grid[r][c];
+                float bx = x + 10.0F + c * (btnSz + gap + 3.0F);
+                float by = startY + r * (btnSz + gap);
 
-        for (int r = 0; r < 5; r++) {
-            float rowY = gridStartY + r * (btnSz + gap);
-            int cols = btnGrid[r].length;
-            for (int c = 0; c < cols; c++) {
-                String label = btnGrid[r][c];
-                float bW = label.equals("0") ? (btnSz * 2.0F + gap) : btnSz;
-                float bX = x + 10.0F + (c == 0 ? 0.0F : (r == 4 ? (btnSz * 2.0F + gap + gap + (c - 1) * (btnSz + gap)) : (c * (btnSz + gap))));
-                boolean bHov = mx >= bX && mx <= bX + bW && my >= rowY && my <= rowY + btnSz;
-
-                ColorRGBA bg;
-                ColorRGBA fg = ColorRGBA.WHITE;
-                if (r == 0 && c < 3) {
-                    bg = new ColorRGBA(165.0F, 165.0F, 165.0F, bHov ? 255.0F : 210.0F);
-                    fg = ColorRGBA.BLACK;
-                } else if (c == 3 || label.equals("=")) {
-                    bg = new ColorRGBA(255.0F, 159.0F, 10.0F, bHov ? 255.0F : 225.0F);
-                } else {
-                    bg = new ColorRGBA(55.0F, 58.0F, 68.0F, bHov ? 255.0F : 200.0F);
-                }
-
-                IIiii_Class8 bRad = IIiii_Class8.I_method_893b2757(btnSz / 2.0F);
-                custom.drawRoundedRect(bX, rowY, bW, btnSz, bRad, bg);
+                ColorRGBA bg = (c == 3) ? new ColorRGBA(255.0F, 159.0F, 10.0F, 220.0F) : new ColorRGBA(55.0F, 62.0F, 78.0F, 200.0F);
+                custom.drawRoundedRect(bx, by, btnSz, btnSz, IIiii_Class8.I_method_893b2757(6.0F), bg);
                 if (font != null) {
-                    float lw = font.I_method_2c375926(label);
-                    float lx = label.equals("0") ? (bX + 10.0F) : (bX + (bW - lw) / 2.0F);
-                    custom.drawText(font, label, lx, rowY + 6.5F, fg);
+                    float lw = font.I_method_2c375926(lbl);
+                    custom.drawText(font, lbl, bx + (btnSz - lw) / 2.0F, by + 5.0F, ColorRGBA.WHITE);
                 }
             }
         }
     }
 
-    // Module 5: Right Column 3 Squircles (Resume, Settings, Disconnect - Separated & Rounded-Square!)
+    // --- 6. КНОПКИ УПРАВЛЕНИЯ ИГРОЙ (ACTION SQUIRCLES: ПРОДОЛЖИТЬ, НАСТРОЙКИ, ОТКЛЮЧИТЬСЯ) ---
     @Unique
     private void rockstar$renderActionSquircles(III custom, float x, float y, float w, float h, int mx, int my, float hoverA) {
         float btnSz = 48.0F;
         float bx = x + (w - btnSz) / 2.0F;
-        IIiii_Class8 rad = IIiii_Class8.I_method_893b2757(12.0F); // Sleek rounded-square squircle!
-        ColorRGBA theme = IiiiiIIIi_Class242.I_method_7df8e08e();
+        IIiii_Class8 rad = IIiii_Class8.I_method_893b2757(12.0F);
 
-        // 1. Resume Game Button (Top Squircle: Dark Frosted + Play Icon)
+        // 1. Продолжить (Play)
         float y1 = y + 4.0F;
         boolean hov1 = mx >= bx && mx <= bx + btnSz && my >= y1 && my <= y1 + btnSz;
         custom.drawShadow(bx, y1, btnSz, btnSz, 10.0F, rad, new ColorRGBA(0.0F, 0.0F, 0.0F, 80.0F));
-        custom.drawRoundedRect(bx, y1, btnSz, btnSz, rad, new ColorRGBA(22.0F, 26.0F, 36.0F, hov1 ? 255.0F : 210.0F));
-        custom.drawRoundedBorder(bx, y1, btnSz, btnSz, 1.2F, rad, hov1 ? theme : new ColorRGBA(255.0F, 255.0F, 255.0F, 40.0F));
+        custom.drawRoundedRect(bx, y1, btnSz, btnSz, rad, new ColorRGBA(24.0F, 28.0F, 40.0F, hov1 ? 255.0F : 210.0F));
+        custom.drawRoundedBorder(bx, y1, btnSz, btnSz, 1.2F, rad, hov1 ? new ColorRGBA(52.0F, 199.0F, 89.0F, 240.0F) : new ColorRGBA(255.0F, 255.0F, 255.0F, 40.0F));
         custom.drawIcon("play", bx + 17.0F, y1 + 17.0F, 14.0F, ColorRGBA.WHITE);
 
-        // 2. Settings / Options Button (Middle Squircle: Frosted Accent + Clear Gear Icon)
+        // 2. Настройки (Gear)
         float y2 = y + h / 2.0F - btnSz / 2.0F;
         boolean hov2 = mx >= bx && mx <= bx + btnSz && my >= y2 && my <= y2 + btnSz;
         custom.drawShadow(bx, y2, btnSz, btnSz, 10.0F, rad, new ColorRGBA(0.0F, 0.0F, 0.0F, 80.0F));
-        custom.drawRoundedRect(bx, y2, btnSz, btnSz, rad, new ColorRGBA(36.0F, 42.0F, 56.0F, hov2 ? 255.0F : 210.0F));
-        custom.drawRoundedBorder(bx, y2, btnSz, btnSz, 1.2F, rad, hov2 ? theme : new ColorRGBA(255.0F, 255.0F, 255.0F, 40.0F));
+        custom.drawRoundedRect(bx, y2, btnSz, btnSz, rad, new ColorRGBA(24.0F, 28.0F, 40.0F, hov2 ? 255.0F : 210.0F));
+        custom.drawRoundedBorder(bx, y2, btnSz, btnSz, 1.2F, rad, hov2 ? new ColorRGBA(0.0F, 122.0F, 255.0F, 240.0F) : new ColorRGBA(255.0F, 255.0F, 255.0F, 40.0F));
         custom.drawIcon("setting", bx + 16.0F, y2 + 16.0F, 16.0F, ColorRGBA.WHITE);
 
-        // 3. Disconnect Button (Far Bottom Squircle: Alert Crimson Squircle + Distinct Exit Door)
+        // 3. Отключиться (Power / Leave)
         float y3 = y + h - btnSz - 4.0F;
         boolean hov3 = mx >= bx && mx <= bx + btnSz && my >= y3 && my <= y3 + btnSz;
-        custom.drawShadow(bx, y3, btnSz, btnSz, 12.0F, rad, new ColorRGBA(255.0F, 59.0F, 48.0F, 80.0F));
-        custom.drawRoundedRect(bx, y3, btnSz, btnSz, rad, new ColorRGBA(235.0F, 55.0F, 50.0F, hov3 ? 255.0F : 215.0F));
-        custom.drawRoundedBorder(bx, y3, btnSz, btnSz, 1.2F, rad, new ColorRGBA(255.0F, 255.0F, 255.0F, hov3 ? 220.0F : 60.0F));
-        custom.drawIcon("back", bx + 16.0F, y3 + 16.0F, 16.0F, ColorRGBA.WHITE);
+        custom.drawShadow(bx, y3, btnSz, btnSz, 10.0F, rad, new ColorRGBA(0.0F, 0.0F, 0.0F, 80.0F));
+        custom.drawRoundedRect(bx, y3, btnSz, btnSz, rad, new ColorRGBA(24.0F, 28.0F, 40.0F, hov3 ? 255.0F : 210.0F));
+        custom.drawRoundedBorder(bx, y3, btnSz, btnSz, 1.2F, rad, hov3 ? new ColorRGBA(255.0F, 59.0F, 48.0F, 240.0F) : new ColorRGBA(255.0F, 255.0F, 255.0F, 40.0F));
+        custom.drawIcon("xmark", bx + 17.0F, y3 + 17.0F, 14.0F, hov3 ? new ColorRGBA(255.0F, 59.0F, 48.0F, 255.0F) : ColorRGBA.WHITE);
+    }
+
+    // --- 7. НИЖНЯЯ ПАНЕЛЬ: ПОИСК GOOGLE + 3D ЛОГОТИПЫ ЗМЕЙКИ И САПЁРА ---
+    @Unique
+    private void rockstar$renderBottomBar(III custom, float x, float y, float w, float h, IIiIIi_Class10 font, IIiIIi_Class10 subFont, int mx, int my, float hoverA) {
+        IIiii_Class8 sRad = IIiii_Class8.I_method_893b2757(10.0F);
+
+        // Search Bar (Left 280px)
+        float sW = 280.0F;
+        boolean sHover = mx >= x && mx <= x + sW && my >= y && my <= y + h;
+        custom.drawShadow(x, y, sW, h, 12.0F, sRad, new ColorRGBA(0.0F, 0.0F, 0.0F, 80.0F));
+        custom.drawBlurredRect(x, y, sW, h, 14.0F, 3.0F, sRad, new ColorRGBA(255.0F, 255.0F, 255.0F, 22.0F));
+        custom.drawRoundedRect(x, y, sW, h, sRad, new ColorRGBA(22.0F, 26.0F, 36.0F, 215.0F));
+        custom.drawRoundedBorder(x, y, sW, h, 1.2F, sRad, rockstar$searchFocused ? new ColorRGBA(168.0F, 85.0F, 247.0F, 230.0F) : (sHover ? new ColorRGBA(255.0F, 255.0F, 255.0F, 80.0F) : new ColorRGBA(255.0F, 255.0F, 255.0F, 38.0F)));
+
+        if (font != null) {
+            String sPrompt = rockstar$searchText.isEmpty() ? (rockstar$searchFocused ? "" : "🔍 Поиск в Google... (Enter)") : rockstar$searchText;
+            if (rockstar$searchFocused && (System.currentTimeMillis() % 1000L < 500L)) sPrompt += "|";
+            ColorRGBA sCol = rockstar$searchText.isEmpty() ? new ColorRGBA(255.0F, 255.0F, 255.0F, 140.0F) : ColorRGBA.WHITE;
+            custom.drawText(font, sPrompt, x + 12.0F, y + 12.0F, sCol);
+        }
+
+        // --- 3D BRAND LOGO EMBLEM: ЗМЕЙКА (SNAKE LOGO EMBLEM) ---
+        float snX = x + sW + 10.0F;
+        float gBtnW = 58.0F;
+        boolean snHov = mx >= snX && mx <= snX + gBtnW && my >= y && my <= y + h;
+
+        custom.drawShadow(snX, y, gBtnW, h, 12.0F, sRad, new ColorRGBA(0.0F, 0.0F, 0.0F, 80.0F));
+        custom.drawBlurredRect(snX, y, gBtnW, h, 14.0F, 3.0F, sRad, new ColorRGBA(52.0F, 199.0F, 89.0F, 30.0F));
+        custom.drawRoundedRect(snX, y, gBtnW, h, sRad, new ColorRGBA(18.0F, 28.0F, 24.0F, snHov ? 255.0F : 215.0F));
+        custom.drawRoundedBorder(snX, y, gBtnW, h, 1.3F, sRad, snHov ? new ColorRGBA(52.0F, 199.0F, 89.0F, 245.0F) : new ColorRGBA(52.0F, 199.0F, 89.0F, 120.0F));
+
+        // Draw 3D Snake Logo Emblem
+        custom.drawTexture(RockstarClient.id("icons/snake.png"), snX + 7.0F, y + 6.0F, 24.0F, 24.0F, ColorRGBA.WHITE);
+        if (subFont != null) {
+            custom.drawText(subFont, "Змейка", snX + 33.0F, y + 13.5F, snHov ? ColorRGBA.WHITE : new ColorRGBA(180.0F, 240.0F, 200.0F, 220.0F));
+        }
+
+        // --- 3D BRAND LOGO EMBLEM: САПЁР (MINESWEEPER LOGO EMBLEM) ---
+        float mnX = snX + gBtnW + 10.0F;
+        float mBtnW = 58.0F;
+        boolean mnHov = mx >= mnX && mx <= mnX + mBtnW && my >= y && my <= y + h;
+
+        custom.drawShadow(mnX, y, mBtnW, h, 12.0F, sRad, new ColorRGBA(0.0F, 0.0F, 0.0F, 80.0F));
+        custom.drawBlurredRect(mnX, y, mBtnW, h, 14.0F, 3.0F, sRad, new ColorRGBA(255.0F, 59.0F, 48.0F, 30.0F));
+        custom.drawRoundedRect(mnX, y, mBtnW, h, sRad, new ColorRGBA(28.0F, 20.0F, 24.0F, mnHov ? 255.0F : 215.0F));
+        custom.drawRoundedBorder(mnX, y, mBtnW, h, 1.3F, sRad, mnHov ? new ColorRGBA(255.0F, 59.0F, 48.0F, 245.0F) : new ColorRGBA(255.0F, 59.0F, 48.0F, 120.0F));
+
+        // Draw 3D Mine Logo Emblem
+        custom.drawTexture(RockstarClient.id("icons/mine.png"), mnX + 7.0F, y + 6.0F, 24.0F, 24.0F, ColorRGBA.WHITE);
+        if (subFont != null) {
+            custom.drawText(subFont, "Сапёр", mnX + 33.0F, y + 13.5F, mnHov ? ColorRGBA.WHITE : new ColorRGBA(255.0F, 200.0F, 190.0F, 220.0F));
+        }
+    }
+
+    // --- ANIMATED MARCHING DASHED BORDER RENDERER ("ДВИЖУЩИЙСЯ ПУНКТИР") ---
+    @Unique
+    private static void rockstar$drawMarchingDashedBorder(III custom, float x, float y, float w, float h, float rad, ColorRGBA col) {
+        long time = System.currentTimeMillis();
+        float dash = 8.0F;
+        float gap = 5.0F;
+        float period = dash + gap;
+        float speed = 32.0F; // pixels per second
+        float offset = ((time / 1000.0F) * speed) % period;
+
+        // Top edge
+        rockstar$drawDashedHLine(custom, x + rad, x + w - rad, y, offset, dash, gap, col);
+        // Right edge
+        rockstar$drawDashedVLine(custom, x + w, y + rad, y + h - rad, offset, dash, gap, col);
+        // Bottom edge
+        rockstar$drawDashedHLine(custom, x + rad, x + w - rad, y + h, offset + period / 2.0F, dash, gap, col);
+        // Left edge
+        rockstar$drawDashedVLine(custom, x, y + rad, y + h - rad, offset + period / 2.0F, dash, gap, col);
+    }
+
+    @Unique
+    private static void rockstar$drawDashedHLine(III custom, float x1, float x2, float y, float offset, float dash, float gap, ColorRGBA col) {
+        float total = x2 - x1;
+        float period = dash + gap;
+        float cur = -offset;
+        while (cur < total) {
+            float s = Math.max(0.0F, cur);
+            float e = Math.min(total, cur + dash);
+            if (e > s) {
+                custom.drawRect(x1 + s, y - 0.75F, e - s, 1.5F, col);
+            }
+            cur += period;
+        }
+    }
+
+    @Unique
+    private static void rockstar$drawDashedVLine(III custom, float x, float y1, float y2, float offset, float dash, float gap, ColorRGBA col) {
+        float total = y2 - y1;
+        float period = dash + gap;
+        float cur = -offset;
+        while (cur < total) {
+            float s = Math.max(0.0F, cur);
+            float e = Math.min(total, cur + dash);
+            if (e > s) {
+                custom.drawRect(x - 0.75F, y1 + s, 1.5F, e - s, col);
+            }
+            cur += period;
+        }
     }
 
     @Override
@@ -484,103 +558,42 @@ implements iIIiIIiIi_Class294 {
         float cx = this.width / 2.0F;
         float cy = this.height / 2.0F;
 
-        float[][] bounds = new float[][]{
-            { cx - 180.0F, cy - 98.0F, 114.0F, 74.0F },  // 0: Media
-            { cx - 180.0F, cy - 16.0F, 53.0F, 50.0F },   // 1: Camera
-            { cx - 180.0F, cy + 42.0F, 53.0F, 50.0F },   // 2: Fullscreen
-            { cx - 119.0F, cy - 16.0F, 53.0F, 108.0F },  // 3: Volume Pill
-            { cx - 58.0F,  cy - 98.0F, 150.0F, 192.0F }, // 4: Calculator
-            { cx + 100.0F, cy - 98.0F, 52.0F,  192.0F }  // 5: Right Squircles
+        float[][] baseBounds = new float[][]{
+            { cx - 245.0F, cy - 98.0F, 134.0F, 88.0F },  // 0: Погода
+            { cx - 245.0F, cy - 4.0F,  134.0F, 92.0F },  // 1: Радар
+            { cx - 105.0F, cy - 98.0F, 154.0F, 186.0F }, // 2: Арт / Картинка
+            { cx + 55.0F,  cy - 98.0F, 142.0F, 88.0F },  // 3: Медиаплеер
+            { cx + 55.0F,  cy - 4.0F,  142.0F, 92.0F },  // 4: Калькулятор
+            { cx + 203.0F, cy - 98.0F, 52.0F,  186.0F }, // 5: Кнопки управления
+            { cx - 210.0F, cy + 96.0F, 420.0F, 36.0F }   // 6: Поиск и игры
         };
 
-        // 0. Media Player Controls Click
-        float[] b0 = bounds[0];
-        if (mouseX >= b0[0] && mouseX <= b0[0] + b0[2] && mouseY >= b0[1] && mouseY <= b0[1] + b0[3]) {
-            iiIiIIIiI_Class419 tracker = RockstarClient.getInstance().I_method_be969482();
-            float ctrlY = b0[1] + 55.0F;
-            if (mouseY >= ctrlY && mouseY <= b0[1] + b0[3]) {
-                // Previous
-                if (mouseX >= b0[0] + 10.0F && mouseX <= b0[0] + 32.0F) {
-                    if (tracker != null && tracker.I_method_9b92c97b() != null) tracker.I_method_9b92c97b().previous();
-                    UISoundManager.playButtonClick();
-                    return true;
-                }
-                // Play / Pause
-                if (mouseX >= b0[0] + b0[2] / 2.0F - 16.0F && mouseX <= b0[0] + b0[2] / 2.0F + 16.0F) {
-                    if (tracker != null && tracker.I_method_9b92c97b() != null) tracker.I_method_9b92c97b().playPause();
-                    UISoundManager.playButtonClick();
-                    return true;
-                }
-                // Next
-                if (mouseX >= b0[0] + b0[2] - 32.0F && mouseX <= b0[0] + b0[2] - 10.0F) {
-                    if (tracker != null && tracker.I_method_9b92c97b() != null) tracker.I_method_9b92c97b().next();
-                    UISoundManager.playButtonClick();
-                    return true;
-                }
-            }
-
-            // General click toggles play/pause on browser
-            if (tracker != null && tracker.I_method_9b92c97b() != null) {
-                tracker.I_method_9b92c97b().playPause();
-            }
+        // Check Card 0: Weather City Cycle Click
+        float w0x = baseBounds[0][0] + rockstar$widgetOffsets[0][0];
+        float w0y = baseBounds[0][1] + rockstar$widgetOffsets[0][1];
+        if (mouseX >= w0x && mouseX <= w0x + 134.0F && mouseY >= w0y && mouseY <= w0y + 24.0F) {
+            rockstar$weatherCityIdx = (rockstar$weatherCityIdx + 1) % rockstar$cities.length;
             UISoundManager.playButtonClick();
             return true;
         }
 
-        // 1. Camera / Screenshot Click
-        float[] b1 = bounds[1];
-        if (mouseX >= b1[0] && mouseX <= b1[0] + b1[2] && mouseY >= b1[1] && mouseY <= b1[1] + b1[3]) {
-            rockstar$flashAlpha = 1.0F;
-            UISoundManager.playButtonClick();
-            if (this.client != null && this.client.getFramebuffer() != null) {
-                ScreenshotRecorder.saveScreenshot(this.client.runDirectory, this.client.getFramebuffer(), msg -> {
-                    if (this.client != null) this.client.execute(() -> this.client.inGameHud.getChatHud().addMessage(msg));
-                });
-            }
-            return true;
-        }
+        // Check Card 5: Action Squircles Clicks (Продолжить, Настройки, Отключиться)
+        float b5x = baseBounds[5][0] + rockstar$widgetOffsets[5][0];
+        float b5y = baseBounds[5][1] + rockstar$widgetOffsets[5][1];
+        float btnSz = 48.0F;
+        float bx = b5x + (52.0F - btnSz) / 2.0F;
+        if (mouseX >= bx && mouseX <= bx + btnSz) {
+            float y1 = b5y + 4.0F;
+            float y2 = b5y + 186.0F / 2.0F - btnSz / 2.0F;
+            float y3 = b5y + 186.0F - btnSz - 4.0F;
 
-        // 2. Fullscreen Quick Tile Click
-        float[] b2 = bounds[2];
-        if (mouseX >= b2[0] && mouseX <= b2[0] + b2[2] && mouseY >= b2[1] && mouseY <= b2[1] + b2[3]) {
-            UISoundManager.playButtonClick();
-            if (this.client != null) {
-                this.client.getWindow().toggleFullscreen();
-            }
-            return true;
-        }
-
-        // 3. Volume Pill Drag Click
-        float[] b3 = bounds[3];
-        if (mouseX >= b3[0] && mouseX <= b3[0] + b3[2] && mouseY >= b3[1] && mouseY <= b3[1] + b3[3]) {
-            rockstar$isDraggingVolume = true;
-            rockstar$updateVolume(mouseY, b3[1], b3[3]);
-            return true;
-        }
-
-        // 4. Calculator Click
-        float[] b4 = bounds[4];
-        if (mouseX >= b4[0] && mouseX <= b4[0] + b4[2] && mouseY >= b4[1] && mouseY <= b4[1] + b4[3]) {
-            if (rockstar$handleCalcClick(mouseX, mouseY, b4[0], b4[1], b4[2], b4[3])) {
-                return true;
-            }
-        }
-
-        // 5. Right Action Squircles Click (Resume, Settings, Disconnect)
-        float[] b5 = bounds[5];
-        if (mouseX >= b5[0] - 4.0F && mouseX <= b5[0] + b5[2] + 4.0F) {
-            float btnSz = 48.0F;
-            float y1 = b5[1] + 4.0F;
-            float y2 = b5[1] + b5[3] / 2.0F - btnSz / 2.0F;
-            float y3 = b5[1] + b5[3] - btnSz - 4.0F;
-
-            // Resume Game
+            // 1. Продолжить (Resume)
             if (mouseY >= y1 && mouseY <= y1 + btnSz) {
                 UISoundManager.playButtonClick();
                 this.close();
                 return true;
             }
-            // Options / Settings
+            // 2. Настройки (Options)
             if (mouseY >= y2 && mouseY <= y2 + btnSz) {
                 UISoundManager.playButtonClick();
                 if (this.client != null) {
@@ -588,7 +601,7 @@ implements iIIiIIiIi_Class294 {
                 }
                 return true;
             }
-            // Disconnect / Leave
+            // 3. Отключиться (Disconnect)
             if (mouseY >= y3 && mouseY <= y3 + btnSz) {
                 UISoundManager.playButtonClick();
                 this.disconnect();
@@ -596,18 +609,15 @@ implements iIIiIIiIi_Class294 {
             }
         }
 
-        // 6. Bottom Row: Search Bar, Snake, Minesweeper Clicks
-        float bRowY = cy + 104.0F;
-        float bRowH = 34.0F;
-        float bStartX = cx - 180.0F;
-        float sWidth = 220.0F;
-        float snakeX = bStartX + sWidth + 8.0F;
-        float gBtnW = 48.0F;
-        float mineX = snakeX + gBtnW + 8.0F;
-        float mBtnW = 48.0F;
+        // Check Card 6: Bottom Search, Snake & Minesweeper
+        float b6x = baseBounds[6][0] + rockstar$widgetOffsets[6][0];
+        float b6y = baseBounds[6][1] + rockstar$widgetOffsets[6][1];
+        float sW = 280.0F;
+        float snX = b6x + sW + 10.0F;
+        float mnX = snX + 58.0F + 10.0F;
 
-        // Search Bar click
-        if (mouseX >= bStartX && mouseX <= bStartX + sWidth && mouseY >= bRowY && mouseY <= bRowY + bRowH) {
+        // Search bar click
+        if (mouseX >= b6x && mouseX <= b6x + sW && mouseY >= b6y && mouseY <= b6y + 36.0F) {
             rockstar$searchFocused = true;
             UISoundManager.playButtonClick();
             return true;
@@ -616,7 +626,7 @@ implements iIIiIIiIi_Class294 {
         }
 
         // Snake button click
-        if (mouseX >= snakeX && mouseX <= snakeX + gBtnW && mouseY >= bRowY && mouseY <= bRowY + bRowH) {
+        if (mouseX >= snX && mouseX <= snX + 58.0F && mouseY >= b6y && mouseY <= b6y + 36.0F) {
             UISoundManager.playButtonClick();
             if (this.client != null) {
                 this.client.setScreen(new SnakeScreen(this));
@@ -625,7 +635,7 @@ implements iIIiIIiIi_Class294 {
         }
 
         // Minesweeper button click
-        if (mouseX >= mineX && mouseX <= mineX + mBtnW && mouseY >= bRowY && mouseY <= bRowY + bRowH) {
+        if (mouseX >= mnX && mouseX <= mnX + 58.0F && mouseY >= b6y && mouseY <= b6y + 36.0F) {
             UISoundManager.playButtonClick();
             if (this.client != null) {
                 this.client.setScreen(new MinesweeperScreen(this));
@@ -633,155 +643,45 @@ implements iIIiIIiIi_Class294 {
             return true;
         }
 
+        // Check Draggable Card Grab (Зажатие для перемещения любого виджета!)
+        for (int i = 0; i < 7; i++) {
+            float bxCur = baseBounds[i][0] + rockstar$widgetOffsets[i][0];
+            float byCur = baseBounds[i][1] + rockstar$widgetOffsets[i][1];
+            float bwCur = baseBounds[i][2];
+            float bhCur = baseBounds[i][3];
+
+            if (mouseX >= bxCur && mouseX <= bxCur + bwCur && mouseY >= byCur && mouseY <= byCur + bhCur) {
+                rockstar$draggedWidget = i;
+                rockstar$dragMouseStartX = (float)mouseX;
+                rockstar$dragMouseStartY = (float)mouseY;
+                rockstar$dragOrigX = rockstar$widgetOffsets[i][0];
+                rockstar$dragOrigY = rockstar$widgetOffsets[i][1];
+                return true;
+            }
+        }
+
         return super.mouseClicked(mouseX, mouseY, button);
     }
 
     @Override
     public boolean mouseDragged(double mouseX, double mouseY, int button, double deltaX, double deltaY) {
-        if (rockstar$isDraggingVolume) {
-            float cy = this.height / 2.0F;
-            float volY = cy - 16.0F;
-            rockstar$updateVolume(mouseY, volY, 108.0F);
+        if (rockstar$draggedWidget >= 0 && rockstar$draggedWidget < 7) {
+            float dx = (float)mouseX - rockstar$dragMouseStartX;
+            float dy = (float)mouseY - rockstar$dragMouseStartY;
+            rockstar$widgetOffsets[rockstar$draggedWidget][0] = rockstar$dragOrigX + dx;
+            rockstar$widgetOffsets[rockstar$draggedWidget][1] = rockstar$dragOrigY + dy;
             return true;
         }
-
         return super.mouseDragged(mouseX, mouseY, button, deltaX, deltaY);
     }
 
     @Override
     public boolean mouseReleased(double mouseX, double mouseY, int button) {
+        rockstar$draggedWidget = -1;
         rockstar$isDraggingVolume = false;
         return super.mouseReleased(mouseX, mouseY, button);
     }
 
-    @Unique
-    private static void rockstar$updateVolume(double mouseY, float y, float h) {
-        float rel = 1.0F - (float)((mouseY - y) / h);
-        float newVol = MathHelper.clamp(rel, 0.0F, 1.0F);
-        if (MinecraftClient.getInstance() != null) {
-            MinecraftClient.getInstance().options.getSoundVolumeOption(SoundCategory.MASTER).setValue((double)newVol);
-        }
-    }
-
-    @Unique
-    private static boolean rockstar$handleCalcClick(double mx, double my, float x, float y, float w, float h) {
-        float lcdH = 28.0F;
-        float gridStartY = y + 8.0F + lcdH + 4.0F;
-        float btnSz = 25.0F;
-        float gap = 4.5F;
-
-        String[][] btnGrid = new String[][]{
-            { "C", "+/-", "%", "÷" },
-            { "7", "8", "9", "×" },
-            { "4", "5", "6", "-" },
-            { "1", "2", "3", "+" },
-            { "0", ".", "=" }
-        };
-
-        for (int r = 0; r < 5; r++) {
-            float rowY = gridStartY + r * (btnSz + gap);
-            int cols = btnGrid[r].length;
-            for (int c = 0; c < cols; c++) {
-                String label = btnGrid[r][c];
-                float bW = label.equals("0") ? (btnSz * 2.0F + gap) : btnSz;
-                float bX = x + 10.0F + (c == 0 ? 0.0F : (r == 4 ? (btnSz * 2.0F + gap + gap + (c - 1) * (btnSz + gap)) : (c * (btnSz + gap))));
-
-                if (mx >= bX && mx <= bX + bW && my >= rowY && my <= rowY + btnSz) {
-                    UISoundManager.playButtonClick();
-                    rockstar$processCalcInput(label);
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    @Unique
-    private static void rockstar$processCalcInput(String key) {
-        try {
-            switch (key) {
-                case "C" -> {
-                    rockstar$calcDisplay = "0";
-                    rockstar$calcStored = 0.0;
-                    rockstar$calcOp = null;
-                    rockstar$calcClearNext = false;
-                }
-                case "+/-" -> {
-                    if (rockstar$calcDisplay.startsWith("-")) {
-                        rockstar$calcDisplay = rockstar$calcDisplay.substring(1);
-                    } else if (!rockstar$calcDisplay.equals("0")) {
-                        rockstar$calcDisplay = "-" + rockstar$calcDisplay;
-                    }
-                }
-                case "%" -> {
-                    double v = Double.parseDouble(rockstar$calcDisplay) / 100.0;
-                    rockstar$calcDisplay = (v == (long)v) ? String.format("%d", (long)v) : String.valueOf(v);
-                }
-                case "+", "-", "×", "÷" -> {
-                    rockstar$calcStored = Double.parseDouble(rockstar$calcDisplay);
-                    rockstar$calcOp = key;
-                    rockstar$calcClearNext = true;
-                }
-                case "=" -> {
-                    if (rockstar$calcOp != null) {
-                        double cur = Double.parseDouble(rockstar$calcDisplay);
-                        double res = switch (rockstar$calcOp) {
-                            case "+" -> rockstar$calcStored + cur;
-                            case "-" -> rockstar$calcStored - cur;
-                            case "×" -> rockstar$calcStored * cur;
-                            case "÷" -> cur != 0 ? rockstar$calcStored / cur : 0;
-                            default -> cur;
-                        };
-                        rockstar$calcDisplay = (res == (long)res) ? String.format("%d", (long)res) : String.valueOf(res);
-                        rockstar$calcOp = null;
-                        rockstar$calcClearNext = true;
-                    }
-                }
-                case "." -> {
-                    if (rockstar$calcClearNext) {
-                        rockstar$calcDisplay = "0.";
-                        rockstar$calcClearNext = false;
-                    } else if (!rockstar$calcDisplay.contains(".")) {
-                        rockstar$calcDisplay += ".";
-                    }
-                }
-                default -> { // Numbers 0 - 9
-                    if (rockstar$calcClearNext || rockstar$calcDisplay.equals("0")) {
-                        rockstar$calcDisplay = key;
-                        rockstar$calcClearNext = false;
-                    } else {
-                        rockstar$calcDisplay += key;
-                    }
-                }
-            }
-        } catch (Throwable ignored) {
-            rockstar$calcDisplay = "Error";
-            rockstar$calcClearNext = true;
-        }
-    }
-
-    @Unique
-    private void reconnect() {
-        ServerInfo serverInfo;
-        if (iIIIiiiII_Class285.I_method_456510cb(iIIIiiIii_Class284.I_field_ac164e6c) && GameMenuScreenMixin.I_field_3a9bda27.world.getDifficulty() == Difficulty.HARD) {
-            try {
-                GameMenuScreenMixin.I_field_3a9bda27.player.networkHandler.sendChatCommand(".rct");
-            } catch (Exception ignored) {}
-        }
-        if ((serverInfo = I_field_3a9bda27.getCurrentServerEntry()) == null) {
-            return;
-        }
-        ServerAddress serverAddress = ServerAddress.parse((String)serverInfo.address);
-        I_field_3a9bda27.getAbuseReportContext().tryShowDraftScreen(I_field_3a9bda27, (Screen)(Object)this, this::disconnect, true);
-        new Thread(() -> {
-            try {
-                Thread.sleep(1200L);
-            } catch (Exception ignored) {}
-            I_field_3a9bda27.execute(() -> ConnectScreen.connect((Screen)new MultiplayerScreen((Screen)new TitleScreen()), (MinecraftClient)I_field_3a9bda27, (ServerAddress)serverAddress, (ServerInfo)serverInfo, (boolean)false, null));
-        }).start();
-    }
-
-    // Clean, reliable Disconnect supporting singleplayer integrated server & multiplayer realms/servers
     @Unique
     private void disconnect() {
         if (this.client == null) return;
@@ -835,4 +735,3 @@ implements iIIiIIiIi_Class294 {
         return super.keyPressed(keyCode, scanCode, modifiers);
     }
 }
-

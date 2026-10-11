@@ -54,6 +54,11 @@ loom {
     mixin {
         defaultRefmapName = 'rockstar-refmap.json'
     }
+    runs {
+        client {
+            vmArg '-Djava.awt.headless=false'
+        }
+    }
 }
 
 processResources {
