@@ -224,6 +224,8 @@ public class ModuleManager {
         this.registerModule(new BlockOverlayModule());
         this.registerModule(new WeatherAlertModule());
         this.registerModule(new ItemChangerModule());
+        this.registerModule(new AIAssistantModule());
+        this.registerModule(new NotesModule());
         this.snapshotModuleSettings();
     }
 

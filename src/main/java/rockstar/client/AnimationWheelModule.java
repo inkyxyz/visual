@@ -63,7 +63,23 @@ public class AnimationWheelModule extends Module {
     private final SliderSetting animSpeed = new SliderSetting(this, "Скорость")
         .I_method_c8c9a7d7(0.5F).i_method_65e2aff7(2.5F).II_method_b0f56334(0.1F).Ii_method_4e0e6b54(1.0F);
 
-    private final ModeSetting walkingAnim = new ModeSetting(this, "Анимация ходьбы");
+    private final SliderSetting armSwing = new SliderSetting(this, "Размах рук")
+        .I_method_c8c9a7d7(0.2F).i_method_65e2aff7(2.0F).II_method_b0f56334(0.1F).Ii_method_4e0e6b54(1.0F);
+
+    private final SliderSetting legSwing = new SliderSetting(this, "Размах ног")
+        .I_method_c8c9a7d7(0.2F).i_method_65e2aff7(2.0F).II_method_b0f56334(0.1F).Ii_method_4e0e6b54(1.0F);
+
+    private final SliderSetting bodyLean = new SliderSetting(this, "Наклон тела")
+        .I_method_c8c9a7d7(0.0F).i_method_65e2aff7(2.0F).II_method_b0f56334(0.1F).Ii_method_4e0e6b54(1.0F);
+
+    private final ModeSetting idleAnimSetting = new ModeSetting(this, "Покой");
+    private final ModeSetting.Nested1_42765c60 idleRoblox;
+    private final ModeSetting.Nested1_42765c60 idleDefault;
+    private final ModeSetting.Nested1_42765c60 idleBreathing;
+    private final ModeSetting.Nested1_42765c60 idleCombat;
+    private final ModeSetting.Nested1_42765c60 idleLevitation;
+
+    private final ModeSetting walkingAnim = new ModeSetting(this, "Ходьба");
     private final ModeSetting.Nested1_42765c60 walkRoblox;
     private final ModeSetting.Nested1_42765c60 walkDefault;
     private final ModeSetting.Nested1_42765c60 walkSkating;
@@ -72,6 +88,30 @@ public class AnimationWheelModule extends Module {
     private final ModeSetting.Nested1_42765c60 walkSwagger;
     private final ModeSetting.Nested1_42765c60 walkZombie;
     private final ModeSetting.Nested1_42765c60 walkLevitation;
+
+    private final ModeSetting jumpAnimSetting = new ModeSetting(this, "Прыжок");
+    private final ModeSetting.Nested1_42765c60 jumpRoblox;
+    private final ModeSetting.Nested1_42765c60 jumpDefault;
+    private final ModeSetting.Nested1_42765c60 jumpSomersault;
+    private final ModeSetting.Nested1_42765c60 jumpTuck;
+    private final ModeSetting.Nested1_42765c60 jumpHero;
+
+    private final ModeSetting fallAnimSetting = new ModeSetting(this, "Падение");
+    private final ModeSetting.Nested1_42765c60 fallRoblox;
+    private final ModeSetting.Nested1_42765c60 fallDefault;
+    private final ModeSetting.Nested1_42765c60 fallDive;
+    private final ModeSetting.Nested1_42765c60 fallPanic;
+
+    private final ModeSetting climbAnimSetting = new ModeSetting(this, "Лестница");
+    private final ModeSetting.Nested1_42765c60 climbRoblox;
+    private final ModeSetting.Nested1_42765c60 climbDefault;
+    private final ModeSetting.Nested1_42765c60 climbParkour;
+
+    private final ModeSetting swimAnimSetting = new ModeSetting(this, "Плавание");
+    private final ModeSetting.Nested1_42765c60 swimRoblox;
+    private final ModeSetting.Nested1_42765c60 swimDefault;
+    private final ModeSetting.Nested1_42765c60 swimFreestyle;
+    private final ModeSetting.Nested1_42765c60 swimDolphin;
 
     private static AnimationWheelModule INSTANCE;
     private static CustomAnimation activeAnimation = CustomAnimation.NONE;
@@ -90,6 +130,14 @@ public class AnimationWheelModule extends Module {
 
     public AnimationWheelModule() {
         INSTANCE = this;
+        // Idle
+        this.idleRoblox = new ModeSetting.Nested1_42765c60(this.idleAnimSetting, "Роблокс").select();
+        this.idleDefault = new ModeSetting.Nested1_42765c60(this.idleAnimSetting, "Обычный");
+        this.idleBreathing = new ModeSetting.Nested1_42765c60(this.idleAnimSetting, "Дыхание");
+        this.idleCombat = new ModeSetting.Nested1_42765c60(this.idleAnimSetting, "Боевая стойка");
+        this.idleLevitation = new ModeSetting.Nested1_42765c60(this.idleAnimSetting, "Левитация");
+
+        // Walk
         this.walkRoblox = new ModeSetting.Nested1_42765c60(this.walkingAnim, "Роблокс").select();
         this.walkDefault = new ModeSetting.Nested1_42765c60(this.walkingAnim, "Обычная");
         this.walkSkating = new ModeSetting.Nested1_42765c60(this.walkingAnim, "Коньки");
@@ -98,6 +146,30 @@ public class AnimationWheelModule extends Module {
         this.walkSwagger = new ModeSetting.Nested1_42765c60(this.walkingAnim, "Вразвалку");
         this.walkZombie = new ModeSetting.Nested1_42765c60(this.walkingAnim, "Зомби");
         this.walkLevitation = new ModeSetting.Nested1_42765c60(this.walkingAnim, "Левитация");
+
+        // Jump
+        this.jumpRoblox = new ModeSetting.Nested1_42765c60(this.jumpAnimSetting, "Роблокс").select();
+        this.jumpDefault = new ModeSetting.Nested1_42765c60(this.jumpAnimSetting, "Обычный");
+        this.jumpSomersault = new ModeSetting.Nested1_42765c60(this.jumpAnimSetting, "Сальто");
+        this.jumpTuck = new ModeSetting.Nested1_42765c60(this.jumpAnimSetting, "Группировка");
+        this.jumpHero = new ModeSetting.Nested1_42765c60(this.jumpAnimSetting, "Супергерой");
+
+        // Fall
+        this.fallRoblox = new ModeSetting.Nested1_42765c60(this.fallAnimSetting, "Роблокс").select();
+        this.fallDefault = new ModeSetting.Nested1_42765c60(this.fallAnimSetting, "Обычное");
+        this.fallDive = new ModeSetting.Nested1_42765c60(this.fallAnimSetting, "Пикирование");
+        this.fallPanic = new ModeSetting.Nested1_42765c60(this.fallAnimSetting, "Паника");
+
+        // Climb
+        this.climbRoblox = new ModeSetting.Nested1_42765c60(this.climbAnimSetting, "Роблокс").select();
+        this.climbDefault = new ModeSetting.Nested1_42765c60(this.climbAnimSetting, "Обычная");
+        this.climbParkour = new ModeSetting.Nested1_42765c60(this.climbAnimSetting, "Паркур");
+
+        // Swim
+        this.swimRoblox = new ModeSetting.Nested1_42765c60(this.swimAnimSetting, "Роблокс").select();
+        this.swimDefault = new ModeSetting.Nested1_42765c60(this.swimAnimSetting, "Обычное");
+        this.swimFreestyle = new ModeSetting.Nested1_42765c60(this.swimAnimSetting, "Брасс");
+        this.swimDolphin = new ModeSetting.Nested1_42765c60(this.swimAnimSetting, "Дельфин");
     }
 
     public static AnimationWheelModule getInstance() {
@@ -138,82 +210,178 @@ public class AnimationWheelModule extends Module {
     private static void applyWalkingTransforms(PlayerEntity player, BipedEntityModelAccessor accessor, float tickDelta) {
         if (INSTANCE == null || !INSTANCE.isEnabled()) return;
 
-        // 1. Roblox Climbing Animation (Ladders / Vines)
+        float spd = INSTANCE.animSpeed != null ? INSTANCE.animSpeed.Ii_method_a20abcd2() : 1.0F;
+        float aScale = INSTANCE.armSwing != null ? INSTANCE.armSwing.Ii_method_a20abcd2() : 1.0F;
+        float lScale = INSTANCE.legSwing != null ? INSTANCE.legSwing.Ii_method_a20abcd2() : 1.0F;
+        float bScale = INSTANCE.bodyLean != null ? INSTANCE.bodyLean.Ii_method_a20abcd2() : 1.0F;
+
+        // 1. Climbing Animation (Ladders / Vines)
         if (player.isClimbing()) {
-            float climbPhase = (player.age + tickDelta) * 0.45F;
-            float climbStep = (float) Math.sin(climbPhase);
-            accessor.rockstar$getBody().pitch = 0.04F;
-            accessor.rockstar$getBody().pivotY = Math.abs(climbStep) * 0.8F;
-            accessor.rockstar$getLeftArm().pitch = -2.15F + climbStep * 0.75F;
-            accessor.rockstar$getRightArm().pitch = -2.15F - climbStep * 0.75F;
-            accessor.rockstar$getLeftArm().roll = -0.22F;
-            accessor.rockstar$getRightArm().roll = 0.22F;
-            accessor.rockstar$getLeftLeg().pitch = -climbStep * 0.55F;
-            accessor.rockstar$getRightLeg().pitch = climbStep * 0.55F;
+            if (INSTANCE.climbRoblox.isSelected()) {
+                float climbPhase = (player.age + tickDelta) * 0.45F * spd;
+                float climbStep = (float) Math.sin(climbPhase);
+                accessor.rockstar$getBody().pitch = 0.04F * bScale;
+                accessor.rockstar$getBody().pivotY = Math.abs(climbStep) * 0.8F;
+                accessor.rockstar$getLeftArm().pitch = -2.15F + climbStep * 0.75F * aScale;
+                accessor.rockstar$getRightArm().pitch = -2.15F - climbStep * 0.75F * aScale;
+                accessor.rockstar$getLeftArm().roll = -0.22F * aScale;
+                accessor.rockstar$getRightArm().roll = 0.22F * aScale;
+                accessor.rockstar$getLeftLeg().pitch = -climbStep * 0.55F * lScale;
+                accessor.rockstar$getRightLeg().pitch = climbStep * 0.55F * lScale;
+            } else if (INSTANCE.climbParkour.isSelected()) {
+                float climbPhase = (player.age + tickDelta) * 0.55F * spd;
+                float step = (float) Math.sin(climbPhase);
+                accessor.rockstar$getBody().yaw = step * 0.15F * bScale;
+                accessor.rockstar$getLeftArm().pitch = -2.4F + step * 0.9F * aScale;
+                accessor.rockstar$getRightArm().pitch = -2.4F - step * 0.9F * aScale;
+                accessor.rockstar$getLeftLeg().pitch = step * 0.7F * lScale;
+                accessor.rockstar$getRightLeg().pitch = -step * 0.7F * lScale;
+            }
             return;
         }
 
-        // 2. Roblox Swimming Animation (Water)
+        // 2. Swimming Animation (Water)
         if (player.isTouchingWater() || player.isSwimming()) {
-            float swimPhase = (player.age + tickDelta) * 0.35F;
-            float stroke = (float) Math.sin(swimPhase);
-            accessor.rockstar$getBody().pitch = player.isSwimming() ? 1.25F : 0.65F;
-            accessor.rockstar$getHead().pitch = -0.55F;
-            accessor.rockstar$getLeftArm().pitch = -0.85F + stroke * 0.95F;
-            accessor.rockstar$getLeftArm().roll = -0.45F - Math.abs((float) Math.cos(swimPhase)) * 0.65F;
-            accessor.rockstar$getRightArm().pitch = -0.85F - stroke * 0.95F;
-            accessor.rockstar$getRightArm().roll = 0.45F + Math.abs((float) Math.cos(swimPhase)) * 0.65F;
-            accessor.rockstar$getLeftLeg().pitch = (float) Math.sin(swimPhase * 2.2F) * 0.45F;
-            accessor.rockstar$getRightLeg().pitch = -(float) Math.sin(swimPhase * 2.2F) * 0.45F;
+            if (INSTANCE.swimRoblox.isSelected()) {
+                float swimPhase = (player.age + tickDelta) * 0.35F * spd;
+                float stroke = (float) Math.sin(swimPhase);
+                accessor.rockstar$getBody().pitch = (player.isSwimming() ? 1.25F : 0.65F) * bScale;
+                accessor.rockstar$getHead().pitch = -0.55F;
+                accessor.rockstar$getLeftArm().pitch = -0.85F + stroke * 0.95F * aScale;
+                accessor.rockstar$getLeftArm().roll = -0.45F - Math.abs((float) Math.cos(swimPhase)) * 0.65F * aScale;
+                accessor.rockstar$getRightArm().pitch = -0.85F - stroke * 0.95F * aScale;
+                accessor.rockstar$getRightArm().roll = 0.45F + Math.abs((float) Math.cos(swimPhase)) * 0.65F * aScale;
+                accessor.rockstar$getLeftLeg().pitch = (float) Math.sin(swimPhase * 2.2F) * 0.45F * lScale;
+                accessor.rockstar$getRightLeg().pitch = -(float) Math.sin(swimPhase * 2.2F) * 0.45F * lScale;
+            } else if (INSTANCE.swimFreestyle.isSelected()) {
+                float swimPhase = (player.age + tickDelta) * 0.45F * spd;
+                float stroke = (float) Math.sin(swimPhase);
+                accessor.rockstar$getBody().pitch = 1.35F * bScale;
+                accessor.rockstar$getBody().roll = stroke * 0.25F * bScale;
+                accessor.rockstar$getLeftArm().pitch = -1.8F + stroke * 1.2F * aScale;
+                accessor.rockstar$getRightArm().pitch = -1.8F - stroke * 1.2F * aScale;
+                accessor.rockstar$getLeftLeg().pitch = (float) Math.sin(swimPhase * 3.0F) * 0.55F * lScale;
+                accessor.rockstar$getRightLeg().pitch = -(float) Math.sin(swimPhase * 3.0F) * 0.55F * lScale;
+            } else if (INSTANCE.swimDolphin.isSelected()) {
+                float swimPhase = (player.age + tickDelta) * 0.3F * spd;
+                float undul = (float) Math.sin(swimPhase);
+                accessor.rockstar$getBody().pitch = (1.2F + undul * 0.3F) * bScale;
+                accessor.rockstar$getLeftArm().pitch = -2.8F;
+                accessor.rockstar$getRightArm().pitch = -2.8F;
+                accessor.rockstar$getLeftLeg().pitch = undul * 0.6F * lScale;
+                accessor.rockstar$getRightLeg().pitch = undul * 0.6F * lScale;
+            }
             return;
         }
 
-        // 3. Roblox In-Air Jumping / Falling Animation
+        // 3. In-Air Jumping / Falling Animation
         if (!player.isOnGround()) {
             double vy = player.getVelocity().y;
             if (vy > 0.05) {
-                // Roblox R15/R6 Authentic Jump: arms flared straight up, legs bent up at knees
-                accessor.rockstar$getBody().pitch = -0.18F;
-                accessor.rockstar$getLeftArm().pitch = -2.25F;
-                accessor.rockstar$getRightArm().pitch = -2.25F;
-                accessor.rockstar$getLeftArm().roll = -0.55F;
-                accessor.rockstar$getRightArm().roll = 0.55F;
-                accessor.rockstar$getLeftLeg().pitch = 0.55F;
-                accessor.rockstar$getRightLeg().pitch = 0.32F;
-                accessor.rockstar$getLeftLeg().roll = -0.15F;
-                accessor.rockstar$getRightLeg().roll = 0.15F;
+                // Jump Modes
+                if (INSTANCE.jumpRoblox.isSelected()) {
+                    accessor.rockstar$getBody().pitch = -0.18F * bScale;
+                    accessor.rockstar$getLeftArm().pitch = -2.25F * aScale;
+                    accessor.rockstar$getRightArm().pitch = -2.25F * aScale;
+                    accessor.rockstar$getLeftArm().roll = -0.55F * aScale;
+                    accessor.rockstar$getRightArm().roll = 0.55F * aScale;
+                    accessor.rockstar$getLeftLeg().pitch = 0.55F * lScale;
+                    accessor.rockstar$getRightLeg().pitch = 0.32F * lScale;
+                } else if (INSTANCE.jumpSomersault.isSelected()) {
+                    float flip = (player.age + tickDelta) * 0.45F * spd;
+                    accessor.rockstar$getBody().pitch = (flip % ((float)Math.PI * 2.0F)) * bScale;
+                    accessor.rockstar$getLeftArm().pitch = 1.2F * aScale;
+                    accessor.rockstar$getRightArm().pitch = 1.2F * aScale;
+                    accessor.rockstar$getLeftLeg().pitch = 1.2F * lScale;
+                    accessor.rockstar$getRightLeg().pitch = 1.2F * lScale;
+                } else if (INSTANCE.jumpTuck.isSelected()) {
+                    accessor.rockstar$getBody().pitch = 0.25F * bScale;
+                    accessor.rockstar$getLeftArm().pitch = 0.85F * aScale;
+                    accessor.rockstar$getRightArm().pitch = 0.85F * aScale;
+                    accessor.rockstar$getLeftLeg().pitch = 1.15F * lScale;
+                    accessor.rockstar$getRightLeg().pitch = 1.15F * lScale;
+                } else if (INSTANCE.jumpHero.isSelected()) {
+                    accessor.rockstar$getBody().pitch = -0.2F * bScale;
+                    accessor.rockstar$getLeftArm().pitch = 0.6F * aScale;
+                    accessor.rockstar$getRightArm().pitch = -2.9F * aScale;
+                    accessor.rockstar$getLeftLeg().pitch = 0.3F * lScale;
+                    accessor.rockstar$getRightLeg().pitch = -0.4F * lScale;
+                }
             } else {
-                // Roblox Freefall / Falling: torso leans forward, arms flailing back, panicked flutter kick
-                accessor.rockstar$getBody().pitch = 0.22F;
-                float flail = (float) Math.sin((player.age + tickDelta) * 0.45F) * 0.16F;
-                accessor.rockstar$getLeftArm().pitch = -2.55F + flail;
-                accessor.rockstar$getRightArm().pitch = -2.55F - flail;
-                accessor.rockstar$getLeftArm().roll = -0.42F;
-                accessor.rockstar$getRightArm().roll = 0.42F;
-                accessor.rockstar$getLeftLeg().pitch = -0.32F + flail * 0.8F;
-                accessor.rockstar$getRightLeg().pitch = 0.15F - flail * 0.8F;
+                // Fall Modes
+                if (INSTANCE.fallRoblox.isSelected()) {
+                    accessor.rockstar$getBody().pitch = 0.22F * bScale;
+                    float flail = (float) Math.sin((player.age + tickDelta) * 0.45F * spd) * 0.16F;
+                    accessor.rockstar$getLeftArm().pitch = (-2.55F + flail) * aScale;
+                    accessor.rockstar$getRightArm().pitch = (-2.55F - flail) * aScale;
+                    accessor.rockstar$getLeftArm().roll = -0.42F * aScale;
+                    accessor.rockstar$getRightArm().roll = 0.42F * aScale;
+                    accessor.rockstar$getLeftLeg().pitch = (-0.32F + flail * 0.8F) * lScale;
+                    accessor.rockstar$getRightLeg().pitch = (0.15F - flail * 0.8F) * lScale;
+                } else if (INSTANCE.fallDive.isSelected()) {
+                    accessor.rockstar$getBody().pitch = 1.1F * bScale;
+                    accessor.rockstar$getLeftArm().pitch = 0.8F * aScale;
+                    accessor.rockstar$getRightArm().pitch = 0.8F * aScale;
+                    accessor.rockstar$getLeftArm().roll = -0.6F * aScale;
+                    accessor.rockstar$getRightArm().roll = 0.6F * aScale;
+                    accessor.rockstar$getLeftLeg().pitch = -0.3F * lScale;
+                    accessor.rockstar$getRightLeg().pitch = -0.3F * lScale;
+                } else if (INSTANCE.fallPanic.isSelected()) {
+                    float thrash = (float) Math.sin((player.age + tickDelta) * 0.85F * spd) * 0.65F;
+                    accessor.rockstar$getBody().pitch = 0.35F * bScale;
+                    accessor.rockstar$getBody().yaw = thrash * 0.25F * bScale;
+                    accessor.rockstar$getLeftArm().pitch = (-1.8F + thrash) * aScale;
+                    accessor.rockstar$getRightArm().pitch = (-1.8F - thrash) * aScale;
+                    accessor.rockstar$getLeftLeg().pitch = thrash * lScale;
+                    accessor.rockstar$getRightLeg().pitch = -thrash * lScale;
+                }
             }
             return;
         }
 
         boolean isMoving = player.getVelocity().horizontalLengthSquared() > 0.001;
-        float timeSec = (player.age + tickDelta) * 0.22F;
 
-        // 4. Roblox Idle Animation (Breathing, posture, natural arm offset)
+        // 4. Idle Animations
         if (!isMoving) {
-            float idlePhase = (player.age + tickDelta) * 0.08F;
-            accessor.rockstar$getBody().pivotY = (float) Math.sin(idlePhase * 2.0F) * 0.45F;
-            accessor.rockstar$getBody().pitch = (float) Math.sin(idlePhase * 2.0F) * 0.02F;
-            accessor.rockstar$getLeftArm().pitch = 0.05F + (float) Math.sin(idlePhase) * 0.03F;
-            accessor.rockstar$getRightArm().pitch = 0.05F - (float) Math.sin(idlePhase) * 0.03F;
-            accessor.rockstar$getLeftArm().roll = -0.16F - (float) Math.cos(idlePhase) * 0.02F;
-            accessor.rockstar$getRightArm().roll = 0.16F + (float) Math.cos(idlePhase) * 0.02F;
-            accessor.rockstar$getHead().yaw = (float) Math.sin(idlePhase * 0.8F) * 0.04F;
-            accessor.rockstar$getHead().pitch = (float) Math.cos(idlePhase * 0.6F) * 0.03F;
+            float idlePhase = (player.age + tickDelta) * 0.08F * spd;
+            if (INSTANCE.idleRoblox.isSelected()) {
+                accessor.rockstar$getBody().pivotY = (float) Math.sin(idlePhase * 2.0F) * 0.45F;
+                accessor.rockstar$getBody().pitch = (float) Math.sin(idlePhase * 2.0F) * 0.02F * bScale;
+                accessor.rockstar$getLeftArm().pitch = (0.05F + (float) Math.sin(idlePhase) * 0.03F) * aScale;
+                accessor.rockstar$getRightArm().pitch = (0.05F - (float) Math.sin(idlePhase) * 0.03F) * aScale;
+                accessor.rockstar$getLeftArm().roll = (-0.16F - (float) Math.cos(idlePhase) * 0.02F) * aScale;
+                accessor.rockstar$getRightArm().roll = (0.16F + (float) Math.cos(idlePhase) * 0.02F) * aScale;
+                accessor.rockstar$getHead().yaw = (float) Math.sin(idlePhase * 0.8F) * 0.04F;
+                accessor.rockstar$getHead().pitch = (float) Math.cos(idlePhase * 0.6F) * 0.03F;
+            } else if (INSTANCE.idleBreathing.isSelected()) {
+                float breath = (float) Math.sin(idlePhase * 1.5F);
+                accessor.rockstar$getBody().pivotY = breath * 0.3F;
+                accessor.rockstar$getBody().pitch = breath * 0.04F * bScale;
+                accessor.rockstar$getLeftArm().roll = (-0.1F - breath * 0.03F) * aScale;
+                accessor.rockstar$getRightArm().roll = (0.1F + breath * 0.03F) * aScale;
+            } else if (INSTANCE.idleCombat.isSelected()) {
+                float bounce = (float) Math.sin(idlePhase * 3.0F);
+                accessor.rockstar$getBody().yaw = -0.3F * bScale;
+                accessor.rockstar$getBody().pivotY = Math.abs(bounce) * 0.6F;
+                accessor.rockstar$getLeftArm().pitch = -1.2F * aScale;
+                accessor.rockstar$getRightArm().pitch = -1.1F * aScale;
+                accessor.rockstar$getLeftArm().roll = 0.4F * aScale;
+                accessor.rockstar$getRightArm().roll = -0.4F * aScale;
+            } else if (INSTANCE.idleLevitation.isSelected()) {
+                float floatWave = (float) Math.sin(idlePhase * 2.0F);
+                accessor.rockstar$getBody().pivotY = -4.0F + floatWave * 1.2F;
+                accessor.rockstar$getLeftArm().pitch = -0.2F * aScale;
+                accessor.rockstar$getRightArm().pitch = -0.2F * aScale;
+                accessor.rockstar$getLeftArm().roll = -0.35F * aScale;
+                accessor.rockstar$getRightArm().roll = 0.35F * aScale;
+                accessor.rockstar$getLeftLeg().pitch = 0.25F * lScale;
+                accessor.rockstar$getRightLeg().pitch = -0.15F * lScale;
+            }
             return;
         }
 
         // 5. Ground Walking Animations
+        float timeSec = (player.age + tickDelta) * 0.22F * spd;
         if (INSTANCE.walkRoblox.isSelected()) {
             // Authentic Roblox R15/R6 Procedural Walk: cubic bounce, rigid swinging arms with outward flare
             float walkPhase = (player.age + tickDelta) * 0.65F;

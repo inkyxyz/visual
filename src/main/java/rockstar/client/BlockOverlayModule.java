@@ -39,7 +39,11 @@ public class BlockOverlayModule extends Module {
    private ModeSetting.Nested1_42765c60 modeCorners;
    private ModeSetting.Nested1_42765c60 modeFrostedGlass;
    private ModeSetting.Nested1_42765c60 modeNeonGrid;
+   private ModeSetting.Nested1_42765c60 modeNeonPulse;
+   private ModeSetting.Nested1_42765c60 modeHologram;
+   private ModeSetting.Nested1_42765c60 modeChromaWave;
 
+   private SliderSetting expansionSetting;
    private SliderSetting fillAlphaSetting;
    private SliderSetting outlineAlphaSetting;
    private BooleanSetting smoothMorphSetting;
@@ -66,6 +70,12 @@ public class BlockOverlayModule extends Module {
       this.modeCorners = new ModeSetting.Nested1_42765c60(this.modeSetting, "Уголки");
       this.modeFrostedGlass = new ModeSetting.Nested1_42765c60(this.modeSetting, "Стекло");
       this.modeNeonGrid = new ModeSetting.Nested1_42765c60(this.modeSetting, "Сетка");
+      this.modeNeonPulse = new ModeSetting.Nested1_42765c60(this.modeSetting, "Шейдер: Неоновый пульс");
+      this.modeHologram = new ModeSetting.Nested1_42765c60(this.modeSetting, "Шейдер: Голограмма");
+      this.modeChromaWave = new ModeSetting.Nested1_42765c60(this.modeSetting, "Шейдер: Хрома");
+
+      this.expansionSetting = new SliderSetting(this, "Размер оверлея")
+         .I_method_c8c9a7d7(0.001F).i_method_65e2aff7(0.04F).II_method_b0f56334(0.002F).Ii_method_4e0e6b54(0.008F);
 
       this.fillAlphaSetting = new SliderSetting(this, "Прозрачность")
          .I_method_c8c9a7d7(0.0F).i_method_65e2aff7(1.0F).II_method_b0f56334(0.05F).Ii_method_4e0e6b54(0.35F);
@@ -93,7 +103,8 @@ public class BlockOverlayModule extends Module {
          if (!state.isAir()) {
             VoxelShape shape = state.getOutlineShape(mc.world, pos);
             if (!shape.isEmpty()) {
-               targetBox = shape.getBoundingBox().offset(pos);
+               float exp = this.expansionSetting != null ? this.expansionSetting.Ii_method_a20abcd2() : 0.008F;
+               targetBox = shape.getBoundingBox().offset(pos).expand(exp);
             }
          }
       }
@@ -132,12 +143,25 @@ public class BlockOverlayModule extends Module {
          }
       }
 
-      ColorRGBA themeCol = (this.syncTheme != null && this.syncTheme.i_method_9b12da03())
-         ? IiiiiIIIi_Class242.i_method_5dfec6e()
-         : (this.customColor != null ? this.customColor.I_method_bde5f08e() : new ColorRGBA(0.0F, 220.0F, 255.0F, 240.0F));
+      long now = System.currentTimeMillis();
+      ColorRGBA themeCol;
+      if (this.modeChromaWave.isSelected()) {
+         float hue = (float)((now % 3600L) / 3600.0);
+         int rgb = java.awt.Color.HSBtoRGB(hue, 0.85F, 1.0F);
+         themeCol = new ColorRGBA((rgb >> 16) & 0xFF, (rgb >> 8) & 0xFF, rgb & 0xFF, 255);
+      } else {
+         themeCol = (this.syncTheme != null && this.syncTheme.i_method_9b12da03())
+            ? IiiiiIIIi_Class242.i_method_5dfec6e()
+            : (this.customColor != null ? this.customColor.I_method_bde5f08e() : new ColorRGBA(0.0F, 220.0F, 255.0F, 240.0F));
+      }
 
-      float fillA = (this.fillAlphaSetting != null ? this.fillAlphaSetting.Ii_method_a20abcd2() : 0.35F) * this.fadeAlpha;
-      float lineA = (this.outlineAlphaSetting != null ? this.outlineAlphaSetting.Ii_method_a20abcd2() : 0.85F) * this.fadeAlpha;
+      float pulseMult = 1.0F;
+      if (this.modeNeonPulse.isSelected()) {
+         pulseMult = (float)(Math.sin(now / 180.0) * 0.35 + 0.65);
+      }
+
+      float fillA = (this.fillAlphaSetting != null ? this.fillAlphaSetting.Ii_method_a20abcd2() : 0.35F) * this.fadeAlpha * pulseMult;
+      float lineA = (this.outlineAlphaSetting != null ? this.outlineAlphaSetting.Ii_method_a20abcd2() : 0.85F) * this.fadeAlpha * (this.modeNeonPulse.isSelected() ? (float)(Math.cos(now / 180.0) * 0.25 + 0.75) : 1.0F);
 
       Camera cam = I_field_3a9bda27.gameRenderer.getCamera();
       Vec3d cpos = cam.getPos();
@@ -164,7 +188,7 @@ public class BlockOverlayModule extends Module {
       Matrix4f mat = m.peek().getPositionMatrix();
 
       // Render Fill pass
-      boolean renderFill = this.modeFullBox.isSelected() || this.modeGradient.isSelected() || this.modeFrostedGlass.isSelected();
+      boolean renderFill = this.modeFullBox.isSelected() || this.modeGradient.isSelected() || this.modeFrostedGlass.isSelected() || this.modeNeonPulse.isSelected() || this.modeChromaWave.isSelected();
       if (renderFill && fillA > 0.01F) {
          RenderSystem.setShader(ShaderProgramKeys.POSITION_COLOR);
          BufferBuilder buf = RenderSystem.renderThreadTesselator().begin(DrawMode.QUADS, VertexFormats.POSITION_COLOR);
@@ -261,9 +285,19 @@ public class BlockOverlayModule extends Module {
             buf.vertex(mat, x1, y1, z2).color(cLine); buf.vertex(mat, x1, y2, z2).color(cLine);
 
             if (this.modeNeonGrid.isSelected()) {
-               // Internal wireframe cross on top face
+               // Internal wireframe cross on top and side faces
                buf.vertex(mat, x1, y2, z1).color(cLine); buf.vertex(mat, x2, y2, z2).color(cLine);
                buf.vertex(mat, x1, y2, z2).color(cLine); buf.vertex(mat, x2, y2, z1).color(cLine);
+            }
+
+            if (this.modeHologram.isSelected()) {
+               // Animated horizontal hologram scanlines
+               float scanPhase = (float)((now % 2000L) / 2000.0);
+               float sy = y1 + (y2 - y1) * scanPhase;
+               buf.vertex(mat, x1, sy, z1).color(cLine); buf.vertex(mat, x2, sy, z1).color(cLine);
+               buf.vertex(mat, x2, sy, z1).color(cLine); buf.vertex(mat, x2, sy, z2).color(cLine);
+               buf.vertex(mat, x2, sy, z2).color(cLine); buf.vertex(mat, x1, sy, z2).color(cLine);
+               buf.vertex(mat, x1, sy, z2).color(cLine); buf.vertex(mat, x1, sy, z1).color(cLine);
             }
          }
 

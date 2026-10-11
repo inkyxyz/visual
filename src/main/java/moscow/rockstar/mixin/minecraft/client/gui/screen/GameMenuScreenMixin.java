@@ -42,9 +42,13 @@ import rockstar.client.iIIIiiiII_Class285;
 import rockstar.client.iIIiIIiIi_Class294;
 import rockstar.client.iiIiIIIiI_Class419;
 import org.lwjgl.glfw.GLFW;
-import rockstar.client.BrowserScreen;
 import rockstar.client.SnakeScreen;
 import rockstar.client.MinesweeperScreen;
+import rockstar.client.AIAssistantScreen;
+import rockstar.client.NotesScreen;
+import rockstar.client.EscapeMenuConfig;
+import rockstar.client.EscapeMenuCustomizerScreen;
+import rockstar.client.WeatherAlertModule;
 
 @Mixin(value={GameMenuScreen.class})
 public class GameMenuScreenMixin
@@ -68,11 +72,7 @@ implements iIIiIIiIi_Class294 {
     // Volume Drag State
     @Unique private static boolean rockstar$isDraggingVolume = false;
 
-    // Bottom Search & Mini-games State
-    @Unique private static String rockstar$searchText = "";
-    @Unique private static boolean rockstar$searchFocused = false;
-
-    // Per-tile hover float animations ("что бы наводишься а оно выплывает")
+    // Per-tile hover float animations
     @Unique private static final float[] rockstar$tileHoverAnim = new float[6];
 
     protected GameMenuScreenMixin(Text text) {
@@ -147,6 +147,58 @@ implements iIIiIIiIi_Class294 {
             { cx + 100.0F, cy - 98.0F, 52.0F,  192.0F }  // 5: Right Column Squircles
         };
 
+        EscapeMenuConfig cfg = EscapeMenuConfig.getInstance();
+
+        // 0. Weather & Drone Danger Status Pill (Top Center)
+        if (cfg.showWeatherAlerts) {
+            float wPillX = cx - 180.0F;
+            float wPillY = cy - 138.0F;
+            float wPillW = 332.0F;
+            float wPillH = 32.0F;
+            IIiii_Class8 wpRad = IIiii_Class8.I_method_893b2757(10.0F);
+
+            boolean wHov = mouseX >= wPillX && mouseX <= wPillX + wPillW && mouseY >= wPillY && mouseY <= wPillY + wPillH;
+            custom.drawShadow(wPillX, wPillY, wPillW, wPillH, 12.0F, wpRad, new ColorRGBA(0.0F, 0.0F, 0.0F, 70.0F));
+            custom.drawBlurredRect(wPillX, wPillY, wPillW, wPillH, 14.0F, 3.0F, wpRad, new ColorRGBA(255.0F, 255.0F, 255.0F, 18.0F));
+            custom.drawRoundedRect(wPillX, wPillY, wPillW, wPillH, wpRad, new ColorRGBA(20.0F, 24.0F, 34.0F, 215.0F));
+            custom.drawRoundedBorder(wPillX, wPillY, wPillW, wPillH, 1.0F, wpRad, wHov ? new ColorRGBA(255.0F, 255.0F, 255.0F, 75.0F) : new ColorRGBA(255.0F, 255.0F, 255.0F, 32.0F));
+
+            WeatherAlertModule wMod = RockstarClient.getInstance().getModuleManager().getModule(WeatherAlertModule.class);
+            int temp = (wMod != null) ? wMod.getCurrentWeatherTemp() : 16;
+            String cond = (wMod != null) ? wMod.getWeatherCondition() : "Облачно ⛅";
+            String city = (cfg.weatherCity != null) ? cfg.weatherCity : "Киев";
+
+            // Weather text left
+            if (subFont != null) {
+                String wText = cond + " " + city + ": " + (temp > 0 ? "+" : "") + temp + "°C";
+                custom.drawText(subFont, wText, wPillX + 12.0F, wPillY + 11.5F, ColorRGBA.WHITE);
+            }
+
+            // Divider
+            custom.drawRect(wPillX + 130.0F, wPillY + 8.0F, 1.0F, 16.0F, new ColorRGBA(255.0F, 255.0F, 255.0F, 35.0F));
+
+            // Radar pulse dot & Alert text right
+            float radarX = wPillX + 140.0F;
+            float radarY = wPillY + 16.0F;
+            float pulseScale = (float)(Math.sin(now / 200.0) * 0.35 + 0.65);
+
+            String alertTxt = "🔴 Угроза БПЛА: Белгородская, Курская";
+            if ("Украина".equals(cfg.alertScope)) {
+                alertTxt = "🔴 Воздушная тревога: Киевская, Харьковская";
+            } else if ("Россия".equals(cfg.alertScope)) {
+                alertTxt = "🟡 Опасность БПЛА: Белгородская, Воронежская";
+            } else {
+                alertTxt = "🔴 БПЛА / Тревоги: UA + РФ (" + cfg.alertScope + ")";
+            }
+
+            ColorRGBA dotCol = new ColorRGBA(239.0F, 68.0F, 68.0F, 255.0F * pulseScale);
+            custom.drawRoundedRect(radarX - 3.0F, radarY - 3.0F, 6.0F, 6.0F, IIiii_Class8.I_method_893b2757(3.0F), dotCol);
+
+            if (tinyFont != null) {
+                custom.drawText(tinyFont, alertTxt, radarX + 8.0F, wPillY + 12.0F, new ColorRGBA(255.0F, 220.0F, 220.0F, 240.0F));
+            }
+        }
+
         // Smooth Floating Elevation Hover Animation for all cards
         for (int i = 0; i < 6; i++) {
             float[] b = bounds[i];
@@ -155,8 +207,19 @@ implements iIIiIIiIi_Class294 {
             rockstar$tileHoverAnim[i] += (target - rockstar$tileHoverAnim[i]) * 0.20F;
         }
 
-        // Render each module in place with hover float offset
+        // Render each module in place with hover float offset (conditioned on EscapeMenuConfig)
         for (int slotIdx = 0; slotIdx < 6; slotIdx++) {
+            boolean shouldRender = switch (slotIdx) {
+                case 0 -> cfg.showMediaPlayer;
+                case 1 -> cfg.showCamera;
+                case 2 -> cfg.showFullscreen;
+                case 3 -> cfg.showVolume;
+                case 4 -> cfg.showCalculator;
+                case 5 -> true; // Action squircles always visible
+                default -> true;
+            };
+            if (!shouldRender) continue;
+
             float[] b = bounds[slotIdx];
             float hoverA = rockstar$tileHoverAnim[slotIdx];
             float drawX = b[0];
@@ -174,60 +237,80 @@ implements iIIiIIiIi_Class294 {
             drawContext.getMatrices().pop();
         }
 
-        // --- BOTTOM SEARCH BAR & MINI-GAMES BAR ---
+        // --- BOTTOM QUICK CONTROL DOCK ---
+        // (Browser search bar removed completely; matte semi-glass SVG-badge design for games, AI chat, notes, settings)
         float bRowY = cy + 104.0F;
         float bRowH = 34.0F;
         float bStartX = cx - 180.0F;
-        float sWidth = 220.0F;
-
         IIiii_Class8 sRad = IIiii_Class8.I_method_893b2757(10.0F);
-        boolean sHover = mouseX >= bStartX && mouseX <= bStartX + sWidth && mouseY >= bRowY && mouseY <= bRowY + bRowH;
-        custom.drawShadow(bStartX, bRowY, sWidth, bRowH, 12.0F, sRad, new ColorRGBA(0.0F, 0.0F, 0.0F, 80.0F));
-        custom.drawBlurredRect(bStartX, bRowY, sWidth, bRowH, 14.0F, 3.0F, sRad, new ColorRGBA(255.0F, 255.0F, 255.0F, 24.0F));
-        custom.drawRoundedRect(bStartX, bRowY, sWidth, bRowH, sRad, new ColorRGBA(22.0F, 26.0F, 36.0F, 215.0F));
-        custom.drawRoundedBorder(bStartX, bRowY, sWidth, bRowH, 1.2F, sRad, rockstar$searchFocused ? IiiiiIIIi_Class242.I_method_7df8e08e() : (sHover ? new ColorRGBA(255.0F, 255.0F, 255.0F, 80.0F) : new ColorRGBA(255.0F, 255.0F, 255.0F, 38.0F)));
 
-        if (font != null) {
-            String sPrompt = rockstar$searchText.isEmpty() ? (rockstar$searchFocused ? "" : "🔍 Поиск в Google... (Enter)") : rockstar$searchText;
-            if (rockstar$searchFocused && (System.currentTimeMillis() % 1000L < 500L)) sPrompt += "|";
-            ColorRGBA sCol = rockstar$searchText.isEmpty() ? new ColorRGBA(255.0F, 255.0F, 255.0F, 140.0F) : ColorRGBA.WHITE;
-            custom.drawText(font, sPrompt, bStartX + 12.0F, bRowY + 11.0F, sCol);
+        // 1. [ 🤖 ИИ Чат ]
+        if (cfg.showAIChat) {
+            float aiX = bStartX;
+            float aiW = 76.0F;
+            boolean aiHov = mouseX >= aiX && mouseX <= aiX + aiW && mouseY >= bRowY && mouseY <= bRowY + bRowH;
+            float aiDrawY = bRowY - (aiHov ? 2.0F : 0.0F);
+            custom.drawShadow(aiX, aiDrawY, aiW, bRowH, 10.0F, sRad, new ColorRGBA(0.0F, 0.0F, 0.0F, 70.0F));
+            custom.drawBlurredRect(aiX, aiDrawY, aiW, bRowH, 12.0F, 3.0F, sRad, new ColorRGBA(59.0F, 130.0F, 246.0F, 24.0F));
+            custom.drawRoundedRect(aiX, aiDrawY, aiW, bRowH, sRad, new ColorRGBA(22.0F, 26.0F, 36.0F, aiHov ? 245.0F : 205.0F));
+            custom.drawRoundedBorder(aiX, aiDrawY, aiW, bRowH, 1.1F, sRad, aiHov ? new ColorRGBA(59.0F, 130.0F, 246.0F, 220.0F) : new ColorRGBA(255.0F, 255.0F, 255.0F, 38.0F));
+            if (subFont != null) {
+                custom.drawText(subFont, "🤖 ИИ Чат", aiX + 11.0F, aiDrawY + 11.5F, ColorRGBA.WHITE);
+            }
         }
 
-        // Snake Button (Змейка)
-        float snakeX = bStartX + sWidth + 8.0F;
-        float gBtnW = 50.0F;
-        boolean snakeHov = mouseX >= snakeX && mouseX <= snakeX + gBtnW && mouseY >= bRowY && mouseY <= bRowY + bRowH;
-        custom.drawShadow(snakeX, bRowY, gBtnW, bRowH, 10.0F, sRad, new ColorRGBA(0.0F, 0.0F, 0.0F, 70.0F));
-        custom.drawRoundedRect(snakeX, bRowY, gBtnW, bRowH, sRad, new ColorRGBA(26.0F, 32.0F, 46.0F, snakeHov ? 255.0F : 210.0F));
-        custom.drawRoundedBorder(snakeX, bRowY, gBtnW, bRowH, 1.2F, sRad, snakeHov ? new ColorRGBA(52.0F, 199.0F, 89.0F, 220.0F) : new ColorRGBA(255.0F, 255.0F, 255.0F, 40.0F));
-        float snIconSz = 26.0F;
-        custom.drawTexture(RockstarClient.id("icons/snake.png"), snakeX + (gBtnW - snIconSz) / 2.0F, bRowY + (bRowH - snIconSz) / 2.0F, snIconSz, snIconSz, snakeHov ? ColorRGBA.WHITE : ColorRGBA.WHITE.withAlpha(235.0F));
-        if (snakeHov && subFont != null) {
-            float ttW = subFont.I_method_2c375926("Змейка") + 12.0F;
-            float ttX = snakeX + (gBtnW - ttW) / 2.0F;
-            float ttY = bRowY - 18.0F;
-            custom.drawRoundedRect(ttX, ttY, ttW, 14.0F, IIiii_Class8.I_method_893b2757(4.0F), new ColorRGBA(18.0F, 20.0F, 28.0F, 230.0F));
-            custom.drawRoundedBorder(ttX, ttY, ttW, 14.0F, 1.0F, IIiii_Class8.I_method_893b2757(4.0F), new ColorRGBA(52.0F, 199.0F, 89.0F, 180.0F));
-            custom.drawText(subFont, "Змейка", ttX + 6.0F, ttY + 3.0F, ColorRGBA.WHITE);
+        // 2. [ 📝 Заметки ]
+        if (cfg.showNotes) {
+            float notesX = bStartX + 82.0F;
+            float notesW = 76.0F;
+            boolean nHov = mouseX >= notesX && mouseX <= notesX + notesW && mouseY >= bRowY && mouseY <= bRowY + bRowH;
+            float nDrawY = bRowY - (nHov ? 2.0F : 0.0F);
+            custom.drawShadow(notesX, nDrawY, notesW, bRowH, 10.0F, sRad, new ColorRGBA(0.0F, 0.0F, 0.0F, 70.0F));
+            custom.drawBlurredRect(notesX, nDrawY, notesW, bRowH, 12.0F, 3.0F, sRad, new ColorRGBA(16.0F, 185.0F, 129.0F, 24.0F));
+            custom.drawRoundedRect(notesX, nDrawY, notesW, bRowH, sRad, new ColorRGBA(22.0F, 26.0F, 36.0F, nHov ? 245.0F : 205.0F));
+            custom.drawRoundedBorder(notesX, nDrawY, notesW, bRowH, 1.1F, sRad, nHov ? new ColorRGBA(16.0F, 185.0F, 129.0F, 220.0F) : new ColorRGBA(255.0F, 255.0F, 255.0F, 38.0F));
+            if (subFont != null) {
+                custom.drawText(subFont, "📝 Заметки", notesX + 9.0F, nDrawY + 11.5F, ColorRGBA.WHITE);
+            }
         }
 
-        // Minesweeper Button (Сапёр)
-        float mineX = snakeX + gBtnW + 8.0F;
-        float mBtnW = 50.0F;
-        boolean mineHov = mouseX >= mineX && mouseX <= mineX + mBtnW && mouseY >= bRowY && mouseY <= bRowY + bRowH;
-        custom.drawShadow(mineX, bRowY, mBtnW, bRowH, 10.0F, sRad, new ColorRGBA(0.0F, 0.0F, 0.0F, 70.0F));
-        custom.drawRoundedRect(mineX, bRowY, mBtnW, bRowH, sRad, new ColorRGBA(26.0F, 32.0F, 46.0F, mineHov ? 255.0F : 210.0F));
-        custom.drawRoundedBorder(mineX, bRowY, mBtnW, bRowH, 1.2F, sRad, mineHov ? new ColorRGBA(255.0F, 59.0F, 48.0F, 220.0F) : new ColorRGBA(255.0F, 255.0F, 255.0F, 40.0F));
-        float mnIconSz = 26.0F;
-        custom.drawTexture(RockstarClient.id("icons/mine.png"), mineX + (mBtnW - mnIconSz) / 2.0F, bRowY + (bRowH - mnIconSz) / 2.0F, mnIconSz, mnIconSz, mineHov ? ColorRGBA.WHITE : ColorRGBA.WHITE.withAlpha(235.0F));
-        if (mineHov && subFont != null) {
-            float ttW = subFont.I_method_2c375926("Сапёр") + 12.0F;
-            float ttX = mineX + (mBtnW - ttW) / 2.0F;
-            float ttY = bRowY - 18.0F;
-            custom.drawRoundedRect(ttX, ttY, ttW, 14.0F, IIiii_Class8.I_method_893b2757(4.0F), new ColorRGBA(18.0F, 20.0F, 28.0F, 230.0F));
-            custom.drawRoundedBorder(ttX, ttY, ttW, 14.0F, 1.0F, IIiii_Class8.I_method_893b2757(4.0F), new ColorRGBA(255.0F, 59.0F, 48.0F, 180.0F));
-            custom.drawText(subFont, "Сапёр", ttX + 6.0F, ttY + 3.0F, ColorRGBA.WHITE);
+        // 3. [ 🐍 Змейка ] Mini-game
+        if (cfg.showGames) {
+            float snakeX = bStartX + 164.0F;
+            float gBtnW = 48.0F;
+            boolean snakeHov = mouseX >= snakeX && mouseX <= snakeX + gBtnW && mouseY >= bRowY && mouseY <= bRowY + bRowH;
+            float sDrawY = bRowY - (snakeHov ? 2.0F : 0.0F);
+            custom.drawShadow(snakeX, sDrawY, gBtnW, bRowH, 10.0F, sRad, new ColorRGBA(0.0F, 0.0F, 0.0F, 70.0F));
+            custom.drawBlurredRect(snakeX, sDrawY, gBtnW, bRowH, 12.0F, 3.0F, sRad, new ColorRGBA(255.0F, 255.0F, 255.0F, 20.0F));
+            custom.drawRoundedRect(snakeX, sDrawY, gBtnW, bRowH, sRad, new ColorRGBA(22.0F, 26.0F, 36.0F, snakeHov ? 245.0F : 205.0F));
+            custom.drawRoundedBorder(snakeX, sDrawY, gBtnW, bRowH, 1.1F, sRad, snakeHov ? new ColorRGBA(255.0F, 255.0F, 255.0F, 90.0F) : new ColorRGBA(255.0F, 255.0F, 255.0F, 38.0F));
+            float snIconSz = 24.0F;
+            custom.drawTexture(RockstarClient.id("icons/snake.png"), snakeX + (gBtnW - snIconSz) / 2.0F, sDrawY + (bRowH - snIconSz) / 2.0F, snIconSz, snIconSz, snakeHov ? ColorRGBA.WHITE : ColorRGBA.WHITE.withAlpha(235.0F));
+
+            // 4. [ 💣 Сапёр ] Mini-game
+            float mineX = bStartX + 218.0F;
+            float mBtnW = 48.0F;
+            boolean mineHov = mouseX >= mineX && mouseX <= mineX + mBtnW && mouseY >= bRowY && mouseY <= bRowY + bRowH;
+            float mDrawY = bRowY - (mineHov ? 2.0F : 0.0F);
+            custom.drawShadow(mineX, mDrawY, mBtnW, bRowH, 10.0F, sRad, new ColorRGBA(0.0F, 0.0F, 0.0F, 70.0F));
+            custom.drawBlurredRect(mineX, mDrawY, mBtnW, bRowH, 12.0F, 3.0F, sRad, new ColorRGBA(255.0F, 255.0F, 255.0F, 20.0F));
+            custom.drawRoundedRect(mineX, mDrawY, mBtnW, bRowH, sRad, new ColorRGBA(22.0F, 26.0F, 36.0F, mineHov ? 245.0F : 205.0F));
+            custom.drawRoundedBorder(mineX, mDrawY, mBtnW, bRowH, 1.1F, sRad, mineHov ? new ColorRGBA(255.0F, 255.0F, 255.0F, 90.0F) : new ColorRGBA(255.0F, 255.0F, 255.0F, 38.0F));
+            float mnIconSz = 24.0F;
+            custom.drawTexture(RockstarClient.id("icons/mine.png"), mineX + (mBtnW - mnIconSz) / 2.0F, mDrawY + (bRowH - mnIconSz) / 2.0F, mnIconSz, mnIconSz, mineHov ? ColorRGBA.WHITE : ColorRGBA.WHITE.withAlpha(235.0F));
+        }
+
+        // 5. [ ⚙ Меню ] Settings / Customize Button
+        float setX = bStartX + 272.0F;
+        float setW = 60.0F;
+        boolean setHov = mouseX >= setX && mouseX <= setX + setW && mouseY >= bRowY && mouseY <= bRowY + bRowH;
+        float setDrawY = bRowY - (setHov ? 2.0F : 0.0F);
+        custom.drawShadow(setX, setDrawY, setW, bRowH, 10.0F, sRad, new ColorRGBA(0.0F, 0.0F, 0.0F, 70.0F));
+        custom.drawBlurredRect(setX, setDrawY, setW, bRowH, 12.0F, 3.0F, sRad, new ColorRGBA(255.0F, 255.0F, 255.0F, 20.0F));
+        custom.drawRoundedRect(setX, setDrawY, setW, bRowH, sRad, new ColorRGBA(22.0F, 26.0F, 36.0F, setHov ? 245.0F : 205.0F));
+        custom.drawRoundedBorder(setX, setDrawY, setW, bRowH, 1.1F, sRad, setHov ? new ColorRGBA(255.0F, 255.0F, 255.0F, 90.0F) : new ColorRGBA(255.0F, 255.0F, 255.0F, 38.0F));
+        if (subFont != null) {
+            custom.drawText(subFont, "⚙ Меню", setX + 11.0F, setDrawY + 11.5F, ColorRGBA.WHITE);
         }
 
         // Fullscreen Shutter Flash on Screenshot
@@ -483,6 +566,23 @@ implements iIIiIIiIi_Class294 {
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         float cx = this.width / 2.0F;
         float cy = this.height / 2.0F;
+        EscapeMenuConfig cfg = EscapeMenuConfig.getInstance();
+
+        // 0. Weather Pill Click (cycle alert regions)
+        if (cfg.showWeatherAlerts) {
+            float wPillX = cx - 180.0F;
+            float wPillY = cy - 138.0F;
+            float wPillW = 332.0F;
+            float wPillH = 32.0F;
+            if (mouseX >= wPillX && mouseX <= wPillX + wPillW && mouseY >= wPillY && mouseY <= wPillY + wPillH) {
+                if ("Все".equals(cfg.alertScope)) cfg.alertScope = "Украина";
+                else if ("Украина".equals(cfg.alertScope)) cfg.alertScope = "Россия";
+                else cfg.alertScope = "Все";
+                cfg.save();
+                UISoundManager.playButtonClick();
+                return true;
+            }
+        }
 
         float[][] bounds = new float[][]{
             { cx - 180.0F, cy - 98.0F, 114.0F, 74.0F },  // 0: Media
@@ -494,75 +594,84 @@ implements iIIiIIiIi_Class294 {
         };
 
         // 0. Media Player Controls Click
-        float[] b0 = bounds[0];
-        if (mouseX >= b0[0] && mouseX <= b0[0] + b0[2] && mouseY >= b0[1] && mouseY <= b0[1] + b0[3]) {
-            iiIiIIIiI_Class419 tracker = RockstarClient.getInstance().I_method_be969482();
-            float ctrlY = b0[1] + 55.0F;
-            if (mouseY >= ctrlY && mouseY <= b0[1] + b0[3]) {
-                // Previous
-                if (mouseX >= b0[0] + 10.0F && mouseX <= b0[0] + 32.0F) {
-                    if (tracker != null && tracker.I_method_9b92c97b() != null) tracker.I_method_9b92c97b().previous();
-                    UISoundManager.playButtonClick();
-                    return true;
+        if (cfg.showMediaPlayer) {
+            float[] b0 = bounds[0];
+            if (mouseX >= b0[0] && mouseX <= b0[0] + b0[2] && mouseY >= b0[1] && mouseY <= b0[1] + b0[3]) {
+                iiIiIIIiI_Class419 tracker = RockstarClient.getInstance().I_method_be969482();
+                float ctrlY = b0[1] + 55.0F;
+                if (mouseY >= ctrlY && mouseY <= b0[1] + b0[3]) {
+                    // Previous
+                    if (mouseX >= b0[0] + 10.0F && mouseX <= b0[0] + 32.0F) {
+                        if (tracker != null && tracker.I_method_9b92c97b() != null) tracker.I_method_9b92c97b().previous();
+                        UISoundManager.playButtonClick();
+                        return true;
+                    }
+                    // Play / Pause
+                    if (mouseX >= b0[0] + b0[2] / 2.0F - 16.0F && mouseX <= b0[0] + b0[2] / 2.0F + 16.0F) {
+                        if (tracker != null && tracker.I_method_9b92c97b() != null) tracker.I_method_9b92c97b().playPause();
+                        UISoundManager.playButtonClick();
+                        return true;
+                    }
+                    // Next
+                    if (mouseX >= b0[0] + b0[2] - 32.0F && mouseX <= b0[0] + b0[2] - 10.0F) {
+                        if (tracker != null && tracker.I_method_9b92c97b() != null) tracker.I_method_9b92c97b().next();
+                        UISoundManager.playButtonClick();
+                        return true;
+                    }
                 }
-                // Play / Pause
-                if (mouseX >= b0[0] + b0[2] / 2.0F - 16.0F && mouseX <= b0[0] + b0[2] / 2.0F + 16.0F) {
-                    if (tracker != null && tracker.I_method_9b92c97b() != null) tracker.I_method_9b92c97b().playPause();
-                    UISoundManager.playButtonClick();
-                    return true;
-                }
-                // Next
-                if (mouseX >= b0[0] + b0[2] - 32.0F && mouseX <= b0[0] + b0[2] - 10.0F) {
-                    if (tracker != null && tracker.I_method_9b92c97b() != null) tracker.I_method_9b92c97b().next();
-                    UISoundManager.playButtonClick();
-                    return true;
-                }
-            }
 
-            // General click toggles play/pause on browser
-            if (tracker != null && tracker.I_method_9b92c97b() != null) {
-                tracker.I_method_9b92c97b().playPause();
+                if (tracker != null && tracker.I_method_9b92c97b() != null) {
+                    tracker.I_method_9b92c97b().playPause();
+                }
+                UISoundManager.playButtonClick();
+                return true;
             }
-            UISoundManager.playButtonClick();
-            return true;
         }
 
         // 1. Camera / Screenshot Click
-        float[] b1 = bounds[1];
-        if (mouseX >= b1[0] && mouseX <= b1[0] + b1[2] && mouseY >= b1[1] && mouseY <= b1[1] + b1[3]) {
-            rockstar$flashAlpha = 1.0F;
-            UISoundManager.playButtonClick();
-            if (this.client != null && this.client.getFramebuffer() != null) {
-                ScreenshotRecorder.saveScreenshot(this.client.runDirectory, this.client.getFramebuffer(), msg -> {
-                    if (this.client != null) this.client.execute(() -> this.client.inGameHud.getChatHud().addMessage(msg));
-                });
+        if (cfg.showCamera) {
+            float[] b1 = bounds[1];
+            if (mouseX >= b1[0] && mouseX <= b1[0] + b1[2] && mouseY >= b1[1] && mouseY <= b1[1] + b1[3]) {
+                rockstar$flashAlpha = 1.0F;
+                UISoundManager.playButtonClick();
+                if (this.client != null && this.client.getFramebuffer() != null) {
+                    ScreenshotRecorder.saveScreenshot(this.client.runDirectory, this.client.getFramebuffer(), msg -> {
+                        if (this.client != null) this.client.execute(() -> this.client.inGameHud.getChatHud().addMessage(msg));
+                    });
+                }
+                return true;
             }
-            return true;
         }
 
         // 2. Fullscreen Quick Tile Click
-        float[] b2 = bounds[2];
-        if (mouseX >= b2[0] && mouseX <= b2[0] + b2[2] && mouseY >= b2[1] && mouseY <= b2[1] + b2[3]) {
-            UISoundManager.playButtonClick();
-            if (this.client != null) {
-                this.client.getWindow().toggleFullscreen();
+        if (cfg.showFullscreen) {
+            float[] b2 = bounds[2];
+            if (mouseX >= b2[0] && mouseX <= b2[0] + b2[2] && mouseY >= b2[1] && mouseY <= b2[1] + b2[3]) {
+                UISoundManager.playButtonClick();
+                if (this.client != null) {
+                    this.client.getWindow().toggleFullscreen();
+                }
+                return true;
             }
-            return true;
         }
 
         // 3. Volume Pill Drag Click
-        float[] b3 = bounds[3];
-        if (mouseX >= b3[0] && mouseX <= b3[0] + b3[2] && mouseY >= b3[1] && mouseY <= b3[1] + b3[3]) {
-            rockstar$isDraggingVolume = true;
-            rockstar$updateVolume(mouseY, b3[1], b3[3]);
-            return true;
+        if (cfg.showVolume) {
+            float[] b3 = bounds[3];
+            if (mouseX >= b3[0] && mouseX <= b3[0] + b3[2] && mouseY >= b3[1] && mouseY <= b3[1] + b3[3]) {
+                rockstar$isDraggingVolume = true;
+                rockstar$updateVolume(mouseY, b3[1], b3[3]);
+                return true;
+            }
         }
 
         // 4. Calculator Click
-        float[] b4 = bounds[4];
-        if (mouseX >= b4[0] && mouseX <= b4[0] + b4[2] && mouseY >= b4[1] && mouseY <= b4[1] + b4[3]) {
-            if (rockstar$handleCalcClick(mouseX, mouseY, b4[0], b4[1], b4[2], b4[3])) {
-                return true;
+        if (cfg.showCalculator) {
+            float[] b4 = bounds[4];
+            if (mouseX >= b4[0] && mouseX <= b4[0] + b4[2] && mouseY >= b4[1] && mouseY <= b4[1] + b4[3]) {
+                if (rockstar$handleCalcClick(mouseX, mouseY, b4[0], b4[1], b4[2], b4[3])) {
+                    return true;
+                }
             }
         }
 
@@ -596,39 +705,67 @@ implements iIIiIIiIi_Class294 {
             }
         }
 
-        // 6. Bottom Row: Search Bar, Snake, Minesweeper Clicks
+        // 6. Bottom Row: Quick Control Dock Clicks
         float bRowY = cy + 104.0F;
         float bRowH = 34.0F;
         float bStartX = cx - 180.0F;
-        float sWidth = 220.0F;
-        float snakeX = bStartX + sWidth + 8.0F;
-        float gBtnW = 48.0F;
-        float mineX = snakeX + gBtnW + 8.0F;
-        float mBtnW = 48.0F;
 
-        // Search Bar click
-        if (mouseX >= bStartX && mouseX <= bStartX + sWidth && mouseY >= bRowY && mouseY <= bRowY + bRowH) {
-            rockstar$searchFocused = true;
-            UISoundManager.playButtonClick();
-            return true;
-        } else {
-            rockstar$searchFocused = false;
-        }
-
-        // Snake button click
-        if (mouseX >= snakeX && mouseX <= snakeX + gBtnW && mouseY >= bRowY && mouseY <= bRowY + bRowH) {
-            UISoundManager.playButtonClick();
-            if (this.client != null) {
-                this.client.setScreen(new SnakeScreen(this));
+        // 1. [ 🤖 ИИ Чат ]
+        if (cfg.showAIChat) {
+            float aiX = bStartX;
+            float aiW = 76.0F;
+            if (mouseX >= aiX && mouseX <= aiX + aiW && mouseY >= bRowY && mouseY <= bRowY + bRowH) {
+                UISoundManager.playButtonClick();
+                if (this.client != null) {
+                    this.client.setScreen(new AIAssistantScreen(this));
+                }
+                return true;
             }
-            return true;
         }
 
-        // Minesweeper button click
-        if (mouseX >= mineX && mouseX <= mineX + mBtnW && mouseY >= bRowY && mouseY <= bRowY + bRowH) {
+        // 2. [ 📝 Заметки ]
+        if (cfg.showNotes) {
+            float notesX = bStartX + 82.0F;
+            float notesW = 76.0F;
+            if (mouseX >= notesX && mouseX <= notesX + notesW && mouseY >= bRowY && mouseY <= bRowY + bRowH) {
+                UISoundManager.playButtonClick();
+                if (this.client != null) {
+                    this.client.setScreen(new NotesScreen(this));
+                }
+                return true;
+            }
+        }
+
+        // 3. [ 🐍 Змейка ] & [ 💣 Сапёр ] Mini-games
+        if (cfg.showGames) {
+            float snakeX = bStartX + 164.0F;
+            float gBtnW = 48.0F;
+            if (mouseX >= snakeX && mouseX <= snakeX + gBtnW && mouseY >= bRowY && mouseY <= bRowY + bRowH) {
+                UISoundManager.playButtonClick();
+                if (this.client != null) {
+                    this.client.setScreen(new SnakeScreen(this));
+                }
+                return true;
+            }
+
+            float mineX = bStartX + 218.0F;
+            float mBtnW = 48.0F;
+            if (mouseX >= mineX && mouseX <= mineX + mBtnW && mouseY >= bRowY && mouseY <= bRowY + bRowH) {
+                UISoundManager.playButtonClick();
+                if (this.client != null) {
+                    this.client.setScreen(new MinesweeperScreen(this));
+                }
+                return true;
+            }
+        }
+
+        // 4. [ ⚙ Меню ] Full Customize Screen
+        float setX = bStartX + 272.0F;
+        float setW = 60.0F;
+        if (mouseX >= setX && mouseX <= setX + setW && mouseY >= bRowY && mouseY <= bRowY + bRowH) {
             UISoundManager.playButtonClick();
             if (this.client != null) {
-                this.client.setScreen(new MinesweeperScreen(this));
+                this.client.setScreen(new EscapeMenuCustomizerScreen(this));
             }
             return true;
         }
@@ -802,36 +939,11 @@ implements iIIiIIiIi_Class294 {
 
     @Override
     public boolean charTyped(char chr, int modifiers) {
-        if (rockstar$searchFocused) {
-            if (chr >= 32 && chr != 127) {
-                rockstar$searchText += chr;
-                return true;
-            }
-        }
         return super.charTyped(chr, modifiers);
     }
 
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        if (rockstar$searchFocused) {
-            if (keyCode == GLFW.GLFW_KEY_BACKSPACE && !rockstar$searchText.isEmpty()) {
-                rockstar$searchText = rockstar$searchText.substring(0, rockstar$searchText.length() - 1);
-                return true;
-            }
-            if (keyCode == GLFW.GLFW_KEY_ENTER || keyCode == GLFW.GLFW_KEY_KP_ENTER) {
-                String q = rockstar$searchText;
-                rockstar$searchFocused = false;
-                UISoundManager.playButtonClick();
-                if (this.client != null) {
-                    this.client.setScreen(new BrowserScreen(this, q));
-                }
-                return true;
-            }
-            if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
-                rockstar$searchFocused = false;
-                return true;
-            }
-        }
         return super.keyPressed(keyCode, scanCode, modifiers);
     }
 }
