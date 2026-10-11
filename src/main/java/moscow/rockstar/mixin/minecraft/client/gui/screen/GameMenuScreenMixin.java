@@ -74,6 +74,7 @@ implements iIIiIIiIi_Class294 {
 
     // Per-tile hover float animations
     @Unique private static final float[] rockstar$tileHoverAnim = new float[6];
+    @Unique private static final float[] rockstar$dockBtnHover = new float[5];
 
     protected GameMenuScreenMixin(Text text) {
         super(text);
@@ -153,49 +154,62 @@ implements iIIiIIiIi_Class294 {
         if (cfg.showWeatherAlerts) {
             float wPillX = cx - 180.0F;
             float wPillY = cy - 138.0F;
-            float wPillW = 332.0F;
+            float wPillW = 340.0F;
             float wPillH = 32.0F;
             IIiii_Class8 wpRad = IIiii_Class8.I_method_893b2757(10.0F);
 
-            boolean wHov = mouseX >= wPillX && mouseX <= wPillX + wPillW && mouseY >= wPillY && mouseY <= wPillY + wPillH;
             custom.drawShadow(wPillX, wPillY, wPillW, wPillH, 12.0F, wpRad, new ColorRGBA(0.0F, 0.0F, 0.0F, 70.0F));
             custom.drawBlurredRect(wPillX, wPillY, wPillW, wPillH, 14.0F, 3.0F, wpRad, new ColorRGBA(255.0F, 255.0F, 255.0F, 18.0F));
             custom.drawRoundedRect(wPillX, wPillY, wPillW, wPillH, wpRad, new ColorRGBA(20.0F, 24.0F, 34.0F, 215.0F));
-            custom.drawRoundedBorder(wPillX, wPillY, wPillW, wPillH, 1.0F, wpRad, wHov ? new ColorRGBA(255.0F, 255.0F, 255.0F, 75.0F) : new ColorRGBA(255.0F, 255.0F, 255.0F, 32.0F));
+            custom.drawRoundedBorder(wPillX, wPillY, wPillW, wPillH, 1.0F, wpRad, new ColorRGBA(255.0F, 255.0F, 255.0F, 32.0F));
 
             WeatherAlertModule wMod = RockstarClient.getInstance().getModuleManager().getModule(WeatherAlertModule.class);
             int temp = (wMod != null) ? wMod.getCurrentWeatherTemp() : 16;
             String cond = (wMod != null) ? wMod.getWeatherCondition() : "Облачно ⛅";
             String city = (cfg.weatherCity != null) ? cfg.weatherCity : "Киев";
 
-            // Weather text left
+            // Left Section: Weather & City Selector
+            float wCityX = wPillX;
+            float wCityW = 148.0F;
+            boolean wCityHov = (mouseX >= wCityX && mouseX <= wCityX + wCityW && mouseY >= wPillY && mouseY <= wPillY + wPillH);
+            if (wCityHov) {
+                custom.drawRoundedRect(wCityX + 2.0F, wPillY + 2.0F, wCityW - 2.0F, wPillH - 4.0F, IIiii_Class8.I_method_893b2757(8.0F), new ColorRGBA(255.0F, 255.0F, 255.0F, 22.0F));
+            }
+
             if (subFont != null) {
-                String wText = cond + " " + city + ": " + (temp > 0 ? "+" : "") + temp + "°C";
-                custom.drawText(subFont, wText, wPillX + 12.0F, wPillY + 11.5F, ColorRGBA.WHITE);
+                String wText = cond + " " + city + ": " + (temp > 0 ? "+" : "") + temp + "° ▾";
+                custom.drawText(subFont, wText, wPillX + 10.0F, wPillY + 11.5F, wCityHov ? ColorRGBA.WHITE : new ColorRGBA(225.0F, 235.0F, 255.0F, 230.0F));
             }
 
             // Divider
-            custom.drawRect(wPillX + 130.0F, wPillY + 8.0F, 1.0F, 16.0F, new ColorRGBA(255.0F, 255.0F, 255.0F, 35.0F));
+            custom.drawRect(wPillX + 148.0F, wPillY + 7.0F, 1.0F, 18.0F, new ColorRGBA(255.0F, 255.0F, 255.0F, 30.0F));
 
-            // Radar pulse dot & Alert text right
-            float radarX = wPillX + 140.0F;
+            // Right Section: Drone Danger Radar & Scope
+            float wScopeX = wPillX + 150.0F;
+            float wScopeW = wPillW - 150.0F;
+            boolean wScopeHov = (mouseX >= wScopeX && mouseX <= wPillX + wPillW && mouseY >= wPillY && mouseY <= wPillY + wPillH);
+            if (wScopeHov) {
+                custom.drawRoundedRect(wScopeX + 2.0F, wPillY + 2.0F, wScopeW - 4.0F, wPillH - 4.0F, IIiii_Class8.I_method_893b2757(8.0F), new ColorRGBA(255.0F, 255.0F, 255.0F, 22.0F));
+            }
+
+            float radarX = wScopeX + 10.0F;
             float radarY = wPillY + 16.0F;
             float pulseScale = (float)(Math.sin(now / 200.0) * 0.35 + 0.65);
 
-            String alertTxt = "🔴 Угроза БПЛА: Белгородская, Курская";
+            String alertTxt = "🔴 БПЛА: Белгород, Курск ▾";
             if ("Украина".equals(cfg.alertScope)) {
-                alertTxt = "🔴 Воздушная тревога: Киевская, Харьковская";
+                alertTxt = "🔴 Тревога: Киев, Харьков ▾";
             } else if ("Россия".equals(cfg.alertScope)) {
-                alertTxt = "🟡 Опасность БПЛА: Белгородская, Воронежская";
+                alertTxt = "🟡 БПЛА: Белгород, Воронеж ▾";
             } else {
-                alertTxt = "🔴 БПЛА / Тревоги: UA + РФ (" + cfg.alertScope + ")";
+                alertTxt = "🔴 БПЛА: UA + РФ (" + cfg.alertScope + ") ▾";
             }
 
             ColorRGBA dotCol = new ColorRGBA(239.0F, 68.0F, 68.0F, 255.0F * pulseScale);
             custom.drawRoundedRect(radarX - 3.0F, radarY - 3.0F, 6.0F, 6.0F, IIiii_Class8.I_method_893b2757(3.0F), dotCol);
 
             if (tinyFont != null) {
-                custom.drawText(tinyFont, alertTxt, radarX + 8.0F, wPillY + 12.0F, new ColorRGBA(255.0F, 220.0F, 220.0F, 240.0F));
+                custom.drawText(tinyFont, alertTxt, radarX + 8.0F, wPillY + 12.0F, wScopeHov ? ColorRGBA.WHITE : new ColorRGBA(255.0F, 220.0F, 220.0F, 230.0F));
             }
         }
 
@@ -238,79 +252,98 @@ implements iIIiIIiIi_Class294 {
         }
 
         // --- BOTTOM QUICK CONTROL DOCK ---
-        // (Browser search bar removed completely; matte semi-glass SVG-badge design for games, AI chat, notes, settings)
         float bRowY = cy + 104.0F;
         float bRowH = 34.0F;
         float bStartX = cx - 180.0F;
         IIiii_Class8 sRad = IIiii_Class8.I_method_893b2757(10.0F);
 
-        // 1. [ 🤖 ИИ Чат ]
+        // Update lerp hover animations for 5 dock buttons
+        float dockAiX = bStartX;
+        float dockAiW = 82.0F;
+        boolean aiHov = (mouseX >= dockAiX && mouseX <= dockAiX + dockAiW && mouseY >= bRowY && mouseY <= bRowY + bRowH);
+        rockstar$dockBtnHover[0] += ((aiHov ? 1.0F : 0.0F) - rockstar$dockBtnHover[0]) * 0.22F;
+
+        float dockNotesX = dockAiX + dockAiW + 6.0F;
+        float dockNotesW = 72.0F;
+        boolean nHov = (mouseX >= dockNotesX && mouseX <= dockNotesX + dockNotesW && mouseY >= bRowY && mouseY <= bRowY + bRowH);
+        rockstar$dockBtnHover[1] += ((nHov ? 1.0F : 0.0F) - rockstar$dockBtnHover[1]) * 0.22F;
+
+        float dockSnakeX = dockNotesX + dockNotesW + 6.0F;
+        float dockSnakeW = 48.0F;
+        boolean snakeHov = (mouseX >= dockSnakeX && mouseX <= dockSnakeX + dockSnakeW && mouseY >= bRowY && mouseY <= bRowY + bRowH);
+        rockstar$dockBtnHover[2] += ((snakeHov ? 1.0F : 0.0F) - rockstar$dockBtnHover[2]) * 0.22F;
+
+        float dockMineX = dockSnakeX + dockSnakeW + 6.0F;
+        float dockMineW = 48.0F;
+        boolean mineHov = (mouseX >= dockMineX && mouseX <= dockMineX + dockMineW && mouseY >= bRowY && mouseY <= bRowY + bRowH);
+        rockstar$dockBtnHover[3] += ((mineHov ? 1.0F : 0.0F) - rockstar$dockBtnHover[3]) * 0.22F;
+
+        float dockSetX = dockMineX + dockMineW + 6.0F;
+        float dockSetW = 68.0F;
+        boolean setHov = (mouseX >= dockSetX && mouseX <= dockSetX + dockSetW && mouseY >= bRowY && mouseY <= bRowY + bRowH);
+        rockstar$dockBtnHover[4] += ((setHov ? 1.0F : 0.0F) - rockstar$dockBtnHover[4]) * 0.22F;
+
+        // 1. [ ✦ Agravity AI ]
         if (cfg.showAIChat) {
-            float aiX = bStartX;
-            float aiW = 76.0F;
-            boolean aiHov = mouseX >= aiX && mouseX <= aiX + aiW && mouseY >= bRowY && mouseY <= bRowY + bRowH;
-            float aiDrawY = bRowY - (aiHov ? 2.0F : 0.0F);
-            custom.drawShadow(aiX, aiDrawY, aiW, bRowH, 10.0F, sRad, new ColorRGBA(0.0F, 0.0F, 0.0F, 70.0F));
-            custom.drawBlurredRect(aiX, aiDrawY, aiW, bRowH, 12.0F, 3.0F, sRad, new ColorRGBA(59.0F, 130.0F, 246.0F, 24.0F));
-            custom.drawRoundedRect(aiX, aiDrawY, aiW, bRowH, sRad, new ColorRGBA(22.0F, 26.0F, 36.0F, aiHov ? 245.0F : 205.0F));
-            custom.drawRoundedBorder(aiX, aiDrawY, aiW, bRowH, 1.1F, sRad, aiHov ? new ColorRGBA(59.0F, 130.0F, 246.0F, 220.0F) : new ColorRGBA(255.0F, 255.0F, 255.0F, 38.0F));
+            float hA = rockstar$dockBtnHover[0];
+            float drawY = bRowY - hA * 3.0F;
+            custom.drawShadow(dockAiX, drawY, dockAiW, bRowH, 10.0F + 4.0F * hA, sRad, new ColorRGBA(0.0F, 0.0F, 0.0F, 70.0F + 30.0F * hA));
+            custom.drawBlurredRect(dockAiX, drawY, dockAiW, bRowH, 12.0F, 3.0F, sRad, new ColorRGBA(59.0F, 130.0F, 246.0F, 24.0F));
+            custom.drawRoundedRect(dockAiX, drawY, dockAiW, bRowH, sRad, new ColorRGBA(22.0F, 26.0F, 36.0F, 205.0F + 40.0F * hA));
+            custom.drawRoundedBorder(dockAiX, drawY, dockAiW, bRowH, 1.1F, sRad, hA > 0.01F ? new ColorRGBA(59.0F, 130.0F, 246.0F, 120.0F + 135.0F * hA) : new ColorRGBA(255.0F, 255.0F, 255.0F, 38.0F));
             if (subFont != null) {
-                custom.drawText(subFont, "🤖 ИИ Чат", aiX + 11.0F, aiDrawY + 11.5F, ColorRGBA.WHITE);
+                float tw = subFont.I_method_2c375926("✦ Agravity AI");
+                custom.drawText(subFont, "✦ Agravity AI", dockAiX + (dockAiW - tw) / 2.0F, drawY + 11.5F, ColorRGBA.WHITE);
             }
         }
 
         // 2. [ 📝 Заметки ]
         if (cfg.showNotes) {
-            float notesX = bStartX + 82.0F;
-            float notesW = 76.0F;
-            boolean nHov = mouseX >= notesX && mouseX <= notesX + notesW && mouseY >= bRowY && mouseY <= bRowY + bRowH;
-            float nDrawY = bRowY - (nHov ? 2.0F : 0.0F);
-            custom.drawShadow(notesX, nDrawY, notesW, bRowH, 10.0F, sRad, new ColorRGBA(0.0F, 0.0F, 0.0F, 70.0F));
-            custom.drawBlurredRect(notesX, nDrawY, notesW, bRowH, 12.0F, 3.0F, sRad, new ColorRGBA(16.0F, 185.0F, 129.0F, 24.0F));
-            custom.drawRoundedRect(notesX, nDrawY, notesW, bRowH, sRad, new ColorRGBA(22.0F, 26.0F, 36.0F, nHov ? 245.0F : 205.0F));
-            custom.drawRoundedBorder(notesX, nDrawY, notesW, bRowH, 1.1F, sRad, nHov ? new ColorRGBA(16.0F, 185.0F, 129.0F, 220.0F) : new ColorRGBA(255.0F, 255.0F, 255.0F, 38.0F));
+            float hA = rockstar$dockBtnHover[1];
+            float drawY = bRowY - hA * 3.0F;
+            custom.drawShadow(dockNotesX, drawY, dockNotesW, bRowH, 10.0F + 4.0F * hA, sRad, new ColorRGBA(0.0F, 0.0F, 0.0F, 70.0F + 30.0F * hA));
+            custom.drawBlurredRect(dockNotesX, drawY, dockNotesW, bRowH, 12.0F, 3.0F, sRad, new ColorRGBA(16.0F, 185.0F, 129.0F, 24.0F));
+            custom.drawRoundedRect(dockNotesX, drawY, dockNotesW, bRowH, sRad, new ColorRGBA(22.0F, 26.0F, 36.0F, 205.0F + 40.0F * hA));
+            custom.drawRoundedBorder(dockNotesX, drawY, dockNotesW, bRowH, 1.1F, sRad, hA > 0.01F ? new ColorRGBA(16.0F, 185.0F, 129.0F, 120.0F + 135.0F * hA) : new ColorRGBA(255.0F, 255.0F, 255.0F, 38.0F));
             if (subFont != null) {
-                custom.drawText(subFont, "📝 Заметки", notesX + 9.0F, nDrawY + 11.5F, ColorRGBA.WHITE);
+                float tw = subFont.I_method_2c375926("📝 Заметки");
+                custom.drawText(subFont, "📝 Заметки", dockNotesX + (dockNotesW - tw) / 2.0F, drawY + 11.5F, ColorRGBA.WHITE);
             }
         }
 
-        // 3. [ 🐍 Змейка ] Mini-game
+        // 3. [ 🐍 Змейка ] & 4. [ 💣 Сапёр ] Mini-games
         if (cfg.showGames) {
-            float snakeX = bStartX + 164.0F;
-            float gBtnW = 48.0F;
-            boolean snakeHov = mouseX >= snakeX && mouseX <= snakeX + gBtnW && mouseY >= bRowY && mouseY <= bRowY + bRowH;
-            float sDrawY = bRowY - (snakeHov ? 2.0F : 0.0F);
-            custom.drawShadow(snakeX, sDrawY, gBtnW, bRowH, 10.0F, sRad, new ColorRGBA(0.0F, 0.0F, 0.0F, 70.0F));
-            custom.drawBlurredRect(snakeX, sDrawY, gBtnW, bRowH, 12.0F, 3.0F, sRad, new ColorRGBA(255.0F, 255.0F, 255.0F, 20.0F));
-            custom.drawRoundedRect(snakeX, sDrawY, gBtnW, bRowH, sRad, new ColorRGBA(22.0F, 26.0F, 36.0F, snakeHov ? 245.0F : 205.0F));
-            custom.drawRoundedBorder(snakeX, sDrawY, gBtnW, bRowH, 1.1F, sRad, snakeHov ? new ColorRGBA(255.0F, 255.0F, 255.0F, 90.0F) : new ColorRGBA(255.0F, 255.0F, 255.0F, 38.0F));
-            float snIconSz = 24.0F;
-            custom.drawTexture(RockstarClient.id("icons/snake.png"), snakeX + (gBtnW - snIconSz) / 2.0F, sDrawY + (bRowH - snIconSz) / 2.0F, snIconSz, snIconSz, snakeHov ? ColorRGBA.WHITE : ColorRGBA.WHITE.withAlpha(235.0F));
+            // Snake
+            float hS = rockstar$dockBtnHover[2];
+            float drawYS = bRowY - hS * 3.0F;
+            custom.drawShadow(dockSnakeX, drawYS, dockSnakeW, bRowH, 10.0F + 4.0F * hS, sRad, new ColorRGBA(0.0F, 0.0F, 0.0F, 70.0F + 30.0F * hS));
+            custom.drawBlurredRect(dockSnakeX, drawYS, dockSnakeW, bRowH, 12.0F, 3.0F, sRad, new ColorRGBA(52.0F, 211.0F, 153.0F, 24.0F));
+            custom.drawRoundedRect(dockSnakeX, drawYS, dockSnakeW, bRowH, sRad, new ColorRGBA(22.0F, 26.0F, 36.0F, 205.0F + 40.0F * hS));
+            custom.drawRoundedBorder(dockSnakeX, drawYS, dockSnakeW, bRowH, 1.1F, sRad, hS > 0.01F ? new ColorRGBA(52.0F, 211.0F, 153.0F, 120.0F + 135.0F * hS) : new ColorRGBA(255.0F, 255.0F, 255.0F, 38.0F));
+            float snIconSz = 26.0F;
+            custom.drawTexture(RockstarClient.id("icons/snake.png"), dockSnakeX + (dockSnakeW - snIconSz) / 2.0F, drawYS + (bRowH - snIconSz) / 2.0F, snIconSz, snIconSz, ColorRGBA.WHITE);
 
-            // 4. [ 💣 Сапёр ] Mini-game
-            float mineX = bStartX + 218.0F;
-            float mBtnW = 48.0F;
-            boolean mineHov = mouseX >= mineX && mouseX <= mineX + mBtnW && mouseY >= bRowY && mouseY <= bRowY + bRowH;
-            float mDrawY = bRowY - (mineHov ? 2.0F : 0.0F);
-            custom.drawShadow(mineX, mDrawY, mBtnW, bRowH, 10.0F, sRad, new ColorRGBA(0.0F, 0.0F, 0.0F, 70.0F));
-            custom.drawBlurredRect(mineX, mDrawY, mBtnW, bRowH, 12.0F, 3.0F, sRad, new ColorRGBA(255.0F, 255.0F, 255.0F, 20.0F));
-            custom.drawRoundedRect(mineX, mDrawY, mBtnW, bRowH, sRad, new ColorRGBA(22.0F, 26.0F, 36.0F, mineHov ? 245.0F : 205.0F));
-            custom.drawRoundedBorder(mineX, mDrawY, mBtnW, bRowH, 1.1F, sRad, mineHov ? new ColorRGBA(255.0F, 255.0F, 255.0F, 90.0F) : new ColorRGBA(255.0F, 255.0F, 255.0F, 38.0F));
-            float mnIconSz = 24.0F;
-            custom.drawTexture(RockstarClient.id("icons/mine.png"), mineX + (mBtnW - mnIconSz) / 2.0F, mDrawY + (bRowH - mnIconSz) / 2.0F, mnIconSz, mnIconSz, mineHov ? ColorRGBA.WHITE : ColorRGBA.WHITE.withAlpha(235.0F));
+            // Mine
+            float hM = rockstar$dockBtnHover[3];
+            float drawYM = bRowY - hM * 3.0F;
+            custom.drawShadow(dockMineX, drawYM, dockMineW, bRowH, 10.0F + 4.0F * hM, sRad, new ColorRGBA(0.0F, 0.0F, 0.0F, 70.0F + 30.0F * hM));
+            custom.drawBlurredRect(dockMineX, drawYM, dockMineW, bRowH, 12.0F, 3.0F, sRad, new ColorRGBA(244.0F, 63.0F, 94.0F, 24.0F));
+            custom.drawRoundedRect(dockMineX, drawYM, dockMineW, bRowH, sRad, new ColorRGBA(22.0F, 26.0F, 36.0F, 205.0F + 40.0F * hM));
+            custom.drawRoundedBorder(dockMineX, drawYM, dockMineW, bRowH, 1.1F, sRad, hM > 0.01F ? new ColorRGBA(244.0F, 63.0F, 94.0F, 120.0F + 135.0F * hM) : new ColorRGBA(255.0F, 255.0F, 255.0F, 38.0F));
+            float mnIconSz = 26.0F;
+            custom.drawTexture(RockstarClient.id("icons/mine.png"), dockMineX + (dockMineW - mnIconSz) / 2.0F, drawYM + (bRowH - mnIconSz) / 2.0F, mnIconSz, mnIconSz, ColorRGBA.WHITE);
         }
 
         // 5. [ ⚙ Меню ] Settings / Customize Button
-        float setX = bStartX + 272.0F;
-        float setW = 60.0F;
-        boolean setHov = mouseX >= setX && mouseX <= setX + setW && mouseY >= bRowY && mouseY <= bRowY + bRowH;
-        float setDrawY = bRowY - (setHov ? 2.0F : 0.0F);
-        custom.drawShadow(setX, setDrawY, setW, bRowH, 10.0F, sRad, new ColorRGBA(0.0F, 0.0F, 0.0F, 70.0F));
-        custom.drawBlurredRect(setX, setDrawY, setW, bRowH, 12.0F, 3.0F, sRad, new ColorRGBA(255.0F, 255.0F, 255.0F, 20.0F));
-        custom.drawRoundedRect(setX, setDrawY, setW, bRowH, sRad, new ColorRGBA(22.0F, 26.0F, 36.0F, setHov ? 245.0F : 205.0F));
-        custom.drawRoundedBorder(setX, setDrawY, setW, bRowH, 1.1F, sRad, setHov ? new ColorRGBA(255.0F, 255.0F, 255.0F, 90.0F) : new ColorRGBA(255.0F, 255.0F, 255.0F, 38.0F));
+        float hSet = rockstar$dockBtnHover[4];
+        float drawYSet = bRowY - hSet * 3.0F;
+        custom.drawShadow(dockSetX, drawYSet, dockSetW, bRowH, 10.0F + 4.0F * hSet, sRad, new ColorRGBA(0.0F, 0.0F, 0.0F, 70.0F + 30.0F * hSet));
+        custom.drawBlurredRect(dockSetX, drawYSet, dockSetW, bRowH, 12.0F, 3.0F, sRad, new ColorRGBA(255.0F, 255.0F, 255.0F, 20.0F));
+        custom.drawRoundedRect(dockSetX, drawYSet, dockSetW, bRowH, sRad, new ColorRGBA(22.0F, 26.0F, 36.0F, 205.0F + 40.0F * hSet));
+        custom.drawRoundedBorder(dockSetX, drawYSet, dockSetW, bRowH, 1.1F, sRad, hSet > 0.01F ? new ColorRGBA(255.0F, 255.0F, 255.0F, 120.0F + 135.0F * hSet) : new ColorRGBA(255.0F, 255.0F, 255.0F, 38.0F));
         if (subFont != null) {
-            custom.drawText(subFont, "⚙ Меню", setX + 11.0F, setDrawY + 11.5F, ColorRGBA.WHITE);
+            float tw = subFont.I_method_2c375926("⚙ Меню");
+            custom.drawText(subFont, "⚙ Меню", dockSetX + (dockSetW - tw) / 2.0F, drawYSet + 11.5F, ColorRGBA.WHITE);
         }
 
         // Fullscreen Shutter Flash on Screenshot
@@ -568,13 +601,39 @@ implements iIIiIIiIi_Class294 {
         float cy = this.height / 2.0F;
         EscapeMenuConfig cfg = EscapeMenuConfig.getInstance();
 
-        // 0. Weather Pill Click (cycle alert regions)
+        // 0. Weather Pill Clicks (Left segment: City, Right segment: Scope)
         if (cfg.showWeatherAlerts) {
             float wPillX = cx - 180.0F;
             float wPillY = cy - 138.0F;
-            float wPillW = 332.0F;
+            float wPillW = 340.0F;
             float wPillH = 32.0F;
-            if (mouseX >= wPillX && mouseX <= wPillX + wPillW && mouseY >= wPillY && mouseY <= wPillY + wPillH) {
+
+            // Weather left segment: cycle city!
+            float wCityX = wPillX;
+            float wCityW = 148.0F;
+            if (mouseX >= wCityX && mouseX <= wCityX + wCityW && mouseY >= wPillY && mouseY <= wPillY + wPillH) {
+                String curCity = (cfg.weatherCity != null) ? cfg.weatherCity : "Киев";
+                int nextIdx = 0;
+                for (int i = 0; i < EscapeMenuCustomizerScreen.WEATHER_CITIES.length; i++) {
+                    if (EscapeMenuCustomizerScreen.WEATHER_CITIES[i].equalsIgnoreCase(curCity)) {
+                        nextIdx = (i + 1) % EscapeMenuCustomizerScreen.WEATHER_CITIES.length;
+                        break;
+                    }
+                }
+                String nextCity = EscapeMenuCustomizerScreen.WEATHER_CITIES[nextIdx];
+                cfg.weatherCity = nextCity;
+                cfg.save();
+                WeatherAlertModule wMod = RockstarClient.getInstance().getModuleManager().getModule(WeatherAlertModule.class);
+                if (wMod != null) {
+                    wMod.setCity(nextCity);
+                }
+                UISoundManager.playButtonClick();
+                return true;
+            }
+
+            // Scope right segment: cycle alert scope!
+            float wScopeX = wPillX + 150.0F;
+            if (mouseX >= wScopeX && mouseX <= wPillX + wPillW && mouseY >= wPillY && mouseY <= wPillY + wPillH) {
                 if ("Все".equals(cfg.alertScope)) cfg.alertScope = "Украина";
                 else if ("Украина".equals(cfg.alertScope)) cfg.alertScope = "Россия";
                 else cfg.alertScope = "Все";
@@ -710,59 +769,54 @@ implements iIIiIIiIi_Class294 {
         float bRowH = 34.0F;
         float bStartX = cx - 180.0F;
 
-        // 1. [ 🤖 ИИ Чат ]
-        if (cfg.showAIChat) {
-            float aiX = bStartX;
-            float aiW = 76.0F;
-            if (mouseX >= aiX && mouseX <= aiX + aiW && mouseY >= bRowY && mouseY <= bRowY + bRowH) {
-                UISoundManager.playButtonClick();
-                if (this.client != null) {
-                    this.client.setScreen(new AIAssistantScreen(this));
-                }
-                return true;
+        // 1. [ ✦ Agravity AI ]
+        float aiX = bStartX;
+        float aiW = 82.0F;
+        if (cfg.showAIChat && mouseX >= aiX && mouseX <= aiX + aiW && mouseY >= bRowY - 6.0F && mouseY <= bRowY + bRowH + 6.0F) {
+            UISoundManager.playButtonClick();
+            if (this.client != null) {
+                this.client.setScreen(new AIAssistantScreen(this));
             }
+            return true;
         }
 
         // 2. [ 📝 Заметки ]
-        if (cfg.showNotes) {
-            float notesX = bStartX + 82.0F;
-            float notesW = 76.0F;
-            if (mouseX >= notesX && mouseX <= notesX + notesW && mouseY >= bRowY && mouseY <= bRowY + bRowH) {
-                UISoundManager.playButtonClick();
-                if (this.client != null) {
-                    this.client.setScreen(new NotesScreen(this));
-                }
-                return true;
+        float notesX = aiX + aiW + 6.0F;
+        float notesW = 72.0F;
+        if (cfg.showNotes && mouseX >= notesX && mouseX <= notesX + notesW && mouseY >= bRowY - 6.0F && mouseY <= bRowY + bRowH + 6.0F) {
+            UISoundManager.playButtonClick();
+            if (this.client != null) {
+                this.client.setScreen(new NotesScreen(this));
             }
+            return true;
         }
 
-        // 3. [ 🐍 Змейка ] & [ 💣 Сапёр ] Mini-games
-        if (cfg.showGames) {
-            float snakeX = bStartX + 164.0F;
-            float gBtnW = 48.0F;
-            if (mouseX >= snakeX && mouseX <= snakeX + gBtnW && mouseY >= bRowY && mouseY <= bRowY + bRowH) {
-                UISoundManager.playButtonClick();
-                if (this.client != null) {
-                    this.client.setScreen(new SnakeScreen(this));
-                }
-                return true;
+        // 3. [ 🐍 Змейка ]
+        float snakeX = notesX + notesW + 6.0F;
+        float gBtnW = 48.0F;
+        if (cfg.showGames && mouseX >= snakeX && mouseX <= snakeX + gBtnW && mouseY >= bRowY - 6.0F && mouseY <= bRowY + bRowH + 6.0F) {
+            UISoundManager.playButtonClick();
+            if (this.client != null) {
+                this.client.setScreen(new SnakeScreen(this));
             }
-
-            float mineX = bStartX + 218.0F;
-            float mBtnW = 48.0F;
-            if (mouseX >= mineX && mouseX <= mineX + mBtnW && mouseY >= bRowY && mouseY <= bRowY + bRowH) {
-                UISoundManager.playButtonClick();
-                if (this.client != null) {
-                    this.client.setScreen(new MinesweeperScreen(this));
-                }
-                return true;
-            }
+            return true;
         }
 
-        // 4. [ ⚙ Меню ] Full Customize Screen
-        float setX = bStartX + 272.0F;
-        float setW = 60.0F;
-        if (mouseX >= setX && mouseX <= setX + setW && mouseY >= bRowY && mouseY <= bRowY + bRowH) {
+        // 4. [ 💣 Сапёр ]
+        float mineX = snakeX + gBtnW + 6.0F;
+        float mBtnW = 48.0F;
+        if (cfg.showGames && mouseX >= mineX && mouseX <= mineX + mBtnW && mouseY >= bRowY - 6.0F && mouseY <= bRowY + bRowH + 6.0F) {
+            UISoundManager.playButtonClick();
+            if (this.client != null) {
+                this.client.setScreen(new MinesweeperScreen(this));
+            }
+            return true;
+        }
+
+        // 5. [ ⚙ Меню ] Full Customize Screen
+        float setX = mineX + mBtnW + 6.0F;
+        float setW = 68.0F;
+        if (mouseX >= setX && mouseX <= setX + setW && mouseY >= bRowY - 6.0F && mouseY <= bRowY + bRowH + 6.0F) {
             UISoundManager.playButtonClick();
             if (this.client != null) {
                 this.client.setScreen(new EscapeMenuCustomizerScreen(this));

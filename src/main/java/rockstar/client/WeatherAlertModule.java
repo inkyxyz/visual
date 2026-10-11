@@ -127,47 +127,73 @@ public class WeatherAlertModule extends Module {
          .I_method_a62f5dd6(new ColorRGBA(0.0F, 220.0F, 255.0F, 240.0F));
    }
 
-   private void updateWeatherData() {
-      long now = System.currentTimeMillis();
-      if (now - this.lastWeatherUpdate > 15000L) {
-         this.lastWeatherUpdate = now;
-         // Dynamic weather variation
-         String cityName = "Киев";
-         if (this.cityMoscow != null && this.cityMoscow.isSelected()) {
-            cityName = "Москва";
+   public void setCity(String cityName) {
+      if (cityName == null) return;
+      this.lastWeatherUpdate = System.currentTimeMillis();
+      switch (cityName) {
+         case "Москва" -> {
             this.currentWeatherTemp = 12;
             this.weatherCondition = "Пасмурно ☁️";
             this.windSpeed = 4.5F;
             this.humidity = 70;
-         } else if (this.cityKharkiv != null && this.cityKharkiv.isSelected()) {
-            cityName = "Харьков";
+         }
+         case "Харьков" -> {
             this.currentWeatherTemp = 15;
             this.weatherCondition = "Ясно ☀️";
             this.windSpeed = 3.2F;
             this.humidity = 58;
-         } else if (this.citySpb != null && this.citySpb.isSelected()) {
-            cityName = "Санкт-Петербург";
+         }
+         case "СПб", "Санкт-Петербург" -> {
             this.currentWeatherTemp = 10;
             this.weatherCondition = "Дождь 🌧️";
             this.windSpeed = 6.1F;
             this.humidity = 84;
-         } else if (this.cityOdesa != null && this.cityOdesa.isSelected()) {
-            cityName = "Одесса";
+         }
+         case "Одесса" -> {
             this.currentWeatherTemp = 19;
             this.weatherCondition = "Ясно ☀️";
             this.windSpeed = 5.0F;
             this.humidity = 55;
-         } else if (this.cityLviv != null && this.cityLviv.isSelected()) {
-            cityName = "Львов";
+         }
+         case "Львов" -> {
             this.currentWeatherTemp = 14;
-            this.weatherCondition = "Переменная облачность ⛅";
+            this.weatherCondition = "Облачно ⛅";
             this.windSpeed = 3.5F;
             this.humidity = 66;
-         } else {
+         }
+         case "Казань" -> {
+            this.currentWeatherTemp = 11;
+            this.weatherCondition = "Переменная облачность ⛅";
+            this.windSpeed = 4.0F;
+            this.humidity = 68;
+         }
+         case "Екатеринбург" -> {
+            this.currentWeatherTemp = 9;
+            this.weatherCondition = "Пасмурно ☁️";
+            this.windSpeed = 5.2F;
+            this.humidity = 62;
+         }
+         case "Ростов" -> {
+            this.currentWeatherTemp = 18;
+            this.weatherCondition = "Ясно ☀️";
+            this.windSpeed = 4.2F;
+            this.humidity = 52;
+         }
+         default -> { // Киев
             this.currentWeatherTemp = 17;
             this.weatherCondition = "Малооблачно 🌤️";
-            this.windSpeed = 3.9F;
+            this.windSpeed = 3.8F;
+            this.humidity = 64;
          }
+      }
+   }
+
+   private void updateWeatherData() {
+      long now = System.currentTimeMillis();
+      if (now - this.lastWeatherUpdate > 15000L) {
+         EscapeMenuConfig cfg = EscapeMenuConfig.getInstance();
+         String cName = (cfg != null && cfg.weatherCity != null) ? cfg.weatherCity : "Киев";
+         this.setCity(cName);
       }
    }
 
