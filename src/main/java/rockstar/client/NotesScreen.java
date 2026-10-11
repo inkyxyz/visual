@@ -99,10 +99,10 @@ public class NotesScreen extends ii_Class4 {
         float cardY = cy - cardH / 2.0F;
         IIiii_Class8 cRad = IIiii_Class8.I_method_893b2757(14.0F);
 
-        custom.drawShadow(cardX, cardY, cardW, cardH, 20.0F, cRad, new ColorRGBA(0.0F, 0.0F, 0.0F, 110.0F));
-        custom.drawBlurredRect(cardX, cardY, cardW, cardH, 22.0F, 3.0F, cRad, new ColorRGBA(255.0F, 255.0F, 255.0F, 20.0F));
-        custom.drawRoundedRect(cardX, cardY, cardW, cardH, cRad, new ColorRGBA(18.0F, 22.0F, 32.0F, 230.0F));
-        custom.drawRoundedBorder(cardX, cardY, cardW, cardH, 1.2F, cRad, new ColorRGBA(255.0F, 255.0F, 255.0F, 38.0F));
+        custom.drawShadow(cardX, cardY, cardW, cardH, 20.0F, cRad, new ColorRGBA(0.0F, 0.0F, 0.0F, 100.0F));
+        custom.drawBlurredRect(cardX, cardY, cardW, cardH, 22.0F, 3.0F, cRad, new ColorRGBA(255.0F, 255.0F, 255.0F, 12.0F));
+        custom.drawRoundedRect(cardX, cardY, cardW, cardH, cRad, new ColorRGBA(18.0F, 22.0F, 32.0F, 125.0F));
+        custom.drawRoundedBorder(cardX, cardY, cardW, cardH, 0.5F, cRad, new ColorRGBA(255.0F, 255.0F, 255.0F, 18.0F));
 
         // Header Title
         float hY = cardY + 12.0F;
@@ -115,14 +115,12 @@ public class NotesScreen extends ii_Class4 {
         float closeX = cardX + cardW - closeW - 14.0F;
         float closeY = hY - 2.0F;
         boolean closeHov = (custom.I_method_b1c3e152() >= closeX && custom.I_method_b1c3e152() <= closeX + closeW && custom.i_method_b1d26d32() >= closeY && custom.i_method_b1d26d32() <= closeY + closeW);
-        custom.drawRoundedRect(closeX, closeY, closeW, closeW, IIiii_Class8.I_method_893b2757(6.0F), new ColorRGBA(239.0F, 68.0F, 68.0F, closeHov ? 240.0F : 140.0F));
-        if (font != null) {
-            custom.drawText(font, "✕", closeX + 8.0F, closeY + 6.0F, ColorRGBA.WHITE);
-        }
+        custom.drawRoundedRect(closeX, closeY, closeW, closeW, IIiii_Class8.I_method_893b2757(6.0F), new ColorRGBA(239.0F, 68.0F, 68.0F, closeHov ? 200.0F : 120.0F));
+        custom.drawIcon("xmark", closeX + 7.0F, closeY + 7.0F, 10.0F, ColorRGBA.WHITE);
 
         // Divider
         float divY = cardY + 38.0F;
-        custom.drawRect(cardX + 16.0F, divY, cardW - 32.0F, 1.0F, new ColorRGBA(255.0F, 255.0F, 255.0F, 25.0F));
+        custom.drawRect(cardX + 16.0F, divY, cardW - 32.0F, 1.0F, new ColorRGBA(255.0F, 255.0F, 255.0F, 15.0F));
 
         // Layout Columns: Left (List, 180px) | Right (Editor)
         float listW = 180.0F;
@@ -133,8 +131,8 @@ public class NotesScreen extends ii_Class4 {
         // Button: "+ Новая заметка"
         float newBtnH = 26.0F;
         boolean newHov = (custom.I_method_b1c3e152() >= listX && custom.I_method_b1c3e152() <= listX + listW && custom.i_method_b1d26d32() >= bodyY && custom.i_method_b1d26d32() <= bodyY + newBtnH);
-        custom.drawRoundedRect(listX, bodyY, listW, newBtnH, IIiii_Class8.I_method_893b2757(6.0F), new ColorRGBA(37.0F, 99.0F, 235.0F, newHov ? 240.0F : 200.0F));
-        custom.drawRoundedBorder(listX, bodyY, listW, newBtnH, 1.0F, IIiii_Class8.I_method_893b2757(6.0F), new ColorRGBA(255.0F, 255.0F, 255.0F, 40.0F));
+        custom.drawRoundedRect(listX, bodyY, listW, newBtnH, IIiii_Class8.I_method_893b2757(6.0F), new ColorRGBA(37.0F, 99.0F, 235.0F, newHov ? 240.0F : 190.0F));
+        custom.drawRoundedBorder(listX, bodyY, listW, newBtnH, 0.5F, IIiii_Class8.I_method_893b2757(6.0F), new ColorRGBA(255.0F, 255.0F, 255.0F, 25.0F));
         if (subFont != null) {
             custom.drawText(subFont, "+ Новая заметка", listX + 38.0F, bodyY + 7.0F, ColorRGBA.WHITE);
         }
@@ -142,8 +140,8 @@ public class NotesScreen extends ii_Class4 {
         // Notes List Container
         float listItemsY = bodyY + newBtnH + 6.0F;
         float listItemsH = bodyH - newBtnH - 6.0F;
-        custom.drawRoundedRect(listX, listItemsY, listW, listItemsH, IIiii_Class8.I_method_893b2757(8.0F), new ColorRGBA(12.0F, 16.0F, 24.0F, 140.0F));
-        custom.drawRoundedBorder(listX, listItemsY, listW, listItemsH, 1.0F, IIiii_Class8.I_method_893b2757(8.0F), new ColorRGBA(255.0F, 255.0F, 255.0F, 20.0F));
+        custom.drawRoundedRect(listX, listItemsY, listW, listItemsH, IIiii_Class8.I_method_893b2757(8.0F), new ColorRGBA(12.0F, 16.0F, 24.0F, 110.0F));
+        custom.drawRoundedBorder(listX, listItemsY, listW, listItemsH, 0.5F, IIiii_Class8.I_method_893b2757(8.0F), new ColorRGBA(255.0F, 255.0F, 255.0F, 15.0F));
 
         List<NotesManager.Note> notes = NotesManager.getNotes();
         float itemY = listItemsY + 4.0F;
@@ -159,7 +157,7 @@ public class NotesScreen extends ii_Class4 {
             ColorRGBA bg = isSel ? new ColorRGBA(59.0F, 130.0F, 246.0F, 70.0F) : (itemHov ? new ColorRGBA(255.0F, 255.0F, 255.0F, 15.0F) : new ColorRGBA(255.0F, 255.0F, 255.0F, 6.0F));
             custom.drawRoundedRect(listX + 4.0F, itemY, listW - 8.0F, itemH, IIiii_Class8.I_method_893b2757(6.0F), bg);
             if (isSel) {
-                custom.drawRoundedBorder(listX + 4.0F, itemY, listW - 8.0F, itemH, 1.0F, IIiii_Class8.I_method_893b2757(6.0F), new ColorRGBA(59.0F, 130.0F, 246.0F, 180.0F));
+                custom.drawRoundedBorder(listX + 4.0F, itemY, listW - 8.0F, itemH, 0.5F, IIiii_Class8.I_method_893b2757(6.0F), new ColorRGBA(59.0F, 130.0F, 246.0F, 140.0F));
             }
 
             // Note title
@@ -198,8 +196,8 @@ public class NotesScreen extends ii_Class4 {
         if (this.selectedNote != null) {
             // Title Input Box
             float titleH = 26.0F;
-            custom.drawRoundedRect(editX, bodyY, editW, titleH, IIiii_Class8.I_method_893b2757(6.0F), new ColorRGBA(12.0F, 16.0F, 24.0F, 180.0F));
-            custom.drawRoundedBorder(editX, bodyY, editW, titleH, 1.0F, IIiii_Class8.I_method_893b2757(6.0F), this.editingTitle ? new ColorRGBA(59.0F, 130.0F, 246.0F, 220.0F) : new ColorRGBA(255.0F, 255.0F, 255.0F, 30.0F));
+            custom.drawRoundedRect(editX, bodyY, editW, titleH, IIiii_Class8.I_method_893b2757(6.0F), new ColorRGBA(12.0F, 16.0F, 24.0F, 140.0F));
+            custom.drawRoundedBorder(editX, bodyY, editW, titleH, 0.5F, IIiii_Class8.I_method_893b2757(6.0F), this.editingTitle ? new ColorRGBA(59.0F, 130.0F, 246.0F, 180.0F) : new ColorRGBA(255.0F, 255.0F, 255.0F, 20.0F));
             if (font != null) {
                 String tDisp = this.editTitle.isEmpty() ? (this.editingTitle ? "" : "Заголовок заметки...") : this.editTitle;
                 if (this.editingTitle && (System.currentTimeMillis() % 1000L < 500L)) tDisp += "|";
@@ -240,8 +238,8 @@ public class NotesScreen extends ii_Class4 {
             // Multi-line Text Editor Box
             float textY = tbY + btnH + 6.0F;
             float textH = bodyH - (textY - bodyY);
-            custom.drawRoundedRect(editX, textY, editW, textH, IIiii_Class8.I_method_893b2757(8.0F), new ColorRGBA(12.0F, 16.0F, 24.0F, 180.0F));
-            custom.drawRoundedBorder(editX, textY, editW, textH, 1.0F, IIiii_Class8.I_method_893b2757(8.0F), this.editingContent ? new ColorRGBA(59.0F, 130.0F, 246.0F, 220.0F) : new ColorRGBA(255.0F, 255.0F, 255.0F, 30.0F));
+            custom.drawRoundedRect(editX, textY, editW, textH, IIiii_Class8.I_method_893b2757(8.0F), new ColorRGBA(12.0F, 16.0F, 24.0F, 140.0F));
+            custom.drawRoundedBorder(editX, textY, editW, textH, 0.5F, IIiii_Class8.I_method_893b2757(8.0F), this.editingContent ? new ColorRGBA(59.0F, 130.0F, 246.0F, 180.0F) : new ColorRGBA(255.0F, 255.0F, 255.0F, 20.0F));
 
             if (subFont != null) {
                 String[] lines = this.editContent.split("\n");

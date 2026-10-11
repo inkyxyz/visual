@@ -175,10 +175,10 @@ public class MinesweeperScreen extends ii_Class4 {
         float frameH = boardH + pad * 2.0F + topHeaderH + 18.0F;
         IIiii_Class8 rad = IIiii_Class8.I_method_893b2757(16.0F);
 
-        custom.drawShadow(frameX, frameY, frameW, frameH, 28.0F, rad, new ColorRGBA(0.0F, 0.0F, 0.0F, 150.0F));
-        custom.drawBlurredRect(frameX, frameY, frameW, frameH, 20.0F, 4.0F, rad, new ColorRGBA(255.0F, 255.0F, 255.0F, 24.0F));
-        custom.drawRoundedRect(frameX, frameY, frameW, frameH, rad, new ColorRGBA(16.0F, 18.0F, 26.0F, 240.0F));
-        custom.drawRoundedBorder(frameX, frameY, frameW, frameH, 1.2F, rad, IiiiiIIIi_Class242.I_method_7df8e08e().withAlpha(160.0F));
+        custom.drawShadow(frameX, frameY, frameW, frameH, 28.0F, rad, new ColorRGBA(0.0F, 0.0F, 0.0F, 100.0F));
+        custom.drawBlurredRect(frameX, frameY, frameW, frameH, 20.0F, 4.0F, rad, new ColorRGBA(255.0F, 255.0F, 255.0F, 14.0F));
+        custom.drawRoundedRect(frameX, frameY, frameW, frameH, rad, new ColorRGBA(16.0F, 18.0F, 26.0F, 130.0F));
+        custom.drawRoundedBorder(frameX, frameY, frameW, frameH, 0.5F, rad, IiiiiIIIi_Class242.I_method_7df8e08e().withAlpha(90.0F));
 
         // Header: Mines Counter (Left), Smiley Button (Center), Timer (Right)
         float headerY = frameY + 10.0F;
@@ -193,7 +193,7 @@ public class MinesweeperScreen extends ii_Class4 {
         float smileY = headerY;
         IIiii_Class8 sRad = IIiii_Class8.I_method_893b2757(smileSz / 2.0F);
         custom.drawRoundedRect(smileX, smileY, smileSz, smileSz, sRad, new ColorRGBA(255.0F, 255.0F, 255.0F, 25.0F));
-        custom.drawRoundedBorder(smileX, smileY, smileSz, smileSz, 1.0F, sRad, new ColorRGBA(255.0F, 255.0F, 255.0F, 60.0F));
+        custom.drawRoundedBorder(smileX, smileY, smileSz, smileSz, 0.5F, sRad, new ColorRGBA(255.0F, 255.0F, 255.0F, 30.0F));
 
         String smileSym = isWon ? "😎" : (isGameOver ? "😵" : "🙂");
         if (font != null) {
@@ -210,14 +210,12 @@ public class MinesweeperScreen extends ii_Class4 {
 
         // Close button (X)
         float closeX = frameX + frameW - 24.0F;
-        if (font != null) {
-            custom.drawText(font, "✕", closeX, headerY + 4.0F, new ColorRGBA(255.0F, 255.0F, 255.0F, 180.0F));
-        }
+        custom.drawIcon("xmark", closeX + 2.0F, headerY + 2.0F, 12.0F, ColorRGBA.WHITE);
 
         // Board Backdrop
         IIiii_Class8 bRad = IIiii_Class8.I_method_893b2757(8.0F);
-        custom.drawRoundedRect(boardX, boardY, boardW, boardH, bRad, new ColorRGBA(10.0F, 12.0F, 18.0F, 255.0F));
-        custom.drawRoundedBorder(boardX, boardY, boardW, boardH, 1.0F, bRad, new ColorRGBA(255.0F, 255.0F, 255.0F, 35.0F));
+        custom.drawRoundedRect(boardX, boardY, boardW, boardH, bRad, new ColorRGBA(10.0F, 12.0F, 18.0F, 160.0F));
+        custom.drawRoundedBorder(boardX, boardY, boardW, boardH, 0.5F, bRad, new ColorRGBA(255.0F, 255.0F, 255.0F, 20.0F));
 
         // Draw Cells
         for (int r = 0; r < ROWS; r++) {

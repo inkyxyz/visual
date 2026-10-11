@@ -34,7 +34,6 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import pyrock.utility.render.ColorRGBA;
-import rockstar.client.AIAssistantScreen;
 import rockstar.client.AIAssistantService;
 import rockstar.client.EscapeMenuConfig;
 import rockstar.client.EscapeMenuCustomizerScreen;
@@ -46,13 +45,10 @@ import rockstar.client.IiiIIiIii_Class204;
 import rockstar.client.IiiiiIIIi_Class242;
 import rockstar.client.MinesweeperScreen;
 import rockstar.client.NotesManager;
-import rockstar.client.NotesScreen;
 import rockstar.client.RockstarClient;
 import rockstar.client.SnakeScreen;
 import rockstar.client.UISoundManager;
 import rockstar.client.WeatherAlertModule;
-import rockstar.client.iIIIiiIii_Class284;
-import rockstar.client.iIIIiiiII_Class285;
 import rockstar.client.iIIiIIiIi_Class294;
 import rockstar.client.iiIiIIIiI_Class419;
 
@@ -120,6 +116,7 @@ implements iIIiIIiIi_Class294 {
         float cx = this.width / 2.0F;
         float cy = this.height / 2.0F;
         long now = System.currentTimeMillis();
+        ColorRGBA theme = IiiiiIIIi_Class242.I_method_7df8e08e();
 
         // Update entrance fly-in animation lerp
         rockstar$flyInAnim += (1.0F - rockstar$flyInAnim) * 0.18F;
@@ -128,8 +125,8 @@ implements iIIiIIiIi_Class294 {
         float targetDrawer = rockstar$aiDrawerOpen ? 1.0F : 0.0F;
         rockstar$aiDrawerAnim += (targetDrawer - rockstar$aiDrawerAnim) * 0.22F;
 
-        // Dark frosted backdrop with Liquid Glass tint
-        custom.drawRect(0.0F, 0.0F, (float)this.width, (float)this.height, new ColorRGBA(8.0F, 12.0F, 20.0F, 135.0F));
+        // Subtle, beautiful translucent backdrop (no pitch black!)
+        custom.drawRect(0.0F, 0.0F, (float)this.width, (float)this.height, new ColorRGBA(4.0F, 6.0F, 12.0F, 75.0F));
 
         IIiIIi_Class10 font = null;
         IIiIIi_Class10 boldFont = null;
@@ -165,13 +162,13 @@ implements iIIiIIiIi_Class294 {
 
         // ==========================================
         // 1. TOP ROW: 3 SEPARATE MODULAR IOS WIDGETS
-        // Media (116x74) | Weather (116x74) | Drone Threat Radar (116x74)
+        // Media (120x74) | Weather (120x74) | Drone Threat Radar (120x74)
         // ==========================================
-        float topStartX = cx - 180.0F;
-        float topY = cy - 138.0F;
-        float topW = 116.0F;
+        float topW = 120.0F;
         float topH = 74.0F;
-        float topGap = 6.0F;
+        float topGap = 8.0F;
+        float topStartX = cx - (topW * 3.0F + topGap * 2.0F) / 2.0F;
+        float topY = cy - 138.0F;
 
         // Fly-in offset for Top Row
         float topFlyY = (1.0F - rockstar$flyInAnim) * 26.0F;
@@ -182,7 +179,7 @@ implements iIIiIIiIi_Class294 {
             float mY = topY + topFlyY;
             boolean mHov = (mouseX >= mX && mouseX <= mX + topW && mouseY >= mY && mouseY <= mY + topH);
             rockstar$tileHoverAnim[0] += ((mHov ? 1.0F : 0.0F) - rockstar$tileHoverAnim[0]) * 0.20F;
-            float dY = mY - rockstar$tileHoverAnim[0] * 3.5F;
+            float dY = mY - rockstar$tileHoverAnim[0] * 3.0F;
             rockstar$renderMediaCard(custom, mX, dY, topW, topH, font, subFont, tinyFont, mouseX, mouseY, rockstar$tileHoverAnim[0], snap, tracker);
         }
 
@@ -192,7 +189,7 @@ implements iIIiIIiIi_Class294 {
             float wY = topY + topFlyY;
             boolean wHov = (mouseX >= wX && mouseX <= wX + topW && mouseY >= wY && mouseY <= wY + topH);
             rockstar$tileHoverAnim[1] += ((wHov ? 1.0F : 0.0F) - rockstar$tileHoverAnim[1]) * 0.20F;
-            float dY = wY - rockstar$tileHoverAnim[1] * 3.5F;
+            float dY = wY - rockstar$tileHoverAnim[1] * 3.0F;
             rockstar$renderWeatherCard(custom, wX, dY, topW, topH, boldFont, font, subFont, tinyFont, mouseX, mouseY, rockstar$tileHoverAnim[1], cfg);
         }
 
@@ -202,7 +199,7 @@ implements iIIiIIiIi_Class294 {
             float rY = topY + topFlyY;
             boolean rHov = (mouseX >= rX && mouseX <= rX + topW && mouseY >= rY && mouseY <= rY + topH);
             rockstar$tileHoverAnim[2] += ((rHov ? 1.0F : 0.0F) - rockstar$tileHoverAnim[2]) * 0.20F;
-            float dY = rY - rockstar$tileHoverAnim[2] * 3.5F;
+            float dY = rY - rockstar$tileHoverAnim[2] * 3.0F;
             rockstar$renderDroneRadarCard(custom, rX, dY, topW, topH, boldFont, font, subFont, tinyFont, mouseX, mouseY, rockstar$tileHoverAnim[2], cfg, now);
         }
 
@@ -223,7 +220,7 @@ implements iIIiIIiIi_Class294 {
             float volW = 50.0F;
             boolean vHov = (mouseX >= leftPodX && mouseX <= leftPodX + volW && mouseY >= vY && mouseY <= vY + mainH);
             rockstar$tileHoverAnim[3] += ((vHov ? 1.0F : 0.0F) - rockstar$tileHoverAnim[3]) * 0.20F;
-            float dY = vY - rockstar$tileHoverAnim[3] * 3.5F;
+            float dY = vY - rockstar$tileHoverAnim[3] * 3.0F;
             rockstar$renderVolumePill(custom, leftPodX, dY, volW, mainH, subFont, mouseX, mouseY, rockstar$tileHoverAnim[3]);
         }
 
@@ -235,13 +232,13 @@ implements iIIiIIiIi_Class294 {
             float camY = vY;
             boolean cHov = (mouseX >= qX && mouseX <= qX + qW && mouseY >= camY && mouseY <= camY + qTileH);
             rockstar$tileHoverAnim[4] += ((cHov ? 1.0F : 0.0F) - rockstar$tileHoverAnim[4]) * 0.20F;
-            float dY = camY - rockstar$tileHoverAnim[4] * 3.5F;
+            float dY = camY - rockstar$tileHoverAnim[4] * 3.0F;
             rockstar$renderCameraTile(custom, qX, dY, qW, qTileH, mouseX, mouseY, rockstar$tileHoverAnim[4]);
 
             float fsY = camY + qTileH + 6.0F;
             boolean fsHov = (mouseX >= qX && mouseX <= qX + qW && mouseY >= fsY && mouseY <= fsY + qTileH);
             rockstar$tileHoverAnim[5] += ((fsHov ? 1.0F : 0.0F) - rockstar$tileHoverAnim[5]) * 0.20F;
-            float dFsY = fsY - rockstar$tileHoverAnim[5] * 3.5F;
+            float dFsY = fsY - rockstar$tileHoverAnim[5] * 3.0F;
             rockstar$renderFullscreenTile(custom, qX, dFsY, qW, qTileH, mouseX, mouseY, rockstar$tileHoverAnim[5]);
         }
 
@@ -252,7 +249,7 @@ implements iIIiIIiIi_Class294 {
             float cY = mainY + mainFlyY;
             boolean calcHov = (mouseX >= calcX && mouseX <= calcX + calcW && mouseY >= cY && mouseY <= cY + mainH);
             rockstar$tileHoverAnim[6] += ((calcHov ? 1.0F : 0.0F) - rockstar$tileHoverAnim[6]) * 0.20F;
-            float dY = cY - rockstar$tileHoverAnim[6] * 3.5F;
+            float dY = cY - rockstar$tileHoverAnim[6] * 3.0F;
             rockstar$renderCalculatorCard(custom, calcX, dY, calcW, mainH, boldFont, font, mouseX, mouseY, rockstar$tileHoverAnim[6]);
         }
 
@@ -263,19 +260,19 @@ implements iIIiIIiIi_Class294 {
             float nY = mainY + mainFlyY;
             boolean nHov = (mouseX >= notesX && mouseX <= notesX + notesW && mouseY >= nY && mouseY <= nY + mainH);
             rockstar$tileHoverAnim[7] += ((nHov ? 1.0F : 0.0F) - rockstar$tileHoverAnim[7]) * 0.20F;
-            float dY = nY - rockstar$tileHoverAnim[7] * 3.5F;
+            float dY = nY - rockstar$tileHoverAnim[7] * 3.0F;
             rockstar$renderNotesCard(custom, notesX, dY, notesW, mainH, boldFont, font, subFont, tinyFont, mouseX, mouseY, rockstar$tileHoverAnim[7]);
         }
 
-        // 6: Right Action Rectangular Frosted Glass Buttons (В игру, Настройки, Меню, Выход)
+        // 6: Right Action Rectangular Frosted Glass Buttons (В игру, Опции, Меню, Выйти)
         float actX = cx + 167.0F;
         float actW = 108.0F;
         float actBtnH = 40.0F;
         float actGap = 8.0F;
         float actY = mainY + mainFlyY + 3.0F;
-        IIiii_Class8 aRad = IIiii_Class8.I_method_893b2757(8.0F);
+        IIiii_Class8 aRad = IIiii_Class8.I_method_893b2757(10.0F);
 
-        String[] actionLabels = { "▶ В игру", "⚙ Опции", "🛠 Меню", "🚪 Выйти" };
+        String[] actionLabels = { "В игру", "Опции", "Меню", "Выйти" };
         String[] actionIcons = { "play", "setting", "hud/target", "back" };
         ColorRGBA[] actionColors = {
             new ColorRGBA(34.0F, 197.0F, 94.0F, 220.0F),
@@ -291,91 +288,103 @@ implements iIIiIIiIi_Class294 {
             float hA = rockstar$actionBtnHover[i];
             float drawY = bY - hA * 2.5F;
 
-            custom.drawShadow(actX, drawY, actW, actBtnH, 10.0F + 4.0F * hA, aRad, new ColorRGBA(0.0F, 0.0F, 0.0F, 70.0F + 30.0F * hA));
-            custom.drawBlurredRect(actX, drawY, actW, actBtnH, 12.0F, 3.0F, aRad, actionColors[i].withAlpha(18.0F));
-            custom.drawRoundedRect(actX, drawY, actW, actBtnH, aRad, new ColorRGBA(22.0F, 26.0F, 36.0F, 205.0F + 40.0F * hA));
-            custom.drawRoundedBorder(actX, drawY, actW, actBtnH, 1.0F, aRad, hA > 0.01F ? actionColors[i].withAlpha(140.0F + 115.0F * hA) : new ColorRGBA(255.0F, 255.0F, 255.0F, 35.0F));
+            // Translucent glass, NO fat border!
+            custom.drawShadow(actX, drawY, actW, actBtnH, 10.0F, aRad, new ColorRGBA(0.0F, 0.0F, 0.0F, 50.0F));
+            custom.drawBlurredRect(actX, drawY, actW, actBtnH, 14.0F, 3.0F, aRad, new ColorRGBA(255.0F, 255.0F, 255.0F, 12.0F));
+            custom.drawRoundedRect(actX, drawY, actW, actBtnH, aRad, new ColorRGBA(18.0F, 22.0F, 32.0F, 125.0F + 35.0F * hA));
+            custom.drawRoundedBorder(actX, drawY, actW, actBtnH, 0.6F, aRad, hA > 0.01F ? actionColors[i].withAlpha(120.0F * hA) : new ColorRGBA(255.0F, 255.0F, 255.0F, 18.0F));
 
+            custom.drawIcon(actionIcons[i], actX + 12.0F, drawY + (actBtnH - 14.0F) / 2.0F, 14.0F, hA > 0.01F ? actionColors[i] : ColorRGBA.WHITE);
             if (font != null) {
-                float tw = font.I_method_2c375926(actionLabels[i]);
-                custom.drawText(font, actionLabels[i], actX + 12.0F, drawY + 14.5F, ColorRGBA.WHITE);
+                custom.drawText(font, actionLabels[i], actX + 32.0F, drawY + 15.0F, ColorRGBA.WHITE);
             }
         }
 
         // ==========================================
         // 3. BOTTOM QUICK CONTROL DOCK (Rectangular Frosted Glass Buttons)
-        // [ ✦ Agravity AI ] [ 🐍 Змейка ] [ 💣 Сапёр ] [ 🛠 Меню ]
+        // All with uniform iOS squircle icons: ai.png, snake.png, mine.png, settings.png
         // ==========================================
         float bRowY = cy + 140.0F;
-        float bRowH = 34.0F;
-        float bStartX = cx - 160.0F;
-        IIiii_Class8 sRad = IIiii_Class8.I_method_893b2757(8.0F);
-
+        float bRowH = 36.0F;
         float dockFlyY = (1.0F - rockstar$flyInAnim) * 44.0F;
+        IIiii_Class8 sRad = IIiii_Class8.I_method_893b2757(10.0F);
 
-        // 1. [ ✦ Agravity AI ] (Toggles Slide-in Drawer!)
+        float dockAiW = 104.0F;
+        float dockSnW = 80.0F;
+        float dockMnW = 80.0F;
+        float dockSetW = 96.0F;
+        float dockGap = 6.0F;
+        float dockTotalW = dockAiW + dockSnW + dockMnW + dockSetW + dockGap * 3.0F;
+        float bStartX = cx - dockTotalW / 2.0F;
+
+        // 1. [ (✦) Agravity AI ] (Toggles Slide-in Drawer!)
         float aiX = bStartX;
-        float aiW = 100.0F;
-        boolean aiHov = (mouseX >= aiX && mouseX <= aiX + aiW && mouseY >= bRowY + dockFlyY && mouseY <= bRowY + dockFlyY + bRowH);
+        boolean aiHov = (mouseX >= aiX && mouseX <= aiX + dockAiW && mouseY >= bRowY + dockFlyY && mouseY <= bRowY + dockFlyY + bRowH);
         rockstar$dockBtnHover[0] += ((aiHov ? 1.0F : 0.0F) - rockstar$dockBtnHover[0]) * 0.22F;
         float hA0 = rockstar$dockBtnHover[0];
         float drawYAi = bRowY + dockFlyY - hA0 * 2.5F;
         boolean aiActive = rockstar$aiDrawerOpen;
-        custom.drawShadow(aiX, drawYAi, aiW, bRowH, 10.0F + 4.0F * hA0, sRad, new ColorRGBA(0.0F, 0.0F, 0.0F, 70.0F));
-        custom.drawBlurredRect(aiX, drawYAi, aiW, bRowH, 12.0F, 3.0F, sRad, new ColorRGBA(59.0F, 130.0F, 246.0F, aiActive ? 50.0F : 24.0F));
-        custom.drawRoundedRect(aiX, drawYAi, aiW, bRowH, sRad, aiActive ? new ColorRGBA(37.0F, 99.0F, 235.0F, 220.0F) : new ColorRGBA(22.0F, 26.0F, 36.0F, 205.0F + 40.0F * hA0));
-        custom.drawRoundedBorder(aiX, drawYAi, aiW, bRowH, 1.0F, sRad, aiActive ? new ColorRGBA(255.0F, 255.0F, 255.0F, 160.0F) : (hA0 > 0.01F ? new ColorRGBA(59.0F, 130.0F, 246.0F, 140.0F + 115.0F * hA0) : new ColorRGBA(255.0F, 255.0F, 255.0F, 38.0F)));
+
+        custom.drawShadow(aiX, drawYAi, dockAiW, bRowH, 10.0F, sRad, new ColorRGBA(0.0F, 0.0F, 0.0F, 40.0F));
+        custom.drawBlurredRect(aiX, drawYAi, dockAiW, bRowH, 14.0F, 3.0F, sRad, new ColorRGBA(theme.getRed(), theme.getGreen(), theme.getBlue(), aiActive ? 30.0F : 12.0F));
+        custom.drawRoundedRect(aiX, drawYAi, dockAiW, bRowH, sRad, aiActive ? theme.withAlpha(150.0F) : new ColorRGBA(16.0F, 20.0F, 30.0F, 110.0F + 30.0F * hA0));
+        custom.drawRoundedBorder(aiX, drawYAi, dockAiW, bRowH, 0.5F, sRad, aiActive ? theme.withAlpha(180.0F) : (hA0 > 0.01F ? theme.withAlpha(90.0F * hA0) : new ColorRGBA(255.0F, 255.0F, 255.0F, 15.0F)));
+
+        float sqIconSz = 22.0F;
+        custom.drawTexture(RockstarClient.id("icons/ai.png"), aiX + 7.0F, drawYAi + (bRowH - sqIconSz) / 2.0F, sqIconSz, sqIconSz, ColorRGBA.WHITE);
         if (subFont != null) {
-            float tw = subFont.I_method_2c375926("✦ Agravity AI");
-            custom.drawText(subFont, "✦ Agravity AI", aiX + (aiW - tw) / 2.0F, drawYAi + 11.5F, ColorRGBA.WHITE);
+            custom.drawText(subFont, "Agravity AI", aiX + 33.0F, drawYAi + 13.5F, ColorRGBA.WHITE);
         }
 
-        // 2. [ 🐍 Змейка ] Mini-game
-        float snakeX = aiX + aiW + 6.0F;
-        float gBtnW = 60.0F;
-        boolean snakeHov = (mouseX >= snakeX && mouseX <= snakeX + gBtnW && mouseY >= bRowY + dockFlyY && mouseY <= bRowY + dockFlyY + bRowH);
+        // 2. [ (🐍) Змейка ] Mini-game
+        float snakeX = aiX + dockAiW + dockGap;
+        boolean snakeHov = (mouseX >= snakeX && mouseX <= snakeX + dockSnW && mouseY >= bRowY + dockFlyY && mouseY <= bRowY + dockFlyY + bRowH);
         rockstar$dockBtnHover[1] += ((snakeHov ? 1.0F : 0.0F) - rockstar$dockBtnHover[1]) * 0.22F;
         float hA1 = rockstar$dockBtnHover[1];
         float drawYSn = bRowY + dockFlyY - hA1 * 2.5F;
-        custom.drawShadow(snakeX, drawYSn, gBtnW, bRowH, 10.0F + 4.0F * hA1, sRad, new ColorRGBA(0.0F, 0.0F, 0.0F, 70.0F));
-        custom.drawBlurredRect(snakeX, drawYSn, gBtnW, bRowH, 12.0F, 3.0F, sRad, new ColorRGBA(52.0F, 211.0F, 153.0F, 24.0F));
-        custom.drawRoundedRect(snakeX, drawYSn, gBtnW, bRowH, sRad, new ColorRGBA(22.0F, 26.0F, 36.0F, 205.0F + 40.0F * hA1));
-        custom.drawRoundedBorder(snakeX, drawYSn, gBtnW, bRowH, 1.0F, sRad, hA1 > 0.01F ? new ColorRGBA(52.0F, 211.0F, 153.0F, 140.0F + 115.0F * hA1) : new ColorRGBA(255.0F, 255.0F, 255.0F, 38.0F));
-        float snSz = 22.0F;
-        custom.drawTexture(RockstarClient.id("icons/snake.png"), snakeX + 6.0F, drawYSn + (bRowH - snSz) / 2.0F, snSz, snSz, ColorRGBA.WHITE);
-        if (tinyFont != null) {
-            custom.drawText(tinyFont, "Змейка", snakeX + 32.0F, drawYSn + 12.5F, ColorRGBA.WHITE);
+
+        custom.drawShadow(snakeX, drawYSn, dockSnW, bRowH, 10.0F, sRad, new ColorRGBA(0.0F, 0.0F, 0.0F, 40.0F));
+        custom.drawBlurredRect(snakeX, drawYSn, dockSnW, bRowH, 14.0F, 3.0F, sRad, new ColorRGBA(52.0F, 211.0F, 153.0F, 12.0F));
+        custom.drawRoundedRect(snakeX, drawYSn, dockSnW, bRowH, sRad, new ColorRGBA(16.0F, 20.0F, 30.0F, 110.0F + 30.0F * hA1));
+        custom.drawRoundedBorder(snakeX, drawYSn, dockSnW, bRowH, 0.5F, sRad, hA1 > 0.01F ? new ColorRGBA(52.0F, 211.0F, 153.0F, 90.0F * hA1) : new ColorRGBA(255.0F, 255.0F, 255.0F, 15.0F));
+
+        custom.drawTexture(RockstarClient.id("icons/snake.png"), snakeX + 7.0F, drawYSn + (bRowH - sqIconSz) / 2.0F, sqIconSz, sqIconSz, ColorRGBA.WHITE);
+        if (subFont != null) {
+            custom.drawText(subFont, "Змейка", snakeX + 33.0F, drawYSn + 13.5F, ColorRGBA.WHITE);
         }
 
-        // 3. [ 💣 Сапёр ] Mini-game
-        float mineX = snakeX + gBtnW + 6.0F;
-        boolean mineHov = (mouseX >= mineX && mouseX <= mineX + gBtnW && mouseY >= bRowY + dockFlyY && mouseY <= bRowY + dockFlyY + bRowH);
+        // 3. [ (💣) Сапёр ] Mini-game
+        float mineX = snakeX + dockSnW + dockGap;
+        boolean mineHov = (mouseX >= mineX && mouseX <= mineX + dockMnW && mouseY >= bRowY + dockFlyY && mouseY <= bRowY + dockFlyY + bRowH);
         rockstar$dockBtnHover[2] += ((mineHov ? 1.0F : 0.0F) - rockstar$dockBtnHover[2]) * 0.22F;
         float hA2 = rockstar$dockBtnHover[2];
         float drawYMn = bRowY + dockFlyY - hA2 * 2.5F;
-        custom.drawShadow(mineX, drawYMn, gBtnW, bRowH, 10.0F + 4.0F * hA2, sRad, new ColorRGBA(0.0F, 0.0F, 0.0F, 70.0F));
-        custom.drawBlurredRect(mineX, drawYMn, gBtnW, bRowH, 12.0F, 3.0F, sRad, new ColorRGBA(244.0F, 63.0F, 94.0F, 24.0F));
-        custom.drawRoundedRect(mineX, drawYMn, gBtnW, bRowH, sRad, new ColorRGBA(22.0F, 26.0F, 36.0F, 205.0F + 40.0F * hA2));
-        custom.drawRoundedBorder(mineX, drawYMn, gBtnW, bRowH, 1.0F, sRad, hA2 > 0.01F ? new ColorRGBA(244.0F, 63.0F, 94.0F, 140.0F + 115.0F * hA2) : new ColorRGBA(255.0F, 255.0F, 255.0F, 38.0F));
-        custom.drawTexture(RockstarClient.id("icons/mine.png"), mineX + 6.0F, drawYMn + (bRowH - snSz) / 2.0F, snSz, snSz, ColorRGBA.WHITE);
-        if (tinyFont != null) {
-            custom.drawText(tinyFont, "Сапёр", mineX + 32.0F, drawYMn + 12.5F, ColorRGBA.WHITE);
+
+        custom.drawShadow(mineX, drawYMn, dockMnW, bRowH, 10.0F, sRad, new ColorRGBA(0.0F, 0.0F, 0.0F, 40.0F));
+        custom.drawBlurredRect(mineX, drawYMn, dockMnW, bRowH, 14.0F, 3.0F, sRad, new ColorRGBA(244.0F, 63.0F, 94.0F, 12.0F));
+        custom.drawRoundedRect(mineX, drawYMn, dockMnW, bRowH, sRad, new ColorRGBA(16.0F, 20.0F, 30.0F, 110.0F + 30.0F * hA2));
+        custom.drawRoundedBorder(mineX, drawYMn, dockMnW, bRowH, 0.5F, sRad, hA2 > 0.01F ? new ColorRGBA(244.0F, 63.0F, 94.0F, 90.0F * hA2) : new ColorRGBA(255.0F, 255.0F, 255.0F, 15.0F));
+
+        custom.drawTexture(RockstarClient.id("icons/mine.png"), mineX + 7.0F, drawYMn + (bRowH - sqIconSz) / 2.0F, sqIconSz, sqIconSz, ColorRGBA.WHITE);
+        if (subFont != null) {
+            custom.drawText(subFont, "Сапёр", mineX + 33.0F, drawYMn + 13.5F, ColorRGBA.WHITE);
         }
 
-        // 4. [ 🛠 Настройка ] Quick Customizer Button
-        float setX = mineX + gBtnW + 6.0F;
-        float setW = 82.0F;
-        boolean setHov = (mouseX >= setX && mouseX <= setX + setW && mouseY >= bRowY + dockFlyY && mouseY <= bRowY + dockFlyY + bRowH);
+        // 4. [ (⚙) Настройка ] Settings & Menu Customizer Button
+        float setX = mineX + dockMnW + dockGap;
+        boolean setHov = (mouseX >= setX && mouseX <= setX + dockSetW && mouseY >= bRowY + dockFlyY && mouseY <= bRowY + dockFlyY + bRowH);
         rockstar$dockBtnHover[3] += ((setHov ? 1.0F : 0.0F) - rockstar$dockBtnHover[3]) * 0.22F;
         float hA3 = rockstar$dockBtnHover[3];
         float drawYSet = bRowY + dockFlyY - hA3 * 2.5F;
-        custom.drawShadow(setX, drawYSet, setW, bRowH, 10.0F + 4.0F * hA3, sRad, new ColorRGBA(0.0F, 0.0F, 0.0F, 70.0F));
-        custom.drawBlurredRect(setX, drawYSet, setW, bRowH, 12.0F, 3.0F, sRad, new ColorRGBA(255.0F, 255.0F, 255.0F, 20.0F));
-        custom.drawRoundedRect(setX, drawYSet, setW, bRowH, sRad, new ColorRGBA(22.0F, 26.0F, 36.0F, 205.0F + 40.0F * hA3));
-        custom.drawRoundedBorder(setX, drawYSet, setW, bRowH, 1.0F, sRad, hA3 > 0.01F ? new ColorRGBA(255.0F, 255.0F, 255.0F, 120.0F + 135.0F * hA3) : new ColorRGBA(255.0F, 255.0F, 255.0F, 38.0F));
+
+        custom.drawShadow(setX, drawYSet, dockSetW, bRowH, 10.0F, sRad, new ColorRGBA(0.0F, 0.0F, 0.0F, 40.0F));
+        custom.drawBlurredRect(setX, drawYSet, dockSetW, bRowH, 14.0F, 3.0F, sRad, new ColorRGBA(148.0F, 163.0F, 184.0F, 12.0F));
+        custom.drawRoundedRect(setX, drawYSet, dockSetW, bRowH, sRad, new ColorRGBA(16.0F, 20.0F, 30.0F, 110.0F + 30.0F * hA3));
+        custom.drawRoundedBorder(setX, drawYSet, dockSetW, bRowH, 0.5F, sRad, hA3 > 0.01F ? new ColorRGBA(148.0F, 163.0F, 184.0F, 90.0F * hA3) : new ColorRGBA(255.0F, 255.0F, 255.0F, 15.0F));
+
+        custom.drawTexture(RockstarClient.id("icons/settings.png"), setX + 7.0F, drawYSet + (bRowH - sqIconSz) / 2.0F, sqIconSz, sqIconSz, ColorRGBA.WHITE);
         if (subFont != null) {
-            float tw = subFont.I_method_2c375926("🛠 Настройка");
-            custom.drawText(subFont, "🛠 Настройка", setX + (setW - tw) / 2.0F, drawYSet + 11.5F, ColorRGBA.WHITE);
+            custom.drawText(subFont, "Настройка", setX + 33.0F, drawYSet + 13.5F, ColorRGBA.WHITE);
         }
 
         // ==========================================
@@ -395,15 +404,15 @@ implements iIIiIIiIi_Class294 {
     // Module 0: Real Browser Media Player Card
     @Unique
     private void rockstar$renderMediaCard(III custom, float x, float y, float w, float h, IIiIIi_Class10 font, IIiIIi_Class10 subFont, IIiIIi_Class10 tinyFont, int mx, int my, float hoverA, @Nullable iiIiIIIiI_Class419.Nested1_a961800 snap, @Nullable iiIiIIIiI_Class419 tracker) {
-        IIiii_Class8 rad = IIiii_Class8.I_method_893b2757(14.0F);
+        IIiii_Class8 rad = IIiii_Class8.I_method_893b2757(12.0F);
         ColorRGBA theme = IiiiiIIIi_Class242.I_method_7df8e08e();
-        custom.drawShadow(x, y, w, h, 14.0F + 8.0F * hoverA, rad, new ColorRGBA(0.0F, 0.0F, 0.0F, 90.0F + 40.0F * hoverA));
-        custom.drawBlurredRect(x, y, w, h, 16.0F, 3.0F, rad, new ColorRGBA(255.0F, 255.0F, 255.0F, 24.0F));
-        custom.drawRoundedRect(x, y, w, h, rad, new ColorRGBA(22.0F, 26.0F, 36.0F, 205.0F));
-        custom.drawRoundedBorder(x, y, w, h, 1.0F, rad, hoverA > 0.01F ? theme.withAlpha(220.0F * hoverA) : new ColorRGBA(255.0F, 255.0F, 255.0F, 38.0F));
+        custom.drawShadow(x, y, w, h, 12.0F, rad, new ColorRGBA(0.0F, 0.0F, 0.0F, 40.0F));
+        custom.drawBlurredRect(x, y, w, h, 14.0F, 3.0F, rad, new ColorRGBA(255.0F, 255.0F, 255.0F, 10.0F));
+        custom.drawRoundedRect(x, y, w, h, rad, new ColorRGBA(16.0F, 20.0F, 30.0F, 110.0F));
+        custom.drawRoundedBorder(x, y, w, h, 0.5F, rad, hoverA > 0.01F ? theme.withAlpha(90.0F * hoverA) : new ColorRGBA(255.0F, 255.0F, 255.0F, 15.0F));
 
         boolean hasTrack = (snap != null);
-        String trackTitle = hasTrack ? snap.I_method_33e8b426() : "Музыка в браузере";
+        String trackTitle = hasTrack ? snap.I_method_33e8b426() : "Музыка";
         boolean isPlaying = hasTrack && snap.I_method_1a22ebbe();
         double posSec = hasTrack ? snap.I_method_1a22eba8() : 0.0;
         long durSec = hasTrack ? snap.I_method_1a22ebae() : 0L;
@@ -411,7 +420,7 @@ implements iIIiIIiIi_Class294 {
 
         // Album artwork thumbnail
         float thumbSz = 26.0F;
-        custom.drawRoundedRect(x + 8.0F, y + 8.0F, thumbSz, thumbSz, IIiii_Class8.I_method_893b2757(6.0F), new ColorRGBA(255.0F, 255.0F, 255.0F, 24.0F));
+        custom.drawRoundedRect(x + 8.0F, y + 8.0F, thumbSz, thumbSz, IIiii_Class8.I_method_893b2757(6.0F), new ColorRGBA(255.0F, 255.0F, 255.0F, 18.0F));
         if (artwork != null) {
             custom.drawTexture(artwork, x + 8.0F, y + 8.0F, thumbSz, thumbSz, ColorRGBA.WHITE);
         } else {
@@ -426,11 +435,11 @@ implements iIIiIIiIi_Class294 {
         for (int b = 0; b < rockstar$eqFrequencies.length; b++) {
             float bH = Math.max(3.0F, rockstar$eqFrequencies[b] * 16.0F);
             float bx = eqStartX + b * (barW + barGap);
-            custom.drawRoundedRect(bx, eqBaseY - bH, barW, bH, IIiii_Class8.I_method_893b2757(1.0F), new ColorRGBA(255.0F, 255.0F, 255.0F, isPlaying ? 235.0F : 80.0F));
+            custom.drawRoundedRect(bx, eqBaseY - bH, barW, bH, IIiii_Class8.I_method_893b2757(1.0F), new ColorRGBA(255.0F, 255.0F, 255.0F, isPlaying ? 220.0F : 70.0F));
         }
 
         // Web / Browser indicator icon in top right
-        custom.drawIcon("language", x + w - 18.0F, y + 9.0F, 11.0F, new ColorRGBA(255.0F, 255.0F, 255.0F, 170.0F));
+        custom.drawIcon("language", x + w - 18.0F, y + 9.0F, 11.0F, new ColorRGBA(255.0F, 255.0F, 255.0F, 150.0F));
 
         // Track title
         if (font != null) {
@@ -446,7 +455,7 @@ implements iIIiIIiIi_Class294 {
         float scrubX = x + 8.0F;
         float progRatio = (durSec > 0) ? MathHelper.clamp((float)(posSec / (double)durSec), 0.0F, 1.0F) : 0.0F;
 
-        custom.drawRoundedRect(scrubX, scrubY, scrubW, scrubH, IIiii_Class8.I_method_893b2757(1.5F), new ColorRGBA(255.0F, 255.0F, 255.0F, 35.0F));
+        custom.drawRoundedRect(scrubX, scrubY, scrubW, scrubH, IIiii_Class8.I_method_893b2757(1.5F), new ColorRGBA(255.0F, 255.0F, 255.0F, 30.0F));
         if (progRatio > 0.01F) {
             custom.drawRoundedRect(scrubX, scrubY, scrubW * progRatio, scrubH, IIiii_Class8.I_method_893b2757(1.5F), theme);
             custom.drawRoundedRect(scrubX + scrubW * progRatio - 2.5F, scrubY - 1.5F, 5.0F, 5.5F, IIiii_Class8.I_method_893b2757(2.5F), ColorRGBA.WHITE);
@@ -456,107 +465,103 @@ implements iIIiIIiIi_Class294 {
         float ctrlY = y + 57.0F;
         if (subFont != null) {
             boolean prevHov = mx >= x + 12.0F && mx <= x + 28.0F && my >= ctrlY - 2.0F && my <= ctrlY + 12.0F;
-            custom.drawText(subFont, "⏮", x + 14.0F, ctrlY, prevHov ? ColorRGBA.WHITE : new ColorRGBA(255.0F, 255.0F, 255.0F, 180.0F));
+            custom.drawText(subFont, "⏮", x + 14.0F, ctrlY, prevHov ? ColorRGBA.WHITE : new ColorRGBA(255.0F, 255.0F, 255.0F, 170.0F));
 
             boolean playHov = mx >= x + w / 2.0F - 10.0F && mx <= x + w / 2.0F + 10.0F && my >= ctrlY - 2.0F && my <= ctrlY + 12.0F;
             String playSym = isPlaying ? "⏸" : "▶";
-            custom.drawText(subFont, playSym, x + w / 2.0F - 4.0F, ctrlY, playHov ? ColorRGBA.WHITE : new ColorRGBA(255.0F, 255.0F, 255.0F, 230.0F));
+            custom.drawText(subFont, playSym, x + w / 2.0F - 4.0F, ctrlY, playHov ? ColorRGBA.WHITE : new ColorRGBA(255.0F, 255.0F, 255.0F, 220.0F));
 
             boolean nextHov = mx >= x + w - 28.0F && mx <= x + w - 12.0F && my >= ctrlY - 2.0F && my <= ctrlY + 12.0F;
-            custom.drawText(subFont, "⏭", x + w - 26.0F, ctrlY, nextHov ? ColorRGBA.WHITE : new ColorRGBA(255.0F, 255.0F, 255.0F, 180.0F));
+            custom.drawText(subFont, "⏭", x + w - 26.0F, ctrlY, nextHov ? ColorRGBA.WHITE : new ColorRGBA(255.0F, 255.0F, 255.0F, 170.0F));
         }
     }
 
-    // Module 1: Separate iOS Weather Widget Card
+    // Module 1: Separate iOS Weather Widget Card (NO overlap!)
     @Unique
     private void rockstar$renderWeatherCard(III custom, float x, float y, float w, float h, IIiIIi_Class10 boldFont, IIiIIi_Class10 font, IIiIIi_Class10 subFont, IIiIIi_Class10 tinyFont, int mx, int my, float hoverA, EscapeMenuConfig cfg) {
-        IIiii_Class8 rad = IIiii_Class8.I_method_893b2757(14.0F);
-        custom.drawShadow(x, y, w, h, 14.0F + 8.0F * hoverA, rad, new ColorRGBA(0.0F, 0.0F, 0.0F, 90.0F + 30.0F * hoverA));
-        custom.drawBlurredRect(x, y, w, h, 16.0F, 3.0F, rad, new ColorRGBA(59.0F, 130.0F, 246.0F, 22.0F));
-        custom.drawRoundedRect(x, y, w, h, rad, new ColorRGBA(18.0F, 26.0F, 40.0F, 210.0F));
-        custom.drawRoundedBorder(x, y, w, h, 1.0F, rad, hoverA > 0.01F ? new ColorRGBA(59.0F, 130.0F, 246.0F, 220.0F * hoverA) : new ColorRGBA(255.0F, 255.0F, 255.0F, 38.0F));
+        IIiii_Class8 rad = IIiii_Class8.I_method_893b2757(12.0F);
+        custom.drawShadow(x, y, w, h, 12.0F, rad, new ColorRGBA(0.0F, 0.0F, 0.0F, 40.0F));
+        custom.drawBlurredRect(x, y, w, h, 14.0F, 3.0F, rad, new ColorRGBA(59.0F, 130.0F, 246.0F, 12.0F));
+        custom.drawRoundedRect(x, y, w, h, rad, new ColorRGBA(16.0F, 22.0F, 36.0F, 110.0F));
+        custom.drawRoundedBorder(x, y, w, h, 0.5F, rad, hoverA > 0.01F ? new ColorRGBA(59.0F, 130.0F, 246.0F, 90.0F * hoverA) : new ColorRGBA(255.0F, 255.0F, 255.0F, 15.0F));
 
         WeatherAlertModule wMod = RockstarClient.getInstance().getModuleManager().getModule(WeatherAlertModule.class);
         int temp = (wMod != null) ? wMod.getCurrentWeatherTemp() : 16;
         String cond = (wMod != null) ? wMod.getWeatherCondition() : "Облачно ⛅";
         String city = (cfg.weatherCity != null) ? cfg.weatherCity : "Киев";
-        float wind = (wMod != null) ? wMod.getWindSpeed() : 3.8F;
 
-        // Top Row: City + Chevron
+        // Top line: Header "Погода" + Emoji on far right
+        if (subFont != null) {
+            custom.drawText(subFont, "Погода", x + 10.0F, y + 8.5F, new ColorRGBA(190.0F, 210.0F, 240.0F, 210.0F));
+        }
         if (font != null) {
-            custom.drawText(font, city + " ▾", x + 10.0F, y + 10.0F, ColorRGBA.WHITE);
-        }
-
-        // Weather Icon / Emoji top right
-        if (boldFont != null) {
             String emoji = cond.contains("☀️") ? "☀️" : (cond.contains("🌧️") ? "🌧️" : (cond.contains("🌤️") ? "🌤️" : "⛅"));
-            custom.drawText(boldFont, emoji, x + w - 24.0F, y + 8.0F, ColorRGBA.WHITE);
+            custom.drawText(font, emoji, x + w - 22.0F, y + 7.5F, ColorRGBA.WHITE);
         }
 
-        // Center Big Temp
+        // Center line: Big Temperature
         if (boldFont != null) {
             String tempStr = (temp > 0 ? "+" : "") + temp + "°";
-            custom.drawText(boldFont, tempStr, x + 10.0F, y + 30.0F, ColorRGBA.WHITE);
+            custom.drawText(boldFont, tempStr, x + 10.0F, y + 26.0F, ColorRGBA.WHITE);
         }
 
-        // Bottom condition & wind speed
+        // Bottom line: City pill badge (click target!) + subtle condition
+        float cityPillW = 50.0F;
         if (tinyFont != null) {
-            String subStr = cond + " • " + String.format("%.1f м/с", wind);
-            if (subStr.length() > 20) subStr = subStr.substring(0, 19) + "…";
-            custom.drawText(tinyFont, subStr, x + 10.0F, y + 54.0F, new ColorRGBA(190.0F, 210.0F, 240.0F, 210.0F));
+            cityPillW = tinyFont.I_method_2c375926(city + " ▾") + 10.0F;
+        }
+        custom.drawRoundedRect(x + 10.0F, y + 50.0F, cityPillW, 16.0F, IIiii_Class8.I_method_893b2757(5.0F), new ColorRGBA(59.0F, 130.0F, 246.0F, 40.0F));
+        if (tinyFont != null) {
+            custom.drawText(tinyFont, city + " ▾", x + 15.0F, y + 54.0F, ColorRGBA.WHITE);
+            String shortCond = cond.split(" ")[0];
+            custom.drawText(tinyFont, "• " + shortCond, x + 14.0F + cityPillW, y + 54.0F, new ColorRGBA(200.0F, 215.0F, 235.0F, 200.0F));
         }
     }
 
-    // Module 2: Separate iOS Drone Threat / Tactical Radar Card
+    // Module 2: Separate iOS Drone Threat Radar Card (NO text overlap!)
     @Unique
     private void rockstar$renderDroneRadarCard(III custom, float x, float y, float w, float h, IIiIIi_Class10 boldFont, IIiIIi_Class10 font, IIiIIi_Class10 subFont, IIiIIi_Class10 tinyFont, int mx, int my, float hoverA, EscapeMenuConfig cfg, long now) {
-        IIiii_Class8 rad = IIiii_Class8.I_method_893b2757(14.0F);
-        custom.drawShadow(x, y, w, h, 14.0F + 8.0F * hoverA, rad, new ColorRGBA(0.0F, 0.0F, 0.0F, 90.0F + 30.0F * hoverA));
-        custom.drawBlurredRect(x, y, w, h, 16.0F, 3.0F, rad, new ColorRGBA(239.0F, 68.0F, 68.0F, 20.0F));
-        custom.drawRoundedRect(x, y, w, h, rad, new ColorRGBA(34.0F, 20.0F, 26.0F, 210.0F));
-        custom.drawRoundedBorder(x, y, w, h, 1.0F, rad, hoverA > 0.01F ? new ColorRGBA(239.0F, 68.0F, 68.0F, 220.0F * hoverA) : new ColorRGBA(255.0F, 255.0F, 255.0F, 38.0F));
+        IIiii_Class8 rad = IIiii_Class8.I_method_893b2757(12.0F);
+        custom.drawShadow(x, y, w, h, 12.0F, rad, new ColorRGBA(0.0F, 0.0F, 0.0F, 40.0F));
+        custom.drawBlurredRect(x, y, w, h, 14.0F, 3.0F, rad, new ColorRGBA(239.0F, 68.0F, 68.0F, 12.0F));
+        custom.drawRoundedRect(x, y, w, h, rad, new ColorRGBA(28.0F, 18.0F, 24.0F, 110.0F));
+        custom.drawRoundedBorder(x, y, w, h, 0.5F, rad, hoverA > 0.01F ? new ColorRGBA(239.0F, 68.0F, 68.0F, 90.0F * hoverA) : new ColorRGBA(255.0F, 255.0F, 255.0F, 15.0F));
 
-        // Pulsing radar dot
+        // Top line: Pulsing dot + "Радар БПЛА" (NO badge collision!)
         float radarX = x + 14.0F;
-        float radarY = y + 14.0F;
+        float radarY = y + 13.0F;
         float pulseScale = (float)(Math.sin(now / 200.0) * 0.35 + 0.65);
         ColorRGBA dotCol = new ColorRGBA(239.0F, 68.0F, 68.0F, 255.0F * pulseScale);
         custom.drawRoundedRect(radarX - 3.0F, radarY - 3.0F, 6.0F, 6.0F, IIiii_Class8.I_method_893b2757(3.0F), dotCol);
 
-        // Header Title
-        if (font != null) {
-            custom.drawText(font, "БПЛА Радар", radarX + 8.0F, y + 9.5F, ColorRGBA.WHITE);
+        if (subFont != null) {
+            custom.drawText(subFont, "Радар БПЛА", radarX + 8.0F, y + 8.5F, new ColorRGBA(254.0F, 202.0F, 202.0F, 220.0F));
         }
 
-        // Scope badge top right
-        float badgeW = 44.0F;
-        float badgeH = 15.0F;
-        float badgeX = x + w - badgeW - 8.0F;
-        float badgeY = y + 8.5F;
-        custom.drawRoundedRect(badgeX, badgeY, badgeW, badgeH, IIiii_Class8.I_method_893b2757(4.0F), new ColorRGBA(255.0F, 255.0F, 255.0F, 20.0F));
-        if (tinyFont != null) {
-            float tw = tinyFont.I_method_2c375926(cfg.alertScope + " ▾");
-            custom.drawText(tinyFont, cfg.alertScope + " ▾", badgeX + (badgeW - tw) / 2.0F, badgeY + 4.0F, ColorRGBA.WHITE);
-        }
-
-        // Active threat readout in center
+        // Center line: Threat region text (neatly proportioned)
         String threatMsg = "Белгород, Курск";
-        String threatLevel = "🔴 Опасность атаки";
+        String threatLevel = "Тревога";
         if ("Украина".equals(cfg.alertScope)) {
             threatMsg = "Киев, Харьков";
-            threatLevel = "🔴 Воздушная тревога";
+            threatLevel = "Тревога";
         } else if ("Россия".equals(cfg.alertScope)) {
             threatMsg = "Белгород, Воронеж";
-            threatLevel = "🟡 Угроза БПЛА";
+            threatLevel = "Угроза";
         }
 
-        if (boldFont != null) {
-            custom.drawText(boldFont, threatMsg, x + 10.0F, y + 30.0F, new ColorRGBA(254.0F, 202.0F, 202.0F, 245.0F));
+        if (font != null) {
+            custom.drawText(font, threatMsg, x + 10.0F, y + 28.0F, ColorRGBA.WHITE);
         }
 
-        // Subtitle status
+        // Bottom line: Scope pill badge (click target!) + threat level
+        float scopePillW = 52.0F;
         if (tinyFont != null) {
-            custom.drawText(tinyFont, threatLevel, x + 10.0F, y + 54.0F, new ColorRGBA(252.0F, 165.0F, 165.0F, 210.0F));
+            scopePillW = tinyFont.I_method_2c375926(cfg.alertScope + " ▾") + 10.0F;
+        }
+        custom.drawRoundedRect(x + 10.0F, y + 50.0F, scopePillW, 16.0F, IIiii_Class8.I_method_893b2757(5.0F), new ColorRGBA(239.0F, 68.0F, 68.0F, 50.0F));
+        if (tinyFont != null) {
+            custom.drawText(tinyFont, cfg.alertScope + " ▾", x + 15.0F, y + 54.0F, ColorRGBA.WHITE);
+            custom.drawText(tinyFont, "• " + threatLevel, x + 14.0F + scopePillW, y + 54.0F, new ColorRGBA(254.0F, 180.0F, 180.0F, 200.0F));
         }
     }
 
@@ -565,16 +570,16 @@ implements iIIiIIiIi_Class294 {
     private void rockstar$renderCameraTile(III custom, float x, float y, float w, float h, int mx, int my, float hoverA) {
         IIiii_Class8 rad = IIiii_Class8.I_method_893b2757(12.0F);
         boolean hov = mx >= x && mx <= x + w && my >= y && my <= y + h;
-        custom.drawShadow(x, y, w, h, 12.0F + 6.0F * hoverA, rad, new ColorRGBA(0.0F, 0.0F, 0.0F, 80.0F + 30.0F * hoverA));
-        custom.drawBlurredRect(x, y, w, h, 14.0F, 3.0F, rad, new ColorRGBA(255.0F, 255.0F, 255.0F, 24.0F));
-        custom.drawRoundedRect(x, y, w, h, rad, new ColorRGBA(22.0F, 26.0F, 36.0F, 195.0F));
-        custom.drawRoundedBorder(x, y, w, h, 1.0F, rad, hov ? new ColorRGBA(0.0F, 122.0F, 255.0F, 220.0F) : new ColorRGBA(255.0F, 255.0F, 255.0F, 35.0F));
+        custom.drawShadow(x, y, w, h, 10.0F, rad, new ColorRGBA(0.0F, 0.0F, 0.0F, 40.0F));
+        custom.drawBlurredRect(x, y, w, h, 14.0F, 3.0F, rad, new ColorRGBA(255.0F, 255.0F, 255.0F, 10.0F));
+        custom.drawRoundedRect(x, y, w, h, rad, new ColorRGBA(16.0F, 20.0F, 30.0F, 110.0F));
+        custom.drawRoundedBorder(x, y, w, h, 0.5F, rad, hov ? new ColorRGBA(0.0F, 122.0F, 255.0F, 90.0F) : new ColorRGBA(255.0F, 255.0F, 255.0F, 15.0F));
 
         float podSz = 28.0F;
         float px = x + (w - podSz) / 2.0F;
         float py = y + (h - podSz) / 2.0F;
         IIiii_Class8 pRad = IIiii_Class8.I_method_893b2757(8.0F);
-        custom.drawRoundedRect(px, py, podSz, podSz, pRad, new ColorRGBA(0.0F, 122.0F, 255.0F, hov ? 255.0F : 210.0F));
+        custom.drawRoundedRect(px, py, podSz, podSz, pRad, new ColorRGBA(0.0F, 122.0F, 255.0F, hov ? 220.0F : 170.0F));
         custom.drawIcon("hud/target", px + 6.0F, py + 6.0F, 16.0F, ColorRGBA.WHITE);
     }
 
@@ -585,16 +590,16 @@ implements iIIiIIiIi_Class294 {
         boolean hov = mx >= x && mx <= x + w && my >= y && my <= y + h;
         boolean isFs = (MinecraftClient.getInstance() != null && MinecraftClient.getInstance().getWindow().isFullscreen());
 
-        custom.drawShadow(x, y, w, h, 12.0F + 6.0F * hoverA, rad, new ColorRGBA(0.0F, 0.0F, 0.0F, 80.0F + 30.0F * hoverA));
-        custom.drawBlurredRect(x, y, w, h, 14.0F, 3.0F, rad, new ColorRGBA(255.0F, 255.0F, 255.0F, 24.0F));
-        custom.drawRoundedRect(x, y, w, h, rad, new ColorRGBA(22.0F, 26.0F, 36.0F, 195.0F));
-        custom.drawRoundedBorder(x, y, w, h, 1.0F, rad, hov ? new ColorRGBA(52.0F, 199.0F, 89.0F, 220.0F) : new ColorRGBA(255.0F, 255.0F, 255.0F, 35.0F));
+        custom.drawShadow(x, y, w, h, 10.0F, rad, new ColorRGBA(0.0F, 0.0F, 0.0F, 40.0F));
+        custom.drawBlurredRect(x, y, w, h, 14.0F, 3.0F, rad, new ColorRGBA(255.0F, 255.0F, 255.0F, 10.0F));
+        custom.drawRoundedRect(x, y, w, h, rad, new ColorRGBA(16.0F, 20.0F, 30.0F, 110.0F));
+        custom.drawRoundedBorder(x, y, w, h, 0.5F, rad, hov ? new ColorRGBA(52.0F, 199.0F, 89.0F, 90.0F) : new ColorRGBA(255.0F, 255.0F, 255.0F, 15.0F));
 
         float podSz = 28.0F;
         float px = x + (w - podSz) / 2.0F;
         float py = y + (h - podSz) / 2.0F;
         IIiii_Class8 pRad = IIiii_Class8.I_method_893b2757(8.0F);
-        custom.drawRoundedRect(px, py, podSz, podSz, pRad, isFs ? new ColorRGBA(52.0F, 199.0F, 89.0F, hov ? 255.0F : 220.0F) : new ColorRGBA(255.0F, 255.0F, 255.0F, hov ? 40.0F : 20.0F));
+        custom.drawRoundedRect(px, py, podSz, podSz, pRad, isFs ? new ColorRGBA(52.0F, 199.0F, 89.0F, hov ? 220.0F : 170.0F) : new ColorRGBA(255.0F, 255.0F, 255.0F, hov ? 40.0F : 20.0F));
         custom.drawIcon("keyboard", px + 5.0F, py + 5.0F, 18.0F, ColorRGBA.WHITE);
     }
 
@@ -604,17 +609,17 @@ implements iIIiIIiIi_Class294 {
         IIiii_Class8 rad = IIiii_Class8.I_method_893b2757(w / 2.0F);
         float currentVol = (float)MinecraftClient.getInstance().options.getSoundVolume(SoundCategory.MASTER);
 
-        custom.drawShadow(x, y, w, h, 14.0F + 6.0F * hoverA, rad, new ColorRGBA(0.0F, 0.0F, 0.0F, 90.0F + 30.0F * hoverA));
-        custom.drawBlurredRect(x, y, w, h, 16.0F, 3.0F, rad, new ColorRGBA(255.0F, 255.0F, 255.0F, 24.0F));
-        custom.drawRoundedRect(x, y, w, h, rad, new ColorRGBA(22.0F, 26.0F, 36.0F, 195.0F));
+        custom.drawShadow(x, y, w, h, 12.0F, rad, new ColorRGBA(0.0F, 0.0F, 0.0F, 40.0F));
+        custom.drawBlurredRect(x, y, w, h, 14.0F, 3.0F, rad, new ColorRGBA(255.0F, 255.0F, 255.0F, 10.0F));
+        custom.drawRoundedRect(x, y, w, h, rad, new ColorRGBA(16.0F, 20.0F, 30.0F, 110.0F));
 
         float fillH = h * MathHelper.clamp(currentVol, 0.0F, 1.0F);
         if (fillH > 4.0F) {
             float fillY = y + h - fillH;
-            custom.drawRoundedRect(x, fillY, w, fillH, rad, new ColorRGBA(245.0F, 248.0F, 255.0F, 240.0F));
+            custom.drawRoundedRect(x, fillY, w, fillH, rad, new ColorRGBA(245.0F, 248.0F, 255.0F, 220.0F));
         }
 
-        custom.drawRoundedBorder(x, y, w, h, 1.0F, rad, new ColorRGBA(255.0F, 255.0F, 255.0F, 40.0F));
+        custom.drawRoundedBorder(x, y, w, h, 0.5F, rad, new ColorRGBA(255.0F, 255.0F, 255.0F, 15.0F));
 
         ColorRGBA iconCol = (currentVol > 0.25F) ? new ColorRGBA(0.0F, 122.0F, 255.0F, 255.0F) : ColorRGBA.WHITE;
         custom.drawIcon("music", x + (w - 18.0F) / 2.0F, y + h - 26.0F, 18.0F, iconCol);
@@ -629,11 +634,11 @@ implements iIIiIIiIi_Class294 {
     // Module 6: Interactive iOS Calculator
     @Unique
     private void rockstar$renderCalculatorCard(III custom, float x, float y, float w, float h, IIiIIi_Class10 boldFont, IIiIIi_Class10 font, int mx, int my, float hoverA) {
-        IIiii_Class8 rad = IIiii_Class8.I_method_893b2757(14.0F);
-        custom.drawShadow(x, y, w, h, 16.0F + 8.0F * hoverA, rad, new ColorRGBA(0.0F, 0.0F, 0.0F, 110.0F + 40.0F * hoverA));
-        custom.drawBlurredRect(x, y, w, h, 18.0F, 3.5F, rad, new ColorRGBA(255.0F, 255.0F, 255.0F, 24.0F));
-        custom.drawRoundedRect(x, y, w, h, rad, new ColorRGBA(18.0F, 20.0F, 28.0F, 220.0F));
-        custom.drawRoundedBorder(x, y, w, h, 1.0F, rad, hoverA > 0.01F ? new ColorRGBA(255.0F, 255.0F, 255.0F, 140.0F) : new ColorRGBA(255.0F, 255.0F, 255.0F, 45.0F));
+        IIiii_Class8 rad = IIiii_Class8.I_method_893b2757(12.0F);
+        custom.drawShadow(x, y, w, h, 14.0F, rad, new ColorRGBA(0.0F, 0.0F, 0.0F, 50.0F));
+        custom.drawBlurredRect(x, y, w, h, 16.0F, 3.0F, rad, new ColorRGBA(255.0F, 255.0F, 255.0F, 10.0F));
+        custom.drawRoundedRect(x, y, w, h, rad, new ColorRGBA(16.0F, 18.0F, 26.0F, 115.0F));
+        custom.drawRoundedBorder(x, y, w, h, 0.5F, rad, hoverA > 0.01F ? new ColorRGBA(255.0F, 255.0F, 255.0F, 50.0F) : new ColorRGBA(255.0F, 255.0F, 255.0F, 15.0F));
 
         // LCD Display Area
         float lcdH = 26.0F;
@@ -670,12 +675,12 @@ implements iIIiIIiIi_Class294 {
                 ColorRGBA bg;
                 ColorRGBA fg = ColorRGBA.WHITE;
                 if (r == 0 && c < 3) {
-                    bg = new ColorRGBA(165.0F, 165.0F, 165.0F, bHov ? 255.0F : 210.0F);
+                    bg = new ColorRGBA(165.0F, 165.0F, 165.0F, bHov ? 220.0F : 160.0F);
                     fg = ColorRGBA.BLACK;
                 } else if (c == 3 || label.equals("=")) {
-                    bg = new ColorRGBA(255.0F, 159.0F, 10.0F, bHov ? 255.0F : 225.0F);
+                    bg = new ColorRGBA(255.0F, 159.0F, 10.0F, bHov ? 240.0F : 190.0F);
                 } else {
-                    bg = new ColorRGBA(55.0F, 58.0F, 68.0F, bHov ? 255.0F : 200.0F);
+                    bg = new ColorRGBA(255.0F, 255.0F, 255.0F, bHov ? 40.0F : 20.0F);
                 }
 
                 IIiii_Class8 bRad = IIiii_Class8.I_method_893b2757(btnSz / 2.0F);
@@ -689,15 +694,15 @@ implements iIIiIIiIi_Class294 {
         }
     }
 
-    // Module 7: Embedded Notes Widget with Ruled Notebook Paper Background ("строчный фон как у любого приложения заметок")
+    // Module 7: Embedded Notes Widget with Ruled Notebook Paper Background
     @Unique
     private void rockstar$renderNotesCard(III custom, float x, float y, float w, float h, IIiIIi_Class10 boldFont, IIiIIi_Class10 font, IIiIIi_Class10 subFont, IIiIIi_Class10 tinyFont, int mx, int my, float hoverA) {
-        IIiii_Class8 rad = IIiii_Class8.I_method_893b2757(14.0F);
+        IIiii_Class8 rad = IIiii_Class8.I_method_893b2757(12.0F);
         ColorRGBA theme = IiiiiIIIi_Class242.I_method_7df8e08e();
-        custom.drawShadow(x, y, w, h, 16.0F + 8.0F * hoverA, rad, new ColorRGBA(0.0F, 0.0F, 0.0F, 90.0F + 30.0F * hoverA));
-        custom.drawBlurredRect(x, y, w, h, 18.0F, 3.5F, rad, new ColorRGBA(245.0F, 158.0F, 11.0F, 16.0F));
-        custom.drawRoundedRect(x, y, w, h, rad, new ColorRGBA(24.0F, 26.0F, 34.0F, 220.0F));
-        custom.drawRoundedBorder(x, y, w, h, 1.0F, rad, rockstar$notesEditing ? new ColorRGBA(245.0F, 158.0F, 11.0F, 220.0F) : (hoverA > 0.01F ? theme.withAlpha(200.0F * hoverA) : new ColorRGBA(255.0F, 255.0F, 255.0F, 38.0F)));
+        custom.drawShadow(x, y, w, h, 14.0F, rad, new ColorRGBA(0.0F, 0.0F, 0.0F, 40.0F));
+        custom.drawBlurredRect(x, y, w, h, 16.0F, 3.0F, rad, new ColorRGBA(245.0F, 158.0F, 11.0F, 10.0F));
+        custom.drawRoundedRect(x, y, w, h, rad, new ColorRGBA(20.0F, 22.0F, 30.0F, 115.0F));
+        custom.drawRoundedBorder(x, y, w, h, 0.5F, rad, rockstar$notesEditing ? new ColorRGBA(245.0F, 158.0F, 11.0F, 140.0F) : (hoverA > 0.01F ? theme.withAlpha(90.0F * hoverA) : new ColorRGBA(255.0F, 255.0F, 255.0F, 15.0F)));
 
         // Header Title: 📝 Заметки
         if (font != null) {
@@ -723,7 +728,7 @@ implements iIIiIIiIi_Class294 {
         float btnY = y + 6.0F;
         float btnSz = 16.0F;
         boolean plusHov = (mx >= btnPlusX && mx <= btnPlusX + btnSz && my >= btnY && my <= btnY + btnSz);
-        custom.drawRoundedRect(btnPlusX, btnY, btnSz, btnSz, IIiii_Class8.I_method_893b2757(4.0F), plusHov ? new ColorRGBA(59.0F, 130.0F, 246.0F, 200.0F) : new ColorRGBA(255.0F, 255.0F, 255.0F, 20.0F));
+        custom.drawRoundedRect(btnPlusX, btnY, btnSz, btnSz, IIiii_Class8.I_method_893b2757(4.0F), plusHov ? new ColorRGBA(59.0F, 130.0F, 246.0F, 180.0F) : new ColorRGBA(255.0F, 255.0F, 255.0F, 20.0F));
         if (tinyFont != null) {
             custom.drawText(tinyFont, "+", btnPlusX + 5.0F, btnY + 4.5F, ColorRGBA.WHITE);
         }
@@ -731,22 +736,22 @@ implements iIIiIIiIi_Class294 {
         // Action button 2: [📍] Insert Player Coordinates
         float btnCoordX = x + w - 22.0F;
         boolean coordHov = (mx >= btnCoordX && mx <= btnCoordX + btnSz && my >= btnY && my <= btnY + btnSz);
-        custom.drawRoundedRect(btnCoordX, btnY, btnSz, btnSz, IIiii_Class8.I_method_893b2757(4.0F), coordHov ? new ColorRGBA(16.0F, 185.0F, 129.0F, 200.0F) : new ColorRGBA(255.0F, 255.0F, 255.0F, 20.0F));
+        custom.drawRoundedRect(btnCoordX, btnY, btnSz, btnSz, IIiii_Class8.I_method_893b2757(4.0F), coordHov ? new ColorRGBA(16.0F, 185.0F, 129.0F, 180.0F) : new ColorRGBA(255.0F, 255.0F, 255.0F, 20.0F));
         if (tinyFont != null) {
             custom.drawText(tinyFont, "📍", btnCoordX + 2.0F, btnY + 4.0F, ColorRGBA.WHITE);
         }
 
         // Apple Notes yellow top divider line
-        custom.drawRect(x + 10.0F, y + 25.0F, w - 20.0F, 1.0F, new ColorRGBA(245.0F, 158.0F, 11.0F, 150.0F));
+        custom.drawRect(x + 10.0F, y + 25.0F, w - 20.0F, 1.0F, new ColorRGBA(245.0F, 158.0F, 11.0F, 120.0F));
 
         // Vertical margin guide line (like real lined notebook)
-        custom.drawRect(x + 22.0F, y + 26.0F, 1.0F, h - 34.0F, new ColorRGBA(245.0F, 158.0F, 11.0F, 45.0F));
+        custom.drawRect(x + 22.0F, y + 26.0F, 1.0F, h - 34.0F, new ColorRGBA(245.0F, 158.0F, 11.0F, 35.0F));
 
         // Notebook Ruled Horizontal Lines (строчный фон тетради / Apple Notes)
         float lineStartY = y + 42.0F;
         float lineSpacing = 16.0F;
         for (float ly = lineStartY; ly < y + h - 8.0F; ly += lineSpacing) {
-            custom.drawRect(x + 10.0F, ly, w - 20.0F, 1.0F, new ColorRGBA(255.0F, 255.0F, 255.0F, 12.0F));
+            custom.drawRect(x + 10.0F, ly, w - 20.0F, 1.0F, new ColorRGBA(255.0F, 255.0F, 255.0F, 10.0F));
         }
 
         // Render current note content on the ruled lines
@@ -791,55 +796,52 @@ implements iIIiIIiIi_Class294 {
         }
     }
 
-    // Module 8: Slide-in AI Assistant Drawer ("ai чатом сделай его меньше и размети с правой стороны по кнопке что бы оно выплывало")
+    // Module 8: Slide-in AI Assistant Drawer (Fix icons, bubble wrapping, transparency)
     @Unique
     private void rockstar$renderSlideInAiDrawer(III custom, IIiIIi_Class10 boldFont, IIiIIi_Class10 font, IIiIIi_Class10 subFont, IIiIIi_Class10 tinyFont, int mx, int my) {
-        float drawerW = 260.0F;
-        float drawerH = Math.min(370.0F, this.height - 30.0F);
+        float drawerW = 270.0F;
+        float drawerH = Math.min(380.0F, this.height - 24.0F);
         float drawerY = this.height / 2.0F - drawerH / 2.0F;
         float drawerX = (float)this.width - rockstar$aiDrawerAnim * (drawerW + 12.0F);
         IIiii_Class8 rad = IIiii_Class8.I_method_893b2757(14.0F);
+        ColorRGBA theme = IiiiiIIIi_Class242.I_method_7df8e08e();
 
-        custom.drawShadow(drawerX, drawerY, drawerW, drawerH, 20.0F, rad, new ColorRGBA(0.0F, 0.0F, 0.0F, 110.0F));
-        custom.drawBlurredRect(drawerX, drawerY, drawerW, drawerH, 22.0F, 3.5F, rad, new ColorRGBA(59.0F, 130.0F, 246.0F, 24.0F));
-        custom.drawRoundedRect(drawerX, drawerY, drawerW, drawerH, rad, new ColorRGBA(18.0F, 22.0F, 32.0F, 230.0F));
-        custom.drawRoundedBorder(drawerX, drawerY, drawerW, drawerH, 1.1F, rad, new ColorRGBA(255.0F, 255.0F, 255.0F, 42.0F));
+        custom.drawShadow(drawerX, drawerY, drawerW, drawerH, 18.0F, rad, new ColorRGBA(0.0F, 0.0F, 0.0F, 55.0F));
+        custom.drawBlurredRect(drawerX, drawerY, drawerW, drawerH, 20.0F, 3.5F, rad, new ColorRGBA(theme.getRed(), theme.getGreen(), theme.getBlue(), 12.0F));
+        custom.drawRoundedRect(drawerX, drawerY, drawerW, drawerH, rad, new ColorRGBA(16.0F, 20.0F, 30.0F, 115.0F));
+        custom.drawRoundedBorder(drawerX, drawerY, drawerW, drawerH, 0.5F, rad, new ColorRGBA(255.0F, 255.0F, 255.0F, 16.0F));
 
-        // Header: ✦ Agravity AI + Gemini badge
+        // Header: ✦ Agravity AI (with Siri gradient icon)
         float hY = drawerY + 10.0F;
+        custom.drawTexture(RockstarClient.id("icons/ai.png"), drawerX + 12.0F, hY + 1.0F, 18.0F, 18.0F, ColorRGBA.WHITE);
         if (font != null) {
-            custom.drawText(font, "✦ Agravity AI", drawerX + 12.0F, hY + 1.0F, ColorRGBA.WHITE);
+            custom.drawText(font, "Agravity AI", drawerX + 34.0F, hY + 4.5F, ColorRGBA.WHITE);
         }
 
-        // Close button (✕)
-        float closeSz = 20.0F;
+        // Close button (xmark icon!)
+        float closeSz = 22.0F;
         float closeX = drawerX + drawerW - closeSz - 10.0F;
         float closeY = hY - 1.0F;
         boolean closeHov = (mx >= closeX && mx <= closeX + closeSz && my >= closeY && my <= closeY + closeSz);
         IIiii_Class8 cRad = IIiii_Class8.I_method_893b2757(closeSz / 2.0F);
-        custom.drawRoundedRect(closeX, closeY, closeSz, closeSz, cRad, closeHov ? new ColorRGBA(239.0F, 68.0F, 68.0F, 240.0F) : new ColorRGBA(255.0F, 255.0F, 255.0F, 30.0F));
-        if (font != null) {
-            custom.drawText(font, "✕", closeX + 5.5F, closeY + 5.0F, ColorRGBA.WHITE);
-        }
+        custom.drawRoundedRect(closeX, closeY, closeSz, closeSz, cRad, closeHov ? new ColorRGBA(239.0F, 68.0F, 68.0F, 180.0F) : new ColorRGBA(255.0F, 255.0F, 255.0F, 16.0F));
+        custom.drawIcon("xmark", closeX + (closeSz - 10.0F) / 2.0F, closeY + (closeSz - 10.0F) / 2.0F, 10.0F, ColorRGBA.WHITE);
 
-        // Clear chat button [🗑]
-        float clrSz = 20.0F;
-        float clrX = closeX - clrSz - 6.0F;
-        boolean clrHov = (mx >= clrX && mx <= clrX + clrSz && my >= closeY && my <= closeY + clrSz);
-        custom.drawRoundedRect(clrX, closeY, clrSz, clrSz, cRad, clrHov ? new ColorRGBA(255.0F, 255.0F, 255.0F, 40.0F) : new ColorRGBA(255.0F, 255.0F, 255.0F, 20.0F));
-        if (tinyFont != null) {
-            custom.drawText(tinyFont, "🗑", clrX + 4.5F, closeY + 5.5F, ColorRGBA.WHITE);
-        }
+        // Clear chat button (trash icon!)
+        float clrX = closeX - closeSz - 6.0F;
+        boolean clrHov = (mx >= clrX && mx <= clrX + closeSz && my >= closeY && my <= closeY + closeSz);
+        custom.drawRoundedRect(clrX, closeY, closeSz, closeSz, cRad, clrHov ? new ColorRGBA(255.0F, 255.0F, 255.0F, 35.0F) : new ColorRGBA(255.0F, 255.0F, 255.0F, 16.0F));
+        custom.drawIcon("trash", clrX + (closeSz - 10.0F) / 2.0F, closeY + (closeSz - 10.0F) / 2.0F, 10.0F, ColorRGBA.WHITE);
 
         // Header divider
-        float divY = drawerY + 32.0F;
-        custom.drawRect(drawerX + 10.0F, divY, drawerW - 20.0F, 1.0F, new ColorRGBA(255.0F, 255.0F, 255.0F, 25.0F));
+        float divY = drawerY + 34.0F;
+        custom.drawRect(drawerX + 10.0F, divY, drawerW - 20.0F, 1.0F, new ColorRGBA(255.0F, 255.0F, 255.0F, 12.0F));
 
         // Scrollable Chat Message Bubbles
         float chatX = drawerX + 10.0F;
         float chatY = divY + 6.0F;
         float chatW = drawerW - 20.0F;
-        float chatH = drawerH - 74.0F;
+        float chatH = drawerH - 78.0F;
 
         List<AIAssistantService.ChatMessage> history = AIAssistantService.getHistory();
         float curY = chatY + 4.0F - rockstar$aiScroll;
@@ -848,29 +850,47 @@ implements iIIiIIiIi_Class294 {
             if (tinyFont != null) {
                 String tip = "Задайте любой вопрос об игре,\nPvP или клиенте Agravity:";
                 String[] tLines = tip.split("\n");
-                custom.drawText(tinyFont, tLines[0], chatX + 12.0F, chatY + 24.0F, new ColorRGBA(180.0F, 195.0F, 220.0F, 200.0F));
-                custom.drawText(tinyFont, tLines[1], chatX + 12.0F, chatY + 36.0F, new ColorRGBA(180.0F, 195.0F, 220.0F, 200.0F));
+                custom.drawText(tinyFont, tLines[0], chatX + 12.0F, chatY + 24.0F, new ColorRGBA(180.0F, 195.0F, 220.0F, 180.0F));
+                custom.drawText(tinyFont, tLines[1], chatX + 12.0F, chatY + 36.0F, new ColorRGBA(180.0F, 195.0F, 220.0F, 180.0F));
             }
         } else {
             for (AIAssistantService.ChatMessage msg : history) {
                 boolean isUser = msg.isUser();
-                float bW = chatW * 0.78F;
+                float maxBubbleW = chatW * 0.82F;
+
+                List<String> lines = rockstar$wrapLines(msg.text(), maxBubbleW - 18.0F, subFont);
+                float bH = Math.max(20.0F, lines.size() * 11.5F + 9.0F);
+
+                // Hug text width accurately across all lines
+                float maxLineW = 0.0F;
+                if (subFont != null) {
+                    for (String l : lines) {
+                        float lw = subFont.I_method_2c375926(l);
+                        if (lw > maxLineW) maxLineW = lw;
+                    }
+                } else {
+                    maxLineW = 70.0F;
+                }
+                float bW = Math.min(maxBubbleW, Math.max(28.0F, maxLineW + 18.0F));
                 float bX = isUser ? (chatX + chatW - bW) : chatX;
 
-                List<String> lines = rockstar$wrapLines(msg.text(), bW - 18.0F, subFont);
-                float bH = Math.max(20.0F, lines.size() * 10.5F + 10.0F);
-
                 if (curY + bH >= chatY && curY <= chatY + chatH) {
-                    ColorRGBA bgCol = isUser ? new ColorRGBA(0.0F, 122.0F, 255.0F, 225.0F) : new ColorRGBA(32.0F, 40.0F, 56.0F, 210.0F);
-                    IIiii_Class8 bubbleRad = IIiii_Class8.I_method_893b2757(8.0F);
-                    custom.drawRoundedRect(bX, curY, bW, bH, bubbleRad, bgCol);
-                    custom.drawRoundedBorder(bX, curY, bW, bH, 1.0F, bubbleRad, isUser ? new ColorRGBA(255.0F, 255.0F, 255.0F, 70.0F) : new ColorRGBA(255.0F, 255.0F, 255.0F, 30.0F));
+                    IIiii_Class8 bubbleRad = IIiii_Class8.I_method_893b2757(9.0F);
+                    if (isUser) {
+                        // User message: sleek theme accent bubble (Apple iMessage style)
+                        custom.drawRoundedRect(bX, curY, bW, bH, bubbleRad, theme.withAlpha(200.0F));
+                    } else {
+                        // Assistant message: translucent frosted glass bubble with ultra-subtle highlight
+                        custom.drawBlurredRect(bX, curY, bW, bH, 10.0F, 2.0F, bubbleRad, new ColorRGBA(255.0F, 255.0F, 255.0F, 8.0F));
+                        custom.drawRoundedRect(bX, curY, bW, bH, bubbleRad, new ColorRGBA(255.0F, 255.0F, 255.0F, 18.0F));
+                        custom.drawRoundedBorder(bX, curY, bW, bH, 0.5F, bubbleRad, new ColorRGBA(255.0F, 255.0F, 255.0F, 12.0F));
+                    }
 
                     if (subFont != null) {
-                        float lineY = curY + 5.5F;
+                        float lineY = curY + 6.0F;
                         for (String l : lines) {
-                            custom.drawText(subFont, l, bX + 8.0F, lineY, ColorRGBA.WHITE);
-                            lineY += 10.5F;
+                            custom.drawText(subFont, l, bX + 9.0F, lineY, ColorRGBA.WHITE);
+                            lineY += 11.5F;
                         }
                     }
                 }
@@ -878,19 +898,19 @@ implements iIIiIIiIi_Class294 {
             }
 
             if (rockstar$aiThinking) {
-                float thinkW = 100.0F;
+                float thinkW = 90.0F;
                 float thinkH = 18.0F;
                 if (curY + thinkH >= chatY && curY <= chatY + chatH) {
-                    custom.drawRoundedRect(chatX, curY, thinkW, thinkH, IIiii_Class8.I_method_893b2757(6.0F), new ColorRGBA(32.0F, 40.0F, 56.0F, 210.0F));
+                    custom.drawRoundedRect(chatX, curY, thinkW, thinkH, IIiii_Class8.I_method_893b2757(6.0F), new ColorRGBA(255.0F, 255.0F, 255.0F, 18.0F));
                     if (tinyFont != null) {
                         String dots = "...".substring(0, (int)(System.currentTimeMillis() / 350L % 4L));
-                        custom.drawText(tinyFont, "ИИ думает" + dots, chatX + 8.0F, curY + 5.0F, new ColorRGBA(59.0F, 130.0F, 246.0F, 255.0F));
+                        custom.drawText(tinyFont, "ИИ думает" + dots, chatX + 8.0F, curY + 5.0F, theme.withAlpha(240.0F));
                     }
                 }
             }
         }
 
-        // Bottom Input Bar (iOS pill style)
+        // Bottom Input Bar (iOS pill style, translucent!)
         float inY = drawerY + drawerH - 34.0F;
         float inH = 26.0F;
         float sendW = 54.0F;
@@ -898,21 +918,21 @@ implements iIIiIIiIi_Class294 {
         float inX = drawerX + 10.0F;
 
         IIiii_Class8 inRad = IIiii_Class8.I_method_893b2757(inH / 2.0F);
-        custom.drawRoundedRect(inX, inY, inW, inH, inRad, new ColorRGBA(255.0F, 255.0F, 255.0F, 15.0F));
-        custom.drawRoundedBorder(inX, inY, inW, inH, 1.0F, inRad, new ColorRGBA(255.0F, 255.0F, 255.0F, 40.0F));
+        custom.drawRoundedRect(inX, inY, inW, inH, inRad, new ColorRGBA(255.0F, 255.0F, 255.0F, 14.0F));
+        custom.drawRoundedBorder(inX, inY, inW, inH, 0.5F, inRad, new ColorRGBA(255.0F, 255.0F, 255.0F, 18.0F));
 
         if (subFont != null) {
             String promptDisp = rockstar$aiInput.isEmpty() ? "Спросить..." : rockstar$aiInput;
             if (System.currentTimeMillis() % 1000L < 500L && !rockstar$aiInput.isEmpty()) promptDisp += "|";
-            ColorRGBA col = rockstar$aiInput.isEmpty() ? new ColorRGBA(255.0F, 255.0F, 255.0F, 120.0F) : ColorRGBA.WHITE;
+            ColorRGBA col = rockstar$aiInput.isEmpty() ? new ColorRGBA(255.0F, 255.0F, 255.0F, 110.0F) : ColorRGBA.WHITE;
             custom.drawText(subFont, promptDisp, inX + 10.0F, inY + 8.0F, col);
         }
 
         // Send Button [Отправить]
         float sendX = inX + inW + 6.0F;
         boolean sendHov = (mx >= sendX && mx <= sendX + sendW && my >= inY && my <= inY + inH);
-        custom.drawRoundedRect(sendX, inY, sendW, inH, inRad, new ColorRGBA(0.0F, 122.0F, 255.0F, sendHov ? 255.0F : 210.0F));
-        custom.drawRoundedBorder(sendX, inY, sendW, inH, 1.0F, inRad, ColorRGBA.WHITE.withAlpha(sendHov ? 255.0F : 110.0F));
+        custom.drawRoundedRect(sendX, inY, sendW, inH, inRad, sendHov ? theme.withAlpha(235.0F) : theme.withAlpha(190.0F));
+        custom.drawRoundedBorder(sendX, inY, sendW, inH, 0.5F, inRad, ColorRGBA.WHITE.withAlpha(sendHov ? 90.0F : 30.0F));
         if (tinyFont != null) {
             float sendTxtW = tinyFont.I_method_2c375926("Отправить");
             custom.drawText(tinyFont, "Отправить", sendX + (sendW - sendTxtW) / 2.0F, inY + 8.0F, ColorRGBA.WHITE);
@@ -952,14 +972,14 @@ implements iIIiIIiIi_Class294 {
 
         // 1. Check Clicks on Slide-in AI Drawer (if open)
         if (rockstar$aiDrawerOpen && rockstar$aiDrawerAnim > 0.5F) {
-            float drawerW = 260.0F;
-            float drawerH = Math.min(370.0F, this.height - 30.0F);
+            float drawerW = 270.0F;
+            float drawerH = Math.min(380.0F, this.height - 24.0F);
             float drawerY = this.height / 2.0F - drawerH / 2.0F;
             float drawerX = (float)this.width - (drawerW + 12.0F);
 
             if (mouseX >= drawerX && mouseX <= drawerX + drawerW && mouseY >= drawerY && mouseY <= drawerY + drawerH) {
-                // Close button [✕]
-                float closeSz = 20.0F;
+                // Close button [xmark]
+                float closeSz = 22.0F;
                 float closeX = drawerX + drawerW - closeSz - 10.0F;
                 float closeY = drawerY + 9.0F;
                 if (mouseX >= closeX && mouseX <= closeX + closeSz && mouseY >= closeY && mouseY <= closeY + closeSz) {
@@ -968,10 +988,9 @@ implements iIIiIIiIi_Class294 {
                     return true;
                 }
 
-                // Clear button [🗑]
-                float clrSz = 20.0F;
-                float clrX = closeX - clrSz - 6.0F;
-                if (mouseX >= clrX && mouseX <= clrX + clrSz && mouseY >= closeY && mouseY <= closeY + closeSz) {
+                // Clear button [trash]
+                float clrX = closeX - closeSz - 6.0F;
+                if (mouseX >= clrX && mouseX <= clrX + closeSz && mouseY >= closeY && mouseY <= closeY + closeSz) {
                     UISoundManager.playButtonClick();
                     AIAssistantService.clearHistory();
                     rockstar$aiScroll = 0.0F;
@@ -996,11 +1015,11 @@ implements iIIiIIiIi_Class294 {
         }
 
         // 2. Top Row Widget Clicks:
-        float topStartX = cx - 180.0F;
-        float topY = cy - 138.0F;
-        float topW = 116.0F;
+        float topW = 120.0F;
         float topH = 74.0F;
-        float topGap = 6.0F;
+        float topGap = 8.0F;
+        float topStartX = cx - (topW * 3.0F + topGap * 2.0F) / 2.0F;
+        float topY = cy - 138.0F;
 
         // Media Player Click
         if (cfg.showMediaPlayer) {
@@ -1202,22 +1221,26 @@ implements iIIiIIiIi_Class294 {
 
         // 4. Bottom Dock Buttons Clicks
         float bRowY = cy + 140.0F;
-        float bRowH = 34.0F;
-        float bStartX = cx - 160.0F;
+        float bRowH = 36.0F;
+        float dockAiW = 104.0F;
+        float dockSnW = 78.0F;
+        float dockMnW = 78.0F;
+        float dockSetW = 88.0F;
+        float dockGap = 6.0F;
+        float dockTotalW = dockAiW + dockSnW + dockMnW + dockSetW + dockGap * 3.0F;
+        float bStartX = cx - dockTotalW / 2.0F;
 
-        // [ ✦ Agravity AI ] Click: Toggle Slide-in Drawer!
+        // [ (✦) Agravity AI ] Click: Toggle Slide-in Drawer!
         float aiX = bStartX;
-        float aiW = 100.0F;
-        if (mouseX >= aiX && mouseX <= aiX + aiW && mouseY >= bRowY && mouseY <= bRowY + bRowH) {
+        if (mouseX >= aiX && mouseX <= aiX + dockAiW && mouseY >= bRowY && mouseY <= bRowY + bRowH) {
             UISoundManager.playButtonClick();
             rockstar$aiDrawerOpen = !rockstar$aiDrawerOpen;
             return true;
         }
 
-        // [ 🐍 Змейка ] Click
-        float snakeX = aiX + aiW + 6.0F;
-        float gBtnW = 60.0F;
-        if (cfg.showGames && mouseX >= snakeX && mouseX <= snakeX + gBtnW && mouseY >= bRowY && mouseY <= bRowY + bRowH) {
+        // [ (🐍) Змейка ] Click
+        float snakeX = aiX + dockAiW + dockGap;
+        if (cfg.showGames && mouseX >= snakeX && mouseX <= snakeX + dockSnW && mouseY >= bRowY && mouseY <= bRowY + bRowH) {
             UISoundManager.playButtonClick();
             if (this.client != null) {
                 this.client.setScreen(new SnakeScreen(this));
@@ -1225,9 +1248,9 @@ implements iIIiIIiIi_Class294 {
             return true;
         }
 
-        // [ 💣 Сапёр ] Click
-        float mineX = snakeX + gBtnW + 6.0F;
-        if (cfg.showGames && mouseX >= mineX && mouseX <= mineX + gBtnW && mouseY >= bRowY && mouseY <= bRowY + bRowH) {
+        // [ (💣) Сапёр ] Click
+        float mineX = snakeX + dockSnW + dockGap;
+        if (cfg.showGames && mouseX >= mineX && mouseX <= mineX + dockMnW && mouseY >= bRowY && mouseY <= bRowY + bRowH) {
             UISoundManager.playButtonClick();
             if (this.client != null) {
                 this.client.setScreen(new MinesweeperScreen(this));
@@ -1235,10 +1258,9 @@ implements iIIiIIiIi_Class294 {
             return true;
         }
 
-        // [ 🛠 Меню ] Click
-        float setX = mineX + gBtnW + 6.0F;
-        float setW = 82.0F;
-        if (mouseX >= setX && mouseX <= setX + setW && mouseY >= bRowY && mouseY <= bRowY + bRowH) {
+        // [ (⚙) Настройки ] Click
+        float setX = mineX + dockMnW + dockGap;
+        if (mouseX >= setX && mouseX <= setX + dockSetW && mouseY >= bRowY && mouseY <= bRowY + bRowH) {
             UISoundManager.playButtonClick();
             if (this.client != null) {
                 this.client.setScreen(new EscapeMenuCustomizerScreen(this));
