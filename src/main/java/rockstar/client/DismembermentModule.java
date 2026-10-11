@@ -158,7 +158,7 @@ public class DismembermentModule extends Module {
     private void initSettings() {
         this.affectPlayers = new BooleanSetting(this, "Players").I_method_decd82b5();
         this.affectMobs = new BooleanSetting(this, "Mobs").I_method_decd82b5();
-        this.bloodSetting = new BooleanSetting(this, "Blood / Кровь").I_method_decd82b5();
+        this.bloodSetting = new BooleanSetting(this, "Кровь").I_method_decd82b5();
         this.bloodDecals = new BooleanSetting(this, "Blood Decals").I_method_decd82b5();
         this.headScaleSetting = new SliderSetting(this, "Размер головы")
             .I_method_c8c9a7d7(1.0F)

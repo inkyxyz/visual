@@ -101,35 +101,35 @@ public class ParticlesModule extends Module {
 
    @Compile(obfuscation = 4)
    private void initSettings() {
-      this.typeSetting = new ModeSetting(this, "Particle Type / Тип");
-      this.typeStars = new ModeSetting.Nested1_42765c60(this.typeSetting, "Stars / Звёзды").select();
-      this.typeHearts = new ModeSetting.Nested1_42765c60(this.typeSetting, "Hearts / Сердца");
-      this.typeSparks = new ModeSetting.Nested1_42765c60(this.typeSetting, "Sparks / Искры");
-      this.typeBlood = new ModeSetting.Nested1_42765c60(this.typeSetting, "Blood / Кровь");
-      this.typeRunes = new ModeSetting.Nested1_42765c60(this.typeSetting, "Runes / Руны");
-      this.typeFire = new ModeSetting.Nested1_42765c60(this.typeSetting, "Fire / Огонь");
-      this.typeNeonOrbs = new ModeSetting.Nested1_42765c60(this.typeSetting, "Neon Orbs / Сферы");
+      this.typeSetting = new ModeSetting(this, "Тип частиц");
+      this.typeStars = new ModeSetting.Nested1_42765c60(this.typeSetting, "Звёзды").select();
+      this.typeHearts = new ModeSetting.Nested1_42765c60(this.typeSetting, "Сердца");
+      this.typeSparks = new ModeSetting.Nested1_42765c60(this.typeSetting, "Искры");
+      this.typeBlood = new ModeSetting.Nested1_42765c60(this.typeSetting, "Кровь");
+      this.typeRunes = new ModeSetting.Nested1_42765c60(this.typeSetting, "Руны");
+      this.typeFire = new ModeSetting.Nested1_42765c60(this.typeSetting, "Огонь");
+      this.typeNeonOrbs = new ModeSetting.Nested1_42765c60(this.typeSetting, "Сферы");
 
-      this.triggerHit = new BooleanSetting(this, "On Hit / При ударе").select();
-      this.triggerTrail = new BooleanSetting(this, "Trail / При ходьбе").select();
-      this.triggerJump = new BooleanSetting(this, "On Jump / При прыжке").select();
-      this.triggerAmbient = new BooleanSetting(this, "Ambient / Вокруг игрока");
+      this.triggerHit = new BooleanSetting(this, "При ударе").select();
+      this.triggerTrail = new BooleanSetting(this, "При ходьбе").select();
+      this.triggerJump = new BooleanSetting(this, "При прыжке").select();
+      this.triggerAmbient = new BooleanSetting(this, "Вокруг игрока");
 
-      this.countSetting = new SliderSetting(this, "Count / Количество")
+      this.countSetting = new SliderSetting(this, "Количество")
          .I_method_c8c9a7d7(1.0F).i_method_65e2aff7(24.0F).II_method_b0f56334(1.0F).Ii_method_4e0e6b54(6.0F);
 
-      this.scaleSetting = new SliderSetting(this, "Scale / Размер")
+      this.scaleSetting = new SliderSetting(this, "Размер")
          .I_method_c8c9a7d7(0.2F).i_method_65e2aff7(2.5F).II_method_b0f56334(0.1F).Ii_method_4e0e6b54(0.8F);
 
-      this.lifetimeSetting = new SliderSetting(this, "Lifetime / Время жизни (сек)")
+      this.lifetimeSetting = new SliderSetting(this, "Время жизни (сек)")
          .I_method_c8c9a7d7(0.4F).i_method_65e2aff7(3.5F).II_method_b0f56334(0.1F).Ii_method_4e0e6b54(1.2F);
 
-      this.speedSetting = new SliderSetting(this, "Speed / Скорость")
+      this.speedSetting = new SliderSetting(this, "Скорость")
          .I_method_c8c9a7d7(0.2F).i_method_65e2aff7(3.5F).II_method_b0f56334(0.1F).Ii_method_4e0e6b54(1.0F);
 
-      this.physicsGravity = new BooleanSetting(this, "Gravity / Гравитация").select();
+      this.physicsGravity = new BooleanSetting(this, "Гравитация").select();
       this.syncTheme = new BooleanSetting(this, "theme.sync").select();
-      this.customColor = new ColorSetting(this, "Color / Цвет", this.syncTheme::i_method_9b12da03)
+      this.customColor = new ColorSetting(this, "Цвет", this.syncTheme::i_method_9b12da03)
          .I_method_a62f5dd6(new ColorRGBA(0.0F, 220.0F, 255.0F, 240.0F));
    }
 

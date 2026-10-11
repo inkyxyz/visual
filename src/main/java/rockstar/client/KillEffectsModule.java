@@ -444,7 +444,7 @@ public class KillEffectsModule extends Module {
       this.modeSolarFlare = new ModeSetting.Nested1_42765c60(this.modeSetting, "Solar Flare");
       this.modeVoidTentacles = new ModeSetting.Nested1_42765c60(this.modeSetting, "Void Tentacles");
 
-      this.disintegrationSetting = new BooleanSetting(this, "Disintegration / Рассеивание").I_method_decd82b5();
+      this.disintegrationSetting = new BooleanSetting(this, "Рассеивание").I_method_decd82b5();
 
       this.cardDeckSetting = new ModeSetting(this, "Card Deck", () -> !this.isCardMode());
       this.deckUnoCards = new ModeSetting.Nested1_42765c60(this.cardDeckSetting, "Uno Cards");

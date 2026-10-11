@@ -94,36 +94,36 @@ public class WeatherAlertModule extends Module {
 
    @Compile(obfuscation = 4)
    private void initSettings() {
-      this.displayModeSetting = new ModeSetting(this, "Display Mode / Отображение");
-      this.displayBoth = new ModeSetting.Nested1_42765c60(this.displayModeSetting, "Both / Погода + Карта").select();
-      this.displayWeather = new ModeSetting.Nested1_42765c60(this.displayModeSetting, "Weather Only / Только Погода");
-      this.displayAlerts = new ModeSetting.Nested1_42765c60(this.displayModeSetting, "Alert Map Only / Карта тревог");
+      this.displayModeSetting = new ModeSetting(this, "Отображение");
+      this.displayBoth = new ModeSetting.Nested1_42765c60(this.displayModeSetting, "Погода + Карта").select();
+      this.displayWeather = new ModeSetting.Nested1_42765c60(this.displayModeSetting, "Только погода");
+      this.displayAlerts = new ModeSetting.Nested1_42765c60(this.displayModeSetting, "Карта тревог");
 
-      this.regionScopeSetting = new ModeSetting(this, "Alert Scope / Регионы тревог");
-      this.scopeBoth = new ModeSetting.Nested1_42765c60(this.regionScopeSetting, "UA + RF (Все)").select();
-      this.scopeUkraine = new ModeSetting.Nested1_42765c60(this.regionScopeSetting, "Ukraine (Украина)");
-      this.scopeRF = new ModeSetting.Nested1_42765c60(this.regionScopeSetting, "RF (Россия)");
+      this.regionScopeSetting = new ModeSetting(this, "Регионы тревог");
+      this.scopeBoth = new ModeSetting.Nested1_42765c60(this.regionScopeSetting, "Все регионы").select();
+      this.scopeUkraine = new ModeSetting.Nested1_42765c60(this.regionScopeSetting, "Украина");
+      this.scopeRF = new ModeSetting.Nested1_42765c60(this.regionScopeSetting, "Россия");
 
-      this.citySetting = new ModeSetting(this, "City / Город погоды");
-      this.cityKyiv = new ModeSetting.Nested1_42765c60(this.citySetting, "Kyiv / Киев").select();
-      this.cityMoscow = new ModeSetting.Nested1_42765c60(this.citySetting, "Moscow / Москва");
-      this.cityKharkiv = new ModeSetting.Nested1_42765c60(this.citySetting, "Kharkiv / Харьков");
-      this.citySpb = new ModeSetting.Nested1_42765c60(this.citySetting, "Saint Petersburg / СПб");
-      this.cityOdesa = new ModeSetting.Nested1_42765c60(this.citySetting, "Odesa / Одесса");
-      this.cityLviv = new ModeSetting.Nested1_42765c60(this.citySetting, "Lviv / Львов");
+      this.citySetting = new ModeSetting(this, "Город погоды");
+      this.cityKyiv = new ModeSetting.Nested1_42765c60(this.citySetting, "Киев").select();
+      this.cityMoscow = new ModeSetting.Nested1_42765c60(this.citySetting, "Москва");
+      this.cityKharkiv = new ModeSetting.Nested1_42765c60(this.citySetting, "Харьков");
+      this.citySpb = new ModeSetting.Nested1_42765c60(this.citySetting, "СПб");
+      this.cityOdesa = new ModeSetting.Nested1_42765c60(this.citySetting, "Одесса");
+      this.cityLviv = new ModeSetting.Nested1_42765c60(this.citySetting, "Львов");
 
-      this.posXSetting = new SliderSetting(this, "Position X / Позиция X")
+      this.posXSetting = new SliderSetting(this, "Позиция X")
          .I_method_c8c9a7d7(10.0F).i_method_65e2aff7(1200.0F).II_method_b0f56334(5.0F).Ii_method_4e0e6b54(15.0F);
 
-      this.posYSetting = new SliderSetting(this, "Position Y / Позиция Y")
+      this.posYSetting = new SliderSetting(this, "Позиция Y")
          .I_method_c8c9a7d7(10.0F).i_method_65e2aff7(800.0F).II_method_b0f56334(5.0F).Ii_method_4e0e6b54(120.0F);
 
-      this.scaleSetting = new SliderSetting(this, "Scale / Размер")
+      this.scaleSetting = new SliderSetting(this, "Размер")
          .I_method_c8c9a7d7(0.6F).i_method_65e2aff7(1.8F).II_method_b0f56334(0.05F).Ii_method_4e0e6b54(1.0F);
 
-      this.radarScanSetting = new BooleanSetting(this, "Radar Sweep / Радар-сканер").select();
+      this.radarScanSetting = new BooleanSetting(this, "Радар-сканер").select();
       this.syncTheme = new BooleanSetting(this, "theme.sync").select();
-      this.customColor = new ColorSetting(this, "Color / Цвет", this.syncTheme::i_method_9b12da03)
+      this.customColor = new ColorSetting(this, "Цвет", this.syncTheme::i_method_9b12da03)
          .I_method_a62f5dd6(new ColorRGBA(0.0F, 220.0F, 255.0F, 240.0F));
    }
 

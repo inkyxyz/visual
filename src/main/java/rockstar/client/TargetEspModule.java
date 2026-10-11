@@ -236,7 +236,7 @@ public class TargetEspModule extends Module {
       this.modeCardsSequential = new ModeSetting.Nested1_42765c60(this.I_field_bbe33e6c, "Cards Sequential");
       this.modeCardsTriple = new ModeSetting.Nested1_42765c60(this.I_field_bbe33e6c, "Cards Triple");
       this.modeCardsTrio = new ModeSetting.Nested1_42765c60(this.I_field_bbe33e6c, "Cards Trio");
-      this.modeCustomImage = new ModeSetting.Nested1_42765c60(this.I_field_bbe33e6c, "Custom Image / Своя картинка");
+      this.modeCustomImage = new ModeSetting.Nested1_42765c60(this.I_field_bbe33e6c, "Своя картинка");
 
       this.customImagePreset = new ModeSetting(this, "Image Preset", () -> !this.isCustomImageMode());
       this.presetCrosshair = new ModeSetting.Nested1_42765c60(this.customImagePreset, "Crosshair Marker").select();

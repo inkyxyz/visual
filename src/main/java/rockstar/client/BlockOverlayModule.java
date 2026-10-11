@@ -59,24 +59,24 @@ public class BlockOverlayModule extends Module {
 
    @Compile(obfuscation = 4)
    private void initSettings() {
-      this.modeSetting = new ModeSetting(this, "Mode / Режим");
-      this.modeOutline = new ModeSetting.Nested1_42765c60(this.modeSetting, "Outline / Контур");
-      this.modeGradient = new ModeSetting.Nested1_42765c60(this.modeSetting, "Gradient / Градиент");
-      this.modeFullBox = new ModeSetting.Nested1_42765c60(this.modeSetting, "Full Box / Заливка").select();
-      this.modeCorners = new ModeSetting.Nested1_42765c60(this.modeSetting, "Corners / Уголки");
-      this.modeFrostedGlass = new ModeSetting.Nested1_42765c60(this.modeSetting, "Frosted Glass / Стекло");
-      this.modeNeonGrid = new ModeSetting.Nested1_42765c60(this.modeSetting, "Neon Grid / Сетка");
+      this.modeSetting = new ModeSetting(this, "Режим");
+      this.modeOutline = new ModeSetting.Nested1_42765c60(this.modeSetting, "Контур");
+      this.modeGradient = new ModeSetting.Nested1_42765c60(this.modeSetting, "Градиент");
+      this.modeFullBox = new ModeSetting.Nested1_42765c60(this.modeSetting, "Заливка").select();
+      this.modeCorners = new ModeSetting.Nested1_42765c60(this.modeSetting, "Уголки");
+      this.modeFrostedGlass = new ModeSetting.Nested1_42765c60(this.modeSetting, "Стекло");
+      this.modeNeonGrid = new ModeSetting.Nested1_42765c60(this.modeSetting, "Сетка");
 
-      this.fillAlphaSetting = new SliderSetting(this, "Fill Opacity / Прозрачность")
+      this.fillAlphaSetting = new SliderSetting(this, "Прозрачность")
          .I_method_c8c9a7d7(0.0F).i_method_65e2aff7(1.0F).II_method_b0f56334(0.05F).Ii_method_4e0e6b54(0.35F);
 
-      this.outlineAlphaSetting = new SliderSetting(this, "Outline Alpha / Яркость линий")
+      this.outlineAlphaSetting = new SliderSetting(this, "Яркость линий")
          .I_method_c8c9a7d7(0.0F).i_method_65e2aff7(1.0F).II_method_b0f56334(0.05F).Ii_method_4e0e6b54(0.85F);
 
-      this.smoothMorphSetting = new BooleanSetting(this, "Smooth Morph / Плавный переход").select();
-      this.depthTestSetting = new BooleanSetting(this, "Depth Test / Сквозь стены").I_method_decd82b5();
+      this.smoothMorphSetting = new BooleanSetting(this, "Плавный переход").select();
+      this.depthTestSetting = new BooleanSetting(this, "Сквозь стены").I_method_decd82b5();
       this.syncTheme = new BooleanSetting(this, "theme.sync").select();
-      this.customColor = new ColorSetting(this, "Color / Цвет", this.syncTheme::i_method_9b12da03)
+      this.customColor = new ColorSetting(this, "Цвет", this.syncTheme::i_method_9b12da03)
          .I_method_a62f5dd6(new ColorRGBA(0.0F, 220.0F, 255.0F, 240.0F));
    }
 

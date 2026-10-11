@@ -62,8 +62,8 @@ public class ItemChangerModule extends Module {
 
    @Compile(obfuscation = 4)
    private void initSettings() {
-      this.swordEnabled = new BooleanSetting(this, "Custom Sword / Свой Меч").select();
-      this.swordModelSetting = new ModeSetting(this, "Sword Model / Модель меча", () -> !this.swordEnabled.i_method_9b12da03());
+      this.swordEnabled = new BooleanSetting(this, "Свой меч").select();
+      this.swordModelSetting = new ModeSetting(this, "Модель меча", () -> !this.swordEnabled.i_method_9b12da03());
       this.swordCyberKatana = new ModeSetting.Nested1_42765c60(this.swordModelSetting, "Cyber Katana").select();
       this.swordNebulaBlade = new ModeSetting.Nested1_42765c60(this.swordModelSetting, "Nebula Blade");
       this.swordBloodScythe = new ModeSetting.Nested1_42765c60(this.swordModelSetting, "Blood Scythe");
@@ -71,23 +71,23 @@ public class ItemChangerModule extends Module {
       this.swordTexture1 = new ModeSetting.Nested1_42765c60(this.swordModelSetting, "Texture Sword 1");
       this.swordTexture2 = new ModeSetting.Nested1_42765c60(this.swordModelSetting, "Texture Sword 2");
 
-      this.swordScaleSetting = new SliderSetting(this, "Sword Scale / Размер", () -> !this.swordEnabled.i_method_9b12da03())
+      this.swordScaleSetting = new SliderSetting(this, "Размер меча", () -> !this.swordEnabled.i_method_9b12da03())
          .I_method_c8c9a7d7(0.5F).i_method_65e2aff7(2.5F).II_method_b0f56334(0.05F).Ii_method_4e0e6b54(1.0F);
 
-      this.swordGlowSetting = new BooleanSetting(this, "Sword Glow / Свечение", () -> !this.swordEnabled.i_method_9b12da03()).select();
+      this.swordGlowSetting = new BooleanSetting(this, "Свечение меча", () -> !this.swordEnabled.i_method_9b12da03()).select();
 
-      this.totemEnabled = new BooleanSetting(this, "Custom Totem / Свой Тотем").select();
-      this.totemModelSetting = new ModeSetting(this, "Totem Model / Модель тотема", () -> !this.totemEnabled.i_method_9b12da03());
+      this.totemEnabled = new BooleanSetting(this, "Свой тотем").select();
+      this.totemModelSetting = new ModeSetting(this, "Модель тотема", () -> !this.totemEnabled.i_method_9b12da03());
       this.totemAgravityCrest = new ModeSetting.Nested1_42765c60(this.totemModelSetting, "Agravity Crest").select();
       this.totemSeraphAngel = new ModeSetting.Nested1_42765c60(this.totemModelSetting, "Seraph Angel");
       this.totemDemonSkull = new ModeSetting.Nested1_42765c60(this.totemModelSetting, "Demon Skull");
       this.totemCyberCube = new ModeSetting.Nested1_42765c60(this.totemModelSetting, "Cyber Nexus Cube");
       this.totemGoldenRelic = new ModeSetting.Nested1_42765c60(this.totemModelSetting, "Golden Relic");
 
-      this.totemScaleSetting = new SliderSetting(this, "Totem Scale / Размер", () -> !this.totemEnabled.i_method_9b12da03())
+      this.totemScaleSetting = new SliderSetting(this, "Размер тотема", () -> !this.totemEnabled.i_method_9b12da03())
          .I_method_c8c9a7d7(0.5F).i_method_65e2aff7(2.5F).II_method_b0f56334(0.05F).Ii_method_4e0e6b54(1.0F);
 
-      this.totemGlowSetting = new BooleanSetting(this, "Totem Glow / Свечение", () -> !this.totemEnabled.i_method_9b12da03()).select();
+      this.totemGlowSetting = new BooleanSetting(this, "Свечение тотема", () -> !this.totemEnabled.i_method_9b12da03()).select();
    }
 
    public static boolean shouldReplace(ItemStack stack) {
