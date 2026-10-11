@@ -65,8 +65,11 @@ public class NotesScreen extends ii_Class4 {
             String cordStr = String.format("X: %d, Y: %d, Z: %d | %s", pos.getX(), pos.getY(), pos.getZ(), dim);
             this.editCords = cordStr;
 
-            String snippet = "\n[📍 " + cordStr + "]";
+            String snippet = (this.editContent.isEmpty() ? "" : "\n") + "[📍 " + cordStr + "]";
             this.editContent += snippet;
+            if (mc.keyboard != null) {
+                mc.keyboard.setClipboard(cordStr);
+            }
             saveCurrentNote();
         }
     }
@@ -411,6 +414,36 @@ public class NotesScreen extends ii_Class4 {
 
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        boolean isCtrlDown = Screen.hasControlDown() || (modifiers & GLFW.GLFW_MOD_CONTROL) != 0;
+        if (isCtrlDown) {
+            if (keyCode == GLFW.GLFW_KEY_V) {
+                MinecraftClient mc = MinecraftClient.getInstance();
+                if (mc != null && mc.keyboard != null) {
+                    String clip = mc.keyboard.getClipboard();
+                    if (clip != null && !clip.isEmpty()) {
+                        if (this.editingTitle) {
+                            this.editTitle += clip.replace("\r", "").replace("\n", "");
+                        } else if (this.editingContent) {
+                            this.editContent += clip.replace("\r", "");
+                        }
+                        saveCurrentNote();
+                        return true;
+                    }
+                }
+            } else if (keyCode == GLFW.GLFW_KEY_C) {
+                MinecraftClient mc = MinecraftClient.getInstance();
+                if (mc != null && mc.keyboard != null) {
+                    if (this.editingTitle && !this.editTitle.isEmpty()) {
+                        mc.keyboard.setClipboard(this.editTitle);
+                        return true;
+                    } else if (this.editingContent && !this.editContent.isEmpty()) {
+                        mc.keyboard.setClipboard(this.editContent);
+                        return true;
+                    }
+                }
+            }
+        }
+
         if (this.editingTitle) {
             if (keyCode == GLFW.GLFW_KEY_BACKSPACE && !this.editTitle.isEmpty()) {
                 this.editTitle = this.editTitle.substring(0, this.editTitle.length() - 1);

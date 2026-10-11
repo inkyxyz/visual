@@ -20,6 +20,7 @@ public class EscapeMenuConfig {
     public boolean showVolume = true;
     public boolean showCalculator = true;
     public boolean showWeatherAlerts = true;
+    public boolean showRamUsage = true;
     public boolean showAIChat = true;
     public boolean showNotes = true;
     public boolean showGames = true;
@@ -56,6 +57,7 @@ public class EscapeMenuConfig {
                     this.showVolume = loaded.showVolume;
                     this.showCalculator = loaded.showCalculator;
                     this.showWeatherAlerts = loaded.showWeatherAlerts;
+                    this.showRamUsage = loaded.showRamUsage;
                     this.showAIChat = loaded.showAIChat;
                     this.showNotes = loaded.showNotes;
                     this.showGames = loaded.showGames;

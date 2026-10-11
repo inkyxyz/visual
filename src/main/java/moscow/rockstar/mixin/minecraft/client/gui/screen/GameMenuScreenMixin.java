@@ -75,13 +75,22 @@ implements iIIiIIiIi_Class294 {
     // Volume Drag State
     @Unique private static boolean rockstar$isDraggingVolume = false;
 
-    // Per-tile hover float animations
-    @Unique private static final float[] rockstar$tileHoverAnim = new float[8];
+    // Per-tile hover float animations (0: Media, 1: Weather, 2: Radar, 3: Vol, 4: Cam, 5: Fs, 6: Calc, 7: Notes, 8: RAM)
+    @Unique private static final float[] rockstar$tileHoverAnim = new float[12];
     @Unique private static final float[] rockstar$dockBtnHover = new float[4];
     @Unique private static final float[] rockstar$actionBtnHover = new float[4];
 
     // Smooth Entrance Fly-in animation
     @Unique private static float rockstar$flyInAnim = 0.0F;
+
+    // RAM Widget State & Usage History
+    @Unique private static final float[] rockstar$ramHistory = new float[22];
+    @Unique private static long rockstar$lastRamSample = 0L;
+    @Unique private static long rockstar$ramGcFeedbackTimer = 0L;
+
+    // Time & Date formatters for Control Center Status Bar
+    @Unique private static final java.time.format.DateTimeFormatter rockstar$TIME_FMT = java.time.format.DateTimeFormatter.ofPattern("HH:mm");
+    @Unique private static final java.time.format.DateTimeFormatter rockstar$DATE_FMT = java.time.format.DateTimeFormatter.ofPattern("EEEE, d MMMM", new java.util.Locale("ru", "RU"));
 
     // Embedded Notes State
     @Unique private static int rockstar$notesActiveIdx = 0;
@@ -161,46 +170,106 @@ implements iIIiIIiIi_Class294 {
         EscapeMenuConfig cfg = EscapeMenuConfig.getInstance();
 
         // ==========================================
-        // 1. TOP ROW: 3 SEPARATE MODULAR IOS WIDGETS
-        // Media (120x74) | Weather (120x74) | Drone Threat Radar (120x74)
+        // 1. TOP ROW: 4 SEPARATE MODULAR IOS WIDGETS
+        // Media (120x74) | Weather (120x74) | Drone Radar (120x74) | Free RAM (120x74)
         // ==========================================
         float topW = 120.0F;
         float topH = 74.0F;
         float topGap = 8.0F;
-        float topStartX = cx - (topW * 3.0F + topGap * 2.0F) / 2.0F;
+
+        int topCardCount = 0;
+        if (cfg.showMediaPlayer) topCardCount++;
+        if (cfg.showWeatherAlerts) topCardCount += 2;
+        if (cfg.showRamUsage) topCardCount++;
+        topCardCount = Math.max(1, topCardCount);
+        float topTotalW = topCardCount * topW + (topCardCount - 1) * topGap;
+        float topStartX = cx - topTotalW / 2.0F;
         float topY = cy - 138.0F;
 
         // Fly-in offset for Top Row
         float topFlyY = (1.0F - rockstar$flyInAnim) * 26.0F;
 
+        // ==========================================
+        // 0. IOS STATUS BAR: TIME, DATE, FPS & NETWORK LATENCY
+        // ==========================================
+        float statusBarY = topY - 24.0F + topFlyY;
+        try {
+            java.time.LocalDateTime nowLdt = java.time.LocalDateTime.now();
+            String timeStr = nowLdt.format(rockstar$TIME_FMT);
+            String dateStr = nowLdt.format(rockstar$DATE_FMT);
+            if (!dateStr.isEmpty()) {
+                dateStr = Character.toUpperCase(dateStr.charAt(0)) + dateStr.substring(1);
+            }
+
+            if (boldFont != null) {
+                custom.drawText(boldFont, timeStr, topStartX + 4.0F, statusBarY + 3.0F, ColorRGBA.WHITE);
+            }
+            if (subFont != null) {
+                float tw = boldFont != null ? boldFont.I_method_2c375926(timeStr) : 34.0F;
+                custom.drawText(subFont, "• " + dateStr, topStartX + tw + 10.0F, statusBarY + 5.5F, new ColorRGBA(210.0F, 225.0F, 245.0F, 200.0F));
+            }
+
+            MinecraftClient mc = MinecraftClient.getInstance();
+            int fps = mc.getCurrentFps();
+            int ping = 0;
+            if (mc.player != null && mc.getNetworkHandler() != null) {
+                var entry = mc.getNetworkHandler().getPlayerListEntry(mc.player.getUuid());
+                if (entry != null) ping = entry.getLatency();
+            }
+            String statusBadge = fps + " FPS" + (ping > 0 ? " • " + ping + " ms" : "") + " • Agravity";
+            if (tinyFont != null) {
+                float badgeW = tinyFont.I_method_2c375926(statusBadge) + 16.0F;
+                float badgeX = topStartX + topTotalW - badgeW - 2.0F;
+                custom.drawRoundedRect(badgeX, statusBarY + 2.0F, badgeW, 16.0F, IIiii_Class8.I_method_893b2757(8.0F), new ColorRGBA(255.0F, 255.0F, 255.0F, 12.0F));
+                custom.drawRoundedBorder(badgeX, statusBarY + 2.0F, badgeW, 16.0F, 0.5F, IIiii_Class8.I_method_893b2757(8.0F), new ColorRGBA(255.0F, 255.0F, 255.0F, 16.0F));
+                custom.drawText(tinyFont, statusBadge, badgeX + 8.0F, statusBarY + 5.5F, new ColorRGBA(210.0F, 225.0F, 245.0F, 210.0F));
+            }
+        } catch (Throwable ignored) {}
+
+        float curTopX = topStartX;
+
         // 0: Media Card
         if (cfg.showMediaPlayer) {
-            float mX = topStartX;
+            float mX = curTopX;
             float mY = topY + topFlyY;
             boolean mHov = (mouseX >= mX && mouseX <= mX + topW && mouseY >= mY && mouseY <= mY + topH);
             rockstar$tileHoverAnim[0] += ((mHov ? 1.0F : 0.0F) - rockstar$tileHoverAnim[0]) * 0.20F;
             float dY = mY - rockstar$tileHoverAnim[0] * 3.0F;
             rockstar$renderMediaCard(custom, mX, dY, topW, topH, font, subFont, tinyFont, mouseX, mouseY, rockstar$tileHoverAnim[0], snap, tracker);
+            curTopX += topW + topGap;
         }
 
         // 1: Separate iOS Weather Widget Card
         if (cfg.showWeatherAlerts) {
-            float wX = topStartX + topW + topGap;
+            float wX = curTopX;
             float wY = topY + topFlyY;
             boolean wHov = (mouseX >= wX && mouseX <= wX + topW && mouseY >= wY && mouseY <= wY + topH);
             rockstar$tileHoverAnim[1] += ((wHov ? 1.0F : 0.0F) - rockstar$tileHoverAnim[1]) * 0.20F;
             float dY = wY - rockstar$tileHoverAnim[1] * 3.0F;
             rockstar$renderWeatherCard(custom, wX, dY, topW, topH, boldFont, font, subFont, tinyFont, mouseX, mouseY, rockstar$tileHoverAnim[1], cfg);
+            curTopX += topW + topGap;
         }
 
         // 2: Separate iOS Drone Threat Radar Card
         if (cfg.showWeatherAlerts) {
-            float rX = topStartX + (topW + topGap) * 2.0F;
+            float rX = curTopX;
             float rY = topY + topFlyY;
             boolean rHov = (mouseX >= rX && mouseX <= rX + topW && mouseY >= rY && mouseY <= rY + topH);
             rockstar$tileHoverAnim[2] += ((rHov ? 1.0F : 0.0F) - rockstar$tileHoverAnim[2]) * 0.20F;
             float dY = rY - rockstar$tileHoverAnim[2] * 3.0F;
             rockstar$renderDroneRadarCard(custom, rX, dY, topW, topH, boldFont, font, subFont, tinyFont, mouseX, mouseY, rockstar$tileHoverAnim[2], cfg, now);
+            curTopX += topW + topGap;
+        }
+
+        // 3: Separate iOS Free RAM Card with real-time usage graph
+        if (cfg.showRamUsage) {
+            float ramX = curTopX;
+            float ramY = topY + topFlyY;
+            boolean ramHov = (mouseX >= ramX && mouseX <= ramX + topW && mouseY >= ramY && mouseY <= ramY + topH);
+            rockstar$tileHoverAnim[8] += ((ramHov ? 1.0F : 0.0F) - rockstar$tileHoverAnim[8]) * 0.20F;
+            float dY = ramY - rockstar$tileHoverAnim[8] * 3.0F;
+            rockstar$renderRamCard(custom, ramX, dY, topW, topH, boldFont, font, subFont, tinyFont, mouseX, mouseY, rockstar$tileHoverAnim[8], now);
+            curTopX += topW + topGap;
         }
 
         // ==========================================
@@ -565,6 +634,100 @@ implements iIIiIIiIi_Class294 {
         }
     }
 
+    // Module 2.5: Separate iOS Free RAM Card with Real-time Usage History Graph
+    @Unique
+    private void rockstar$renderRamCard(III custom, float x, float y, float w, float h, IIiIIi_Class10 boldFont, IIiIIi_Class10 font, IIiIIi_Class10 subFont, IIiIIi_Class10 tinyFont, int mx, int my, float hoverA, long now) {
+        IIiii_Class8 rad = IIiii_Class8.I_method_893b2757(12.0F);
+        ColorRGBA theme = IiiiiIIIi_Class242.I_method_7df8e08e();
+        custom.drawShadow(x, y, w, h, 12.0F, rad, new ColorRGBA(0.0F, 0.0F, 0.0F, 40.0F));
+        custom.drawBlurredRect(x, y, w, h, 14.0F, 3.0F, rad, new ColorRGBA(theme.getRed(), theme.getGreen(), theme.getBlue(), 12.0F));
+        custom.drawRoundedRect(x, y, w, h, rad, new ColorRGBA(18.0F, 22.0F, 32.0F, 110.0F));
+        custom.drawRoundedBorder(x, y, w, h, 0.5F, rad, hoverA > 0.01F ? theme.withAlpha(90.0F * hoverA) : new ColorRGBA(255.0F, 255.0F, 255.0F, 15.0F));
+
+        Runtime rt = Runtime.getRuntime();
+        long maxMem = rt.maxMemory();
+        long totalMem = rt.totalMemory();
+        long freeMem = rt.freeMemory();
+        long usedMem = totalMem - freeMem;
+        long availableMem = maxMem - usedMem;
+        double freeGB = (double)availableMem / 1073741824.0;
+        double maxGB = (double)maxMem / 1073741824.0;
+        float usageRatio = (float)usedMem / (float)maxMem;
+        int freePct = (int)MathHelper.clamp((availableMem * 100.0) / maxMem, 0.0, 100.0);
+
+        // Sample rolling RAM history every 350ms
+        if (now - rockstar$lastRamSample > 350L) {
+            rockstar$lastRamSample = now;
+            System.arraycopy(rockstar$ramHistory, 1, rockstar$ramHistory, 0, rockstar$ramHistory.length - 1);
+            rockstar$ramHistory[rockstar$ramHistory.length - 1] = MathHelper.clamp(usageRatio, 0.05F, 0.98F);
+        }
+
+        // Top line: Header "Свободно RAM" & Percentage chip / GC feedback
+        if (subFont != null) {
+            custom.drawText(subFont, "Свободно RAM", x + 10.0F, y + 8.5F, new ColorRGBA(210.0F, 225.0F, 250.0F, 220.0F));
+        }
+
+        boolean isGcFired = (now < rockstar$ramGcFeedbackTimer);
+        if (isGcFired) {
+            float badgeW = 54.0F;
+            float badgeH = 14.0F;
+            custom.drawRoundedRect(x + w - badgeW - 8.0F, y + 7.0F, badgeW, badgeH, IIiii_Class8.I_method_893b2757(4.0F), new ColorRGBA(16.0F, 185.0F, 129.0F, 180.0F));
+            if (tinyFont != null) {
+                custom.drawText(tinyFont, "✓ Очищено", x + w - badgeW - 4.0F, y + 10.0F, ColorRGBA.WHITE);
+            }
+        } else {
+            // Free % badge
+            float badgeW = 32.0F;
+            float badgeH = 14.0F;
+            ColorRGBA badgeCol = freePct > 35 ? new ColorRGBA(16.0F, 185.0F, 129.0F, 140.0F) : new ColorRGBA(245.0F, 158.0F, 11.0F, 140.0F);
+            custom.drawRoundedRect(x + w - badgeW - 8.0F, y + 7.0F, badgeW, badgeH, IIiii_Class8.I_method_893b2757(4.0F), badgeCol);
+            if (tinyFont != null) {
+                String pctStr = freePct + "%";
+                float tw = tinyFont.I_method_2c375926(pctStr);
+                custom.drawText(tinyFont, pctStr, x + w - 8.0F - badgeW + (badgeW - tw) / 2.0F, y + 10.0F, ColorRGBA.WHITE);
+            }
+        }
+
+        // Center line: e.g. "3.2 / 6.0 GB"
+        if (font != null) {
+            String gbStr = String.format(java.util.Locale.US, "%.1f / %.1f GB", freeGB, maxGB);
+            custom.drawText(font, gbStr, x + 10.0F, y + 26.0F, ColorRGBA.WHITE);
+        }
+
+        // Bottom section: Real-time Area / Bar Graph
+        float graphX = x + 10.0F;
+        float graphY = y + 42.0F;
+        float graphW = w - 20.0F;
+        float graphH = 22.0F;
+
+        // Baseline bar background
+        custom.drawRoundedRect(graphX, graphY, graphW, graphH, IIiii_Class8.I_method_893b2757(4.0F), new ColorRGBA(255.0F, 255.0F, 255.0F, 8.0F));
+
+        int bars = rockstar$ramHistory.length;
+        float barGap = 1.5F;
+        float barW = (graphW - (bars - 1) * barGap) / bars;
+
+        for (int i = 0; i < bars; i++) {
+            float val = rockstar$ramHistory[i];
+            if (val <= 0.01F) val = usageRatio;
+            float bH = Math.max(2.0F, val * (graphH - 2.0F));
+            float bx = graphX + i * (barW + barGap);
+            float by = graphY + graphH - bH - 1.0F;
+
+            // Gradient tint based on memory pressure
+            ColorRGBA bCol;
+            if (val > 0.85F) {
+                bCol = new ColorRGBA(244.0F, 63.0F, 94.0F, 180.0F); // Rose red
+            } else if (val > 0.70F) {
+                bCol = new ColorRGBA(245.0F, 158.0F, 11.0F, 180.0F); // Amber
+            } else {
+                bCol = theme.withAlpha(160.0F + 50.0F * ((float)i / bars)); // Theme
+            }
+
+            custom.drawRoundedRect(bx, by, barW, bH, IIiii_Class8.I_method_893b2757(1.0F), bCol);
+        }
+    }
+
     // Module 3: Camera Tile
     @Unique
     private void rockstar$renderCameraTile(III custom, float x, float y, float w, float h, int mx, int my, float hoverA) {
@@ -808,43 +971,33 @@ implements iIIiIIiIi_Class294 {
 
         custom.drawShadow(drawerX, drawerY, drawerW, drawerH, 18.0F, rad, new ColorRGBA(0.0F, 0.0F, 0.0F, 55.0F));
         custom.drawBlurredRect(drawerX, drawerY, drawerW, drawerH, 20.0F, 3.5F, rad, new ColorRGBA(theme.getRed(), theme.getGreen(), theme.getBlue(), 12.0F));
-        custom.drawRoundedRect(drawerX, drawerY, drawerW, drawerH, rad, new ColorRGBA(16.0F, 20.0F, 30.0F, 115.0F));
+        custom.drawRoundedRect(drawerX, drawerY, drawerW, drawerH, rad, new ColorRGBA(16.0F, 20.0F, 30.0F, 125.0F));
         custom.drawRoundedBorder(drawerX, drawerY, drawerW, drawerH, 0.5F, rad, new ColorRGBA(255.0F, 255.0F, 255.0F, 16.0F));
 
-        // Header: ✦ Agravity AI (with Siri gradient icon)
-        float hY = drawerY + 10.0F;
-        custom.drawTexture(RockstarClient.id("icons/ai.png"), drawerX + 12.0F, hY + 1.0F, 18.0F, 18.0F, ColorRGBA.WHITE);
-        if (font != null) {
-            custom.drawText(font, "Agravity AI", drawerX + 34.0F, hY + 4.5F, ColorRGBA.WHITE);
-        }
-
-        // Close button (xmark icon!)
-        float closeSz = 22.0F;
-        float closeX = drawerX + drawerW - closeSz - 10.0F;
-        float closeY = hY - 1.0F;
-        boolean closeHov = (mx >= closeX && mx <= closeX + closeSz && my >= closeY && my <= closeY + closeSz);
-        IIiii_Class8 cRad = IIiii_Class8.I_method_893b2757(closeSz / 2.0F);
-        custom.drawRoundedRect(closeX, closeY, closeSz, closeSz, cRad, closeHov ? new ColorRGBA(239.0F, 68.0F, 68.0F, 180.0F) : new ColorRGBA(255.0F, 255.0F, 255.0F, 16.0F));
-        custom.drawIcon("xmark", closeX + (closeSz - 10.0F) / 2.0F, closeY + (closeSz - 10.0F) / 2.0F, 10.0F, ColorRGBA.WHITE);
-
-        // Clear chat button (trash icon!)
-        float clrX = closeX - closeSz - 6.0F;
-        boolean clrHov = (mx >= clrX && mx <= clrX + closeSz && my >= closeY && my <= closeY + closeSz);
-        custom.drawRoundedRect(clrX, closeY, closeSz, closeSz, cRad, clrHov ? new ColorRGBA(255.0F, 255.0F, 255.0F, 35.0F) : new ColorRGBA(255.0F, 255.0F, 255.0F, 16.0F));
-        custom.drawIcon("trash", clrX + (closeSz - 10.0F) / 2.0F, closeY + (closeSz - 10.0F) / 2.0F, 10.0F, ColorRGBA.WHITE);
-
-        // Header divider
-        float divY = drawerY + 34.0F;
-        custom.drawRect(drawerX + 10.0F, divY, drawerW - 20.0F, 1.0F, new ColorRGBA(255.0F, 255.0F, 255.0F, 12.0F));
-
-        // Scrollable Chat Message Bubbles
+        // Scrollable Chat Viewport Dimensions
         float chatX = drawerX + 10.0F;
-        float chatY = divY + 6.0F;
+        float chatY = drawerY + 38.0F;
         float chatW = drawerW - 20.0F;
-        float chatH = drawerH - 78.0F;
+        float chatH = drawerH - 76.0F;
 
+        // Calculate total content height to properly clamp scroll
         List<AIAssistantService.ChatMessage> history = AIAssistantService.getHistory();
+        float totalContentH = 8.0F;
+        for (AIAssistantService.ChatMessage msg : history) {
+            String fText = rockstar$formatAiText(msg.text());
+            List<String> lines = rockstar$wrapLines(fText, chatW * 0.82F - 18.0F, subFont);
+            float bH = Math.max(20.0F, lines.size() * 11.5F + 9.0F);
+            totalContentH += bH + 5.0F;
+        }
+        if (rockstar$aiThinking) totalContentH += 24.0F;
+
+        float maxScroll = Math.max(0.0F, totalContentH - chatH);
+        rockstar$aiScroll = MathHelper.clamp(rockstar$aiScroll, 0.0F, maxScroll);
+
         float curY = chatY + 4.0F - rockstar$aiScroll;
+
+        // SCISSOR CLIPPING: Completely prevents chat bubbles from rendering outside the chat viewport
+        custom.enableScissor((int)chatX, (int)chatY, (int)(chatX + chatW), (int)(chatY + chatH));
 
         if (history.isEmpty()) {
             if (tinyFont != null) {
@@ -858,10 +1011,10 @@ implements iIIiIIiIi_Class294 {
                 boolean isUser = msg.isUser();
                 float maxBubbleW = chatW * 0.82F;
 
-                List<String> lines = rockstar$wrapLines(msg.text(), maxBubbleW - 18.0F, subFont);
+                String fText = rockstar$formatAiText(msg.text());
+                List<String> lines = rockstar$wrapLines(fText, maxBubbleW - 18.0F, subFont);
                 float bH = Math.max(20.0F, lines.size() * 11.5F + 9.0F);
 
-                // Hug text width accurately across all lines
                 float maxLineW = 0.0F;
                 if (subFont != null) {
                     for (String l : lines) {
@@ -874,13 +1027,11 @@ implements iIIiIIiIi_Class294 {
                 float bW = Math.min(maxBubbleW, Math.max(28.0F, maxLineW + 18.0F));
                 float bX = isUser ? (chatX + chatW - bW) : chatX;
 
-                if (curY + bH >= chatY && curY <= chatY + chatH) {
+                if (curY + bH >= chatY - 10.0F && curY <= chatY + chatH + 10.0F) {
                     IIiii_Class8 bubbleRad = IIiii_Class8.I_method_893b2757(9.0F);
                     if (isUser) {
-                        // User message: sleek theme accent bubble (Apple iMessage style)
                         custom.drawRoundedRect(bX, curY, bW, bH, bubbleRad, theme.withAlpha(200.0F));
                     } else {
-                        // Assistant message: translucent frosted glass bubble with ultra-subtle highlight
                         custom.drawBlurredRect(bX, curY, bW, bH, 10.0F, 2.0F, bubbleRad, new ColorRGBA(255.0F, 255.0F, 255.0F, 8.0F));
                         custom.drawRoundedRect(bX, curY, bW, bH, bubbleRad, new ColorRGBA(255.0F, 255.0F, 255.0F, 18.0F));
                         custom.drawRoundedBorder(bX, curY, bW, bH, 0.5F, bubbleRad, new ColorRGBA(255.0F, 255.0F, 255.0F, 12.0F));
@@ -900,7 +1051,7 @@ implements iIIiIIiIi_Class294 {
             if (rockstar$aiThinking) {
                 float thinkW = 90.0F;
                 float thinkH = 18.0F;
-                if (curY + thinkH >= chatY && curY <= chatY + chatH) {
+                if (curY + thinkH >= chatY - 10.0F && curY <= chatY + chatH + 10.0F) {
                     custom.drawRoundedRect(chatX, curY, thinkW, thinkH, IIiii_Class8.I_method_893b2757(6.0F), new ColorRGBA(255.0F, 255.0F, 255.0F, 18.0F));
                     if (tinyFont != null) {
                         String dots = "...".substring(0, (int)(System.currentTimeMillis() / 350L % 4L));
@@ -910,8 +1061,41 @@ implements iIIiIIiIi_Class294 {
             }
         }
 
-        // Bottom Input Bar (iOS pill style, translucent!)
-        float inY = drawerY + drawerH - 34.0F;
+        custom.disableScissor();
+
+        // Render Header ON TOP so messages never overlap title or buttons
+        float hY = drawerY + 10.0F;
+        custom.drawRoundedRect(drawerX, drawerY, drawerW, 36.0F, new IIiii_Class8(14.0F, 14.0F, 0.0F, 0.0F), new ColorRGBA(16.0F, 20.0F, 30.0F, 230.0F));
+        custom.drawTexture(RockstarClient.id("icons/ai.png"), drawerX + 12.0F, hY + 1.0F, 18.0F, 18.0F, ColorRGBA.WHITE);
+        if (font != null) {
+            custom.drawText(font, "Agravity AI", drawerX + 34.0F, hY + 4.5F, ColorRGBA.WHITE);
+        }
+
+        // Close button (xmark icon)
+        float closeSz = 22.0F;
+        float closeX = drawerX + drawerW - closeSz - 10.0F;
+        float closeY = hY - 1.0F;
+        boolean closeHov = (mx >= closeX && mx <= closeX + closeSz && my >= closeY && my <= closeY + closeSz);
+        IIiii_Class8 cRad = IIiii_Class8.I_method_893b2757(closeSz / 2.0F);
+        custom.drawRoundedRect(closeX, closeY, closeSz, closeSz, cRad, closeHov ? new ColorRGBA(239.0F, 68.0F, 68.0F, 180.0F) : new ColorRGBA(255.0F, 255.0F, 255.0F, 16.0F));
+        custom.drawIcon("xmark", closeX + (closeSz - 10.0F) / 2.0F, closeY + (closeSz - 10.0F) / 2.0F, 10.0F, ColorRGBA.WHITE);
+
+        // Clear chat button (trash icon)
+        float clrX = closeX - closeSz - 6.0F;
+        boolean clrHov = (mx >= clrX && mx <= clrX + closeSz && my >= closeY && my <= closeY + closeSz);
+        custom.drawRoundedRect(clrX, closeY, closeSz, closeSz, cRad, clrHov ? new ColorRGBA(255.0F, 255.0F, 255.0F, 35.0F) : new ColorRGBA(255.0F, 255.0F, 255.0F, 16.0F));
+        custom.drawIcon("trash", clrX + (closeSz - 10.0F) / 2.0F, closeY + (closeSz - 10.0F) / 2.0F, 10.0F, ColorRGBA.WHITE);
+
+        // Header divider
+        float divY = drawerY + 35.0F;
+        custom.drawRect(drawerX + 10.0F, divY, drawerW - 20.0F, 1.0F, new ColorRGBA(255.0F, 255.0F, 255.0F, 14.0F));
+
+        // Bottom Input Bar Container ON TOP
+        float inBarAreaY = drawerY + drawerH - 38.0F;
+        custom.drawRoundedRect(drawerX, inBarAreaY, drawerW, 38.0F, new IIiii_Class8(0.0F, 0.0F, 14.0F, 14.0F), new ColorRGBA(16.0F, 20.0F, 30.0F, 230.0F));
+        custom.drawRect(drawerX + 10.0F, inBarAreaY, drawerW - 20.0F, 1.0F, new ColorRGBA(255.0F, 255.0F, 255.0F, 14.0F));
+
+        float inY = drawerY + drawerH - 32.0F;
         float inH = 26.0F;
         float sendW = 54.0F;
         float inW = drawerW - 20.0F - sendW - 6.0F;
@@ -937,6 +1121,29 @@ implements iIIiIIiIi_Class294 {
             float sendTxtW = tinyFont.I_method_2c375926("Отправить");
             custom.drawText(tinyFont, "Отправить", sendX + (sendW - sendTxtW) / 2.0F, inY + 8.0F, ColorRGBA.WHITE);
         }
+    }
+
+    @Unique
+    private static String rockstar$formatAiText(String text) {
+        if (text == null) return "";
+        String cleaned = text.replace("**", "").replace("__", "");
+        String[] lines = cleaned.split("\n");
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < lines.length; i++) {
+            String l = lines[i];
+            if (l.trim().startsWith("* ") || l.trim().startsWith("- ")) {
+                l = "• " + l.trim().substring(2);
+            } else if (l.trim().startsWith("### ")) {
+                l = l.trim().substring(4);
+            } else if (l.trim().startsWith("## ")) {
+                l = l.trim().substring(3);
+            } else if (l.trim().startsWith("# ")) {
+                l = l.trim().substring(2);
+            }
+            sb.append(l);
+            if (i < lines.length - 1) sb.append("\n");
+        }
+        return sb.toString();
     }
 
     @Unique
@@ -1018,12 +1225,20 @@ implements iIIiIIiIi_Class294 {
         float topW = 120.0F;
         float topH = 74.0F;
         float topGap = 8.0F;
-        float topStartX = cx - (topW * 3.0F + topGap * 2.0F) / 2.0F;
+        int topCardCount = 0;
+        if (cfg.showMediaPlayer) topCardCount++;
+        if (cfg.showWeatherAlerts) topCardCount += 2;
+        if (cfg.showRamUsage) topCardCount++;
+        topCardCount = Math.max(1, topCardCount);
+        float topTotalW = topCardCount * topW + (topCardCount - 1) * topGap;
+        float topStartX = cx - topTotalW / 2.0F;
         float topY = cy - 138.0F;
+        float curTopX = topStartX;
 
         // Media Player Click
         if (cfg.showMediaPlayer) {
-            float mX = topStartX;
+            float mX = curTopX;
+            curTopX += topW + topGap;
             if (mouseX >= mX && mouseX <= mX + topW && mouseY >= topY && mouseY <= topY + topH) {
                 iiIiIIIiI_Class419 tracker = RockstarClient.getInstance().I_method_be969482();
                 float ctrlY = topY + 54.0F;
@@ -1055,7 +1270,8 @@ implements iIIiIIiIi_Class294 {
 
         // Weather Card Click (Cycles City!)
         if (cfg.showWeatherAlerts) {
-            float wX = topStartX + topW + topGap;
+            float wX = curTopX;
+            curTopX += topW + topGap;
             if (mouseX >= wX && mouseX <= wX + topW && mouseY >= topY && mouseY <= topY + topH) {
                 String curCity = (cfg.weatherCity != null) ? cfg.weatherCity : "Киев";
                 int nextIdx = 0;
@@ -1079,12 +1295,25 @@ implements iIIiIIiIi_Class294 {
 
         // Drone Radar Card Click (Cycles Scope!)
         if (cfg.showWeatherAlerts) {
-            float rX = topStartX + (topW + topGap) * 2.0F;
+            float rX = curTopX;
+            curTopX += topW + topGap;
             if (mouseX >= rX && mouseX <= rX + topW && mouseY >= topY && mouseY <= topY + topH) {
                 if ("Все".equals(cfg.alertScope)) cfg.alertScope = "Украина";
                 else if ("Украина".equals(cfg.alertScope)) cfg.alertScope = "Россия";
                 else cfg.alertScope = "Все";
                 cfg.save();
+                UISoundManager.playButtonClick();
+                return true;
+            }
+        }
+
+        // Free RAM Card Click (Triggers Garbage Collection!)
+        if (cfg.showRamUsage) {
+            float ramX = curTopX;
+            curTopX += topW + topGap;
+            if (mouseX >= ramX && mouseX <= ramX + topW && mouseY >= topY && mouseY <= topY + topH) {
+                System.gc();
+                rockstar$ramGcFeedbackTimer = System.currentTimeMillis() + 1500L;
                 UISoundManager.playButtonClick();
                 return true;
             }
@@ -1292,6 +1521,9 @@ implements iIIiIIiIi_Class294 {
                 n.content += (n.content.isEmpty() ? "" : "\n") + "[📍 " + cordStr + "]";
                 NotesManager.updateNote(n.id, n.title, n.content, n.cords);
             }
+            if (mc.keyboard != null) {
+                mc.keyboard.setClipboard(cordStr);
+            }
         }
     }
 
@@ -1479,7 +1711,28 @@ implements iIIiIIiIi_Class294 {
 
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        boolean isCtrlDown = Screen.hasControlDown() || (modifiers & GLFW.GLFW_MOD_CONTROL) != 0;
+
         if (rockstar$aiDrawerOpen && rockstar$aiDrawerAnim > 0.5F) {
+            if (isCtrlDown) {
+                if (keyCode == GLFW.GLFW_KEY_V) {
+                    MinecraftClient mc = MinecraftClient.getInstance();
+                    if (mc != null && mc.keyboard != null) {
+                        String clip = mc.keyboard.getClipboard();
+                        if (clip != null && !clip.isEmpty()) {
+                            rockstar$aiInput += clip.replace("\r", "").replace("\n", " ");
+                            return true;
+                        }
+                    }
+                } else if (keyCode == GLFW.GLFW_KEY_C) {
+                    MinecraftClient mc = MinecraftClient.getInstance();
+                    if (mc != null && mc.keyboard != null && !rockstar$aiInput.isEmpty()) {
+                        mc.keyboard.setClipboard(rockstar$aiInput);
+                        return true;
+                    }
+                }
+            }
+
             if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
                 rockstar$aiDrawerOpen = false;
                 return true;
@@ -1497,6 +1750,36 @@ implements iIIiIIiIi_Class294 {
         }
 
         if (rockstar$notesEditing) {
+            if (isCtrlDown) {
+                if (keyCode == GLFW.GLFW_KEY_V) {
+                    MinecraftClient mc = MinecraftClient.getInstance();
+                    if (mc != null && mc.keyboard != null) {
+                        String clip = mc.keyboard.getClipboard();
+                        if (clip != null && !clip.isEmpty()) {
+                            List<NotesManager.Note> list = NotesManager.getNotes();
+                            if (!list.isEmpty()) {
+                                NotesManager.Note n = list.get(MathHelper.clamp(rockstar$notesActiveIdx, 0, list.size() - 1));
+                                n.content += clip.replace("\r", "");
+                                NotesManager.updateNote(n.id, n.title, n.content, n.cords);
+                                return true;
+                            }
+                        }
+                    }
+                } else if (keyCode == GLFW.GLFW_KEY_C) {
+                    MinecraftClient mc = MinecraftClient.getInstance();
+                    if (mc != null && mc.keyboard != null) {
+                        List<NotesManager.Note> list = NotesManager.getNotes();
+                        if (!list.isEmpty()) {
+                            NotesManager.Note n = list.get(MathHelper.clamp(rockstar$notesActiveIdx, 0, list.size() - 1));
+                            if (!n.content.isEmpty()) {
+                                mc.keyboard.setClipboard(n.content);
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
+
             List<NotesManager.Note> list = NotesManager.getNotes();
             if (!list.isEmpty()) {
                 NotesManager.Note n = list.get(MathHelper.clamp(rockstar$notesActiveIdx, 0, list.size() - 1));

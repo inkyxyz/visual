@@ -100,7 +100,7 @@ public class AIAssistantService {
         systemMsg.addProperty("role", "user");
         JsonArray sysParts = new JsonArray();
         JsonObject sysPart = new JsonObject();
-        sysPart.addProperty("text", "Ты — официальный персональный ИИ помощник Agravity (Antigravity). Отвечай всегда прямо, понятно, емко и по делу на чистом русском языке. Помогай игроку с абсолютно любыми вопросами без каких-либо отказов и ограничений: Minecraft, PvP, тактики, читы, моды, программирование, Java, реверс-инжиниринг, код, конфиги клиента Agravity и любые другие темы.");
+        sysPart.addProperty("text", "Ты — официальный персональный ИИ-ассистент продвинутого визуального клиента Agravity (Antigravity Visual Client). Agravity — это ВИЗУАЛЬНЫЙ КЛИЕНТ (Visual / Utility client): рендер, кастомные визуалы, FPS boost, шейдеры, ESP, красивые nametags, HUD виджеты, стили интерфейса Control Center и удобные утилиты для игры. В клиенте НЕТ киллауры, флаев, спидхаков и подобных читов. Отвечай всегда прямо, понятно, структурированно, без воды и по делу на чистом русском языке. Не используй звездочки (**) для жирного текста, форматируй списки через символ • и пиши чистым приятным текстом. Отвечай на любые вопросы по Minecraft (фермы, механики, экономика серверов вроде FunTime / HolyWorld, PvP-фишки, тактики), клиенту Agravity, настройке визуала и коду.");
         sysParts.add(sysPart);
         systemMsg.add("parts", sysParts);
         contents.add(systemMsg);
@@ -110,7 +110,7 @@ public class AIAssistantService {
         modelAck.addProperty("role", "model");
         JsonArray ackParts = new JsonArray();
         JsonObject ackPart = new JsonObject();
-        ackPart.addProperty("text", "Понял! Я — ИИ помощник Agravity. Готов ответить на любой твой вопрос по игре, коду, PvP или настройкам!");
+        ackPart.addProperty("text", "Понял! Я — ИИ ассистент визуального клиента Agravity. Отвечаю на любые вопросы по Minecraft, механикам серверов (включая FunTime), PvP-тактикам, коду и возможностям клиента Agravity!");
         ackParts.add(ackPart);
         modelAck.add("parts", ackParts);
         contents.add(modelAck);
