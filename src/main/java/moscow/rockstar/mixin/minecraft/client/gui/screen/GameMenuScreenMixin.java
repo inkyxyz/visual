@@ -18,6 +18,7 @@ import net.minecraft.client.gui.widget.ClickableWidget;
 import net.minecraft.client.network.ServerAddress;
 import net.minecraft.client.network.ServerInfo;
 import net.minecraft.client.realms.gui.screen.RealmsMainScreen;
+import net.minecraft.client.render.RenderTickCounter;
 import net.minecraft.client.util.ScreenshotRecorder;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.text.Text;
@@ -858,107 +859,125 @@ implements iIIiIIiIi_Class294 {
         }
     }
 
-    // Module 7: Embedded Notes Widget with Ruled Notebook Paper Background
+    // Module 7: Streamlined Notes & Markers Widget (No pages, 1-click delete markers, coords, text pad)
     @Unique
     private void rockstar$renderNotesCard(III custom, float x, float y, float w, float h, IIiIIi_Class10 boldFont, IIiIIi_Class10 font, IIiIIi_Class10 subFont, IIiIIi_Class10 tinyFont, int mx, int my, float hoverA) {
         IIiii_Class8 rad = IIiii_Class8.I_method_893b2757(12.0F);
         ColorRGBA theme = IiiiiIIIi_Class242.I_method_7df8e08e();
         custom.drawShadow(x, y, w, h, 14.0F, rad, new ColorRGBA(0.0F, 0.0F, 0.0F, 40.0F));
         custom.drawBlurredRect(x, y, w, h, 16.0F, 3.0F, rad, new ColorRGBA(245.0F, 158.0F, 11.0F, 10.0F));
-        custom.drawRoundedRect(x, y, w, h, rad, new ColorRGBA(20.0F, 22.0F, 30.0F, 115.0F));
-        custom.drawRoundedBorder(x, y, w, h, 0.5F, rad, rockstar$notesEditing ? new ColorRGBA(245.0F, 158.0F, 11.0F, 140.0F) : (hoverA > 0.01F ? theme.withAlpha(90.0F * hoverA) : new ColorRGBA(255.0F, 255.0F, 255.0F, 15.0F)));
+        custom.drawRoundedRect(x, y, w, h, rad, new ColorRGBA(20.0F, 22.0F, 30.0F, 125.0F));
+        custom.drawRoundedBorder(x, y, w, h, 0.6F, rad, rockstar$notesEditing ? new ColorRGBA(245.0F, 158.0F, 11.0F, 180.0F) : (hoverA > 0.01F ? theme.withAlpha(90.0F * hoverA) : new ColorRGBA(255.0F, 255.0F, 255.0F, 18.0F)));
 
-        // Header Title: 📝 Заметки
+        // Header Title: 📝 Блокнот
+        float headerY = y + 7.0F;
         if (font != null) {
-            custom.drawText(font, "📝 Заметки", x + 10.0F, y + 8.0F, ColorRGBA.WHITE);
+            custom.drawText(font, "📝 Блокнот", x + 10.0F, headerY + 1.0F, ColorRGBA.WHITE);
         }
 
-        List<NotesManager.Note> notes = NotesManager.getNotes();
-        int noteCount = notes.size();
-        int activeIdx = MathHelper.clamp(rockstar$notesActiveIdx, 0, Math.max(0, noteCount - 1));
-        NotesManager.Note currentNote = (!notes.isEmpty() && activeIdx < notes.size()) ? notes.get(activeIdx) : null;
-
-        // Note Pager: < 1/3 >
-        if (tinyFont != null && noteCount > 0) {
-            String pageStr = (activeIdx + 1) + "/" + noteCount;
-            float pw = tinyFont.I_method_2c375926(pageStr);
-            custom.drawText(tinyFont, "‹", x + 72.0F, y + 9.5F, activeIdx > 0 ? ColorRGBA.WHITE : new ColorRGBA(255.0F, 255.0F, 255.0F, 90.0F));
-            custom.drawText(tinyFont, pageStr, x + 80.0F, y + 9.5F, new ColorRGBA(245.0F, 158.0F, 11.0F, 220.0F));
-            custom.drawText(tinyFont, "›", x + 80.0F + pw + 3.0F, y + 9.5F, activeIdx < noteCount - 1 ? ColorRGBA.WHITE : new ColorRGBA(255.0F, 255.0F, 255.0F, 90.0F));
+        // Action button 1: [+ Метка]
+        float btnMarkerW = 46.0F;
+        float btnMarkerH = 15.0F;
+        float btnMarkerX = x + w - btnMarkerW - 8.0F;
+        float btnMarkerY = headerY;
+        boolean markerHov = (mx >= btnMarkerX && mx <= btnMarkerX + btnMarkerW && my >= btnMarkerY && my <= btnMarkerY + btnMarkerH);
+        IIiii_Class8 bRad = IIiii_Class8.I_method_893b2757(4.0F);
+        custom.drawRoundedRect(btnMarkerX, btnMarkerY, btnMarkerW, btnMarkerH, bRad, markerHov ? new ColorRGBA(59.0F, 130.0F, 246.0F, 220.0F) : new ColorRGBA(59.0F, 130.0F, 246.0F, 140.0F));
+        if (tinyFont != null) {
+            float tw = tinyFont.I_method_2c375926("+ Метка");
+            custom.drawText(tinyFont, "+ Метка", btnMarkerX + (btnMarkerW - tw) / 2.0F, btnMarkerY + (btnMarkerH - 6.5F) / 2.0F, ColorRGBA.WHITE);
         }
 
-        // Action button 1: [+] New Note
-        float btnPlusX = x + w - 42.0F;
-        float btnY = y + 6.0F;
-        float btnSz = 16.0F;
-        boolean plusHov = (mx >= btnPlusX && mx <= btnPlusX + btnSz && my >= btnY && my <= btnY + btnSz);
-        custom.drawRoundedRect(btnPlusX, btnY, btnSz, btnSz, IIiii_Class8.I_method_893b2757(4.0F), plusHov ? new ColorRGBA(59.0F, 130.0F, 246.0F, 180.0F) : new ColorRGBA(255.0F, 255.0F, 255.0F, 20.0F));
-        // Perfect centered procedural + icon (subpixel accurate)
-        float plusCx = btnPlusX + btnSz / 2.0F;
-        float plusCy = btnY + btnSz / 2.0F;
-        custom.drawRoundedRect(plusCx - 3.5F, plusCy - 0.75F, 7.0F, 1.5F, IIiii_Class8.I_method_893b2757(0.75F), ColorRGBA.WHITE);
-        custom.drawRoundedRect(plusCx - 0.75F, plusCy - 3.5F, 1.5F, 7.0F, IIiii_Class8.I_method_893b2757(0.75F), ColorRGBA.WHITE);
-
-        // Action button 2: [📍] Insert Player Coordinates
-        float btnCoordX = x + w - 22.0F;
-        boolean coordHov = (mx >= btnCoordX && mx <= btnCoordX + btnSz && my >= btnY && my <= btnY + btnSz);
-        custom.drawRoundedRect(btnCoordX, btnY, btnSz, btnSz, IIiii_Class8.I_method_893b2757(4.0F), coordHov ? new ColorRGBA(16.0F, 185.0F, 129.0F, 180.0F) : new ColorRGBA(255.0F, 255.0F, 255.0F, 20.0F));
-        // Vector location pin icon (procedural, always rendered and crisp in any font)
-        custom.drawRoundedRect(btnCoordX + 5.0F, btnY + 2.5F, 6.0F, 6.0F, IIiii_Class8.I_method_893b2757(3.0F), ColorRGBA.WHITE);
-        custom.drawRoundedRect(btnCoordX + 6.75F, btnY + 4.25F, 2.5F, 2.5F, IIiii_Class8.I_method_893b2757(1.25F), coordHov ? new ColorRGBA(16.0F, 185.0F, 129.0F, 255.0F) : new ColorRGBA(30.0F, 34.0F, 46.0F, 255.0F));
-        custom.drawRoundedRect(btnCoordX + 7.25F, btnY + 7.5F, 1.5F, 4.0F, IIiii_Class8.I_method_893b2757(0.75F), ColorRGBA.WHITE);
-
-        // Apple Notes yellow top divider line
-        custom.drawRect(x + 10.0F, y + 25.0F, w - 20.0F, 1.0F, new ColorRGBA(245.0F, 158.0F, 11.0F, 120.0F));
-
-        // Vertical margin guide line (like real lined notebook)
-        custom.drawRect(x + 22.0F, y + 26.0F, 1.0F, h - 34.0F, new ColorRGBA(245.0F, 158.0F, 11.0F, 35.0F));
-
-        // Notebook Ruled Horizontal Lines (строчный фон тетради / Apple Notes)
-        float lineStartY = y + 42.0F;
-        float lineSpacing = 16.0F;
-        for (float ly = lineStartY; ly < y + h - 8.0F; ly += lineSpacing) {
-            custom.drawRect(x + 10.0F, ly, w - 20.0F, 1.0F, new ColorRGBA(255.0F, 255.0F, 255.0F, 10.0F));
+        // Action button 2: [+ Корды]
+        float btnCoordW = 46.0F;
+        float btnCoordX = btnMarkerX - btnCoordW - 4.0F;
+        boolean coordHov = (mx >= btnCoordX && mx <= btnCoordX + btnCoordW && my >= btnMarkerY && my <= btnMarkerY + btnMarkerH);
+        custom.drawRoundedRect(btnCoordX, btnMarkerY, btnCoordW, btnMarkerH, bRad, coordHov ? new ColorRGBA(16.0F, 185.0F, 129.0F, 220.0F) : new ColorRGBA(16.0F, 185.0F, 129.0F, 140.0F));
+        if (tinyFont != null) {
+            float tw = tinyFont.I_method_2c375926("+ Корды");
+            custom.drawText(tinyFont, "+ Корды", btnCoordX + (btnCoordW - tw) / 2.0F, btnMarkerY + (btnMarkerH - 6.5F) / 2.0F, ColorRGBA.WHITE);
         }
 
-        // Render current note content on the ruled lines
-        if (currentNote != null) {
-            // Title on first ruled line
-            if (subFont != null) {
-                String t = currentNote.title.isEmpty() ? "Заметка" : currentNote.title;
-                if (t.length() > 18) t = t.substring(0, 17) + "…";
-                custom.drawText(subFont, t, x + 26.0F, y + 29.0F, new ColorRGBA(254.0F, 240.0F, 138.0F, 240.0F));
-            }
+        // Divider
+        float divY = y + 26.0F;
+        custom.drawRect(x + 10.0F, divY, w - 20.0F, 1.0F, new ColorRGBA(245.0F, 158.0F, 11.0F, 120.0F));
 
-            // Coordinates tag if present
-            if (currentNote.cords != null && !currentNote.cords.isEmpty() && tinyFont != null) {
-                String cDisp = "📍 " + currentNote.cords;
-                if (cDisp.length() > 22) cDisp = cDisp.substring(0, 21) + "…";
-                custom.drawText(tinyFont, cDisp, x + 26.0F, y + 44.5F, new ColorRGBA(52.0F, 211.0F, 153.0F, 220.0F));
-            }
+        // Markers Chips Row (if markers exist)
+        List<NotesManager.Marker> markers = NotesManager.getMarkers();
+        float curTopY = divY + 4.0F;
+        if (!markers.isEmpty()) {
+            float chipH = 15.0F;
+            float chipY = curTopY;
+            float maxShow = Math.min(3, markers.size());
+            float chipGap = 3.0F;
+            float chipW = (w - 20.0F - (maxShow - 1) * chipGap) / maxShow;
 
-            // Note Content lines on the ruled lines
-            if (subFont != null) {
-                String[] lines = currentNote.content.split("\n");
-                float textY = (currentNote.cords != null && !currentNote.cords.isEmpty()) ? (lineStartY + lineSpacing + 2.5F) : (lineStartY + 2.5F);
-                for (int li = 0; li < lines.length; li++) {
-                    if (textY + 12.0F > y + h - 6.0F) break;
-                    String lineTxt = lines[li];
-                    if (li == lines.length - 1 && rockstar$notesEditing && (System.currentTimeMillis() % 1000L < 500L)) {
-                        lineTxt += "|";
+            for (int mi = 0; mi < maxShow; mi++) {
+                NotesManager.Marker m = markers.get(mi);
+                float chipX = x + 10.0F + mi * (chipW + chipGap);
+                boolean chipHov = (mx >= chipX && mx <= chipX + chipW && my >= chipY && my <= chipY + chipH);
+                IIiii_Class8 cRad = IIiii_Class8.I_method_893b2757(4.0F);
+
+                custom.drawRoundedRect(chipX, chipY, chipW, chipH, cRad, chipHov ? new ColorRGBA(36.0F, 44.0F, 62.0F, 220.0F) : new ColorRGBA(28.0F, 32.0F, 46.0F, 180.0F));
+                custom.drawRoundedBorder(chipX, chipY, chipW, chipH, 0.5F, cRad, new ColorRGBA(255.0F, 255.0F, 255.0F, 24.0F));
+
+                // 1-Click Delete Button [✕] on right side of chip
+                float delSz = 11.0F;
+                float delX = chipX + chipW - delSz - 2.0F;
+                float delY = chipY + (chipH - delSz) / 2.0F;
+                boolean delHov = (mx >= delX && mx <= delX + delSz && my >= delY && my <= delY + delSz);
+
+                custom.drawRoundedRect(delX, delY, delSz, delSz, IIiii_Class8.I_method_893b2757(2.0F), delHov ? new ColorRGBA(239.0F, 68.0F, 68.0F, 220.0F) : new ColorRGBA(255.0F, 255.0F, 255.0F, 22.0F));
+                if (tinyFont != null) {
+                    float xTw = tinyFont.I_method_2c375926("×");
+                    custom.drawText(tinyFont, "×", delX + (delSz - xTw) / 2.0F, delY + (delSz - 6.5F) / 2.0F, ColorRGBA.WHITE);
+                }
+
+                // Marker text
+                if (tinyFont != null) {
+                    String mTitle = "📍" + m.name;
+                    float textMaxW = chipW - delSz - 6.0F;
+                    if (tinyFont.I_method_2c375926(mTitle) > textMaxW) {
+                        mTitle = m.name;
                     }
-                    custom.drawText(subFont, lineTxt, x + 26.0F, textY, ColorRGBA.WHITE);
-                    textY += lineSpacing;
-                }
-
-                if (lines.length == 0 || currentNote.content.isEmpty()) {
-                    String emptyMsg = rockstar$notesEditing ? "|" : "Кликните для ввода...";
-                    custom.drawText(subFont, emptyMsg, x + 26.0F, textY, new ColorRGBA(255.0F, 255.0F, 255.0F, 90.0F));
+                    custom.drawText(tinyFont, mTitle, chipX + 3.0F, chipY + (chipH - 6.5F) / 2.0F, ColorRGBA.WHITE);
                 }
             }
-        } else {
-            if (subFont != null) {
-                custom.drawText(subFont, "Нажмите + чтобы создать заметку", x + 16.0F, y + 46.0F, new ColorRGBA(255.0F, 255.0F, 255.0F, 120.0F));
+            curTopY += chipH + 4.0F;
+        }
+
+        // Text Input Area (No pages, continuous text input)
+        float textPadX = x + 10.0F;
+        float textPadY = curTopY;
+        float textPadW = w - 20.0F;
+        float textPadH = (y + h - 8.0F) - curTopY;
+
+        IIiii_Class8 padRad = IIiii_Class8.I_method_893b2757(6.0F);
+        custom.drawRoundedRect(textPadX, textPadY, textPadW, textPadH, padRad, new ColorRGBA(14.0F, 16.0F, 24.0F, 160.0F));
+        custom.drawRoundedBorder(textPadX, textPadY, textPadW, textPadH, 0.5F, padRad, rockstar$notesEditing ? new ColorRGBA(245.0F, 158.0F, 11.0F, 140.0F) : new ColorRGBA(255.0F, 255.0F, 255.0F, 16.0F));
+
+        // Ruled notebook lines inside the text pad
+        float lineSpacing = 14.0F;
+        for (float ly = textPadY + lineSpacing; ly < textPadY + textPadH - 4.0F; ly += lineSpacing) {
+            custom.drawRect(textPadX + 4.0F, ly, textPadW - 8.0F, 1.0F, new ColorRGBA(255.0F, 255.0F, 255.0F, 8.0F));
+        }
+
+        String noteContent = NotesManager.getQuickNote();
+        if (subFont != null) {
+            if (noteContent.isEmpty() && !rockstar$notesEditing) {
+                custom.drawText(subFont, "Нажмите для ввода...", textPadX + 6.0F, textPadY + 4.0F, new ColorRGBA(255.0F, 255.0F, 255.0F, 80.0F));
+            } else {
+                String[] lines = noteContent.split("\n", -1);
+                float lineY = textPadY + 3.0F;
+                for (int li = 0; li < lines.length; li++) {
+                    if (lineY + 10.0F > textPadY + textPadH - 2.0F) break;
+                    String lStr = lines[li];
+                    if (li == lines.length - 1 && rockstar$notesEditing && (System.currentTimeMillis() % 1000L < 500L)) {
+                        lStr += "|";
+                    }
+                    custom.drawText(subFont, lStr, textPadX + 6.0F, lineY, ColorRGBA.WHITE);
+                    lineY += lineSpacing;
+                }
             }
         }
     }
@@ -1379,46 +1398,67 @@ implements iIIiIIiIi_Class294 {
         float notesX = cx - 13.0F;
         float notesW = 172.0F;
         if (cfg.showNotes && mouseX >= notesX && mouseX <= notesX + notesW && mouseY >= mainY && mouseY <= mainY + mainH) {
-            // New Note button [+]
-            float btnPlusX = notesX + notesW - 42.0F;
-            float btnY = mainY + 6.0F;
-            float btnSz = 16.0F;
-            if (mouseX >= btnPlusX && mouseX <= btnPlusX + btnSz && mouseY >= btnY && mouseY <= btnY + btnSz) {
+            float headerY = mainY + 7.0F;
+            float btnMarkerW = 46.0F;
+            float btnMarkerH = 15.0F;
+            float btnMarkerX = notesX + notesW - btnMarkerW - 8.0F;
+            float btnMarkerY = headerY;
+
+            // 1. [+ Метка] Click
+            if (mouseX >= btnMarkerX && mouseX <= btnMarkerX + btnMarkerW && mouseY >= btnMarkerY && mouseY <= btnMarkerY + btnMarkerH) {
                 UISoundManager.playButtonClick();
-                NotesManager.createNote("Заметка " + (NotesManager.getNotes().size() + 1), "", "");
-                rockstar$notesActiveIdx = 0;
-                rockstar$notesEditing = true;
+                rockstar$addPlayerMarker();
                 return true;
             }
 
-            // Insert coordinates button [📍]
-            float btnCoordX = notesX + notesW - 22.0F;
-            if (mouseX >= btnCoordX && mouseX <= btnCoordX + btnSz && mouseY >= btnY && mouseY <= btnY + btnSz) {
+            // 2. [+ Корды] Click
+            float btnCoordW = 46.0F;
+            float btnCoordX = btnMarkerX - btnCoordW - 4.0F;
+            if (mouseX >= btnCoordX && mouseX <= btnCoordX + btnCoordW && mouseY >= btnMarkerY && mouseY <= btnMarkerY + btnMarkerH) {
                 UISoundManager.playButtonClick();
                 rockstar$insertCoordinatesToActiveNote();
                 return true;
             }
 
-            // Pager < and >
-            List<NotesManager.Note> nList = NotesManager.getNotes();
-            if (!nList.isEmpty()) {
-                if (mouseX >= notesX + 70.0F && mouseX <= notesX + 79.0F && mouseY >= mainY + 6.0F && mouseY <= mainY + 22.0F) {
-                    if (rockstar$notesActiveIdx > 0) {
-                        rockstar$notesActiveIdx--;
+            // 3. Markers row clicks (1-click delete or paste)
+            List<NotesManager.Marker> markers = NotesManager.getMarkers();
+            float divY = mainY + 26.0F;
+            float curTopY = divY + 4.0F;
+            if (!markers.isEmpty()) {
+                float chipH = 15.0F;
+                float chipY = curTopY;
+                float maxShow = Math.min(3, markers.size());
+                float chipGap = 3.0F;
+                float chipW = (notesW - 20.0F - (maxShow - 1) * chipGap) / maxShow;
+
+                for (int mi = 0; mi < maxShow; mi++) {
+                    NotesManager.Marker m = markers.get(mi);
+                    float chipX = notesX + 10.0F + mi * (chipW + chipGap);
+
+                    // 1-Click Delete button [✕] on marker
+                    float delSz = 11.0F;
+                    float delX = chipX + chipW - delSz - 2.0F;
+                    float delY = chipY + (chipH - delSz) / 2.0F;
+                    if (mouseX >= delX && mouseX <= delX + delSz && mouseY >= delY && mouseY <= delY + delSz) {
                         UISoundManager.playButtonClick();
+                        NotesManager.deleteMarker(m.id);
+                        return true;
                     }
-                    return true;
-                }
-                if (mouseX >= notesX + 96.0F && mouseX <= notesX + 110.0F && mouseY >= mainY + 6.0F && mouseY <= mainY + 22.0F) {
-                    if (rockstar$notesActiveIdx < nList.size() - 1) {
-                        rockstar$notesActiveIdx++;
+
+                    // Click on chip itself: copy cords & append to note!
+                    if (mouseX >= chipX && mouseX <= chipX + chipW && mouseY >= chipY && mouseY <= chipY + chipH) {
                         UISoundManager.playButtonClick();
+                        String cur = NotesManager.getQuickNote();
+                        NotesManager.setQuickNote(cur + (cur.isEmpty() || cur.endsWith("\n") ? "" : "\n") + "[📍 " + m.name + ": " + m.cords + "]");
+                        if (this.client != null && this.client.keyboard != null) {
+                            this.client.keyboard.setClipboard(m.cords);
+                        }
+                        return true;
                     }
-                    return true;
                 }
             }
 
-            // Clicked inside content area: enable editing!
+            // 4. Clicked inside text pad: focus and edit!
             rockstar$notesEditing = true;
             UISoundManager.playButtonClick();
             return true;
@@ -1506,29 +1546,39 @@ implements iIIiIIiIi_Class294 {
     }
 
     @Unique
-    private static void rockstar$insertCoordinatesToActiveNote() {
+    private static String rockstar$getCurrentCoordsString() {
         MinecraftClient mc = MinecraftClient.getInstance();
-        if (mc.player != null) {
+        if (mc != null && mc.player != null) {
             BlockPos pos = mc.player.getBlockPos();
-            String dim = "Верхний мир";
+            String dim = "Верхний";
             if (mc.world != null) {
                 if (mc.world.getRegistryKey() == World.NETHER) dim = "Незер";
                 else if (mc.world.getRegistryKey() == World.END) dim = "Энд";
             }
-            String cordStr = String.format("X: %d, Y: %d, Z: %d | %s", pos.getX(), pos.getY(), pos.getZ(), dim);
+            return String.format("%d %d %d (%s)", pos.getX(), pos.getY(), pos.getZ(), dim);
+        }
+        return "0 0 0";
+    }
 
-            List<NotesManager.Note> list = NotesManager.getNotes();
-            if (list.isEmpty()) {
-                NotesManager.createNote("Координаты", cordStr, cordStr);
-            } else {
-                NotesManager.Note n = list.get(MathHelper.clamp(rockstar$notesActiveIdx, 0, list.size() - 1));
-                n.cords = cordStr;
-                n.content += (n.content.isEmpty() ? "" : "\n") + "[📍 " + cordStr + "]";
-                NotesManager.updateNote(n.id, n.title, n.content, n.cords);
-            }
-            if (mc.keyboard != null) {
-                mc.keyboard.setClipboard(cordStr);
-            }
+    @Unique
+    private static void rockstar$insertCoordinatesToActiveNote() {
+        MinecraftClient mc = MinecraftClient.getInstance();
+        String cordStr = rockstar$getCurrentCoordsString();
+        String cur = NotesManager.getQuickNote();
+        NotesManager.setQuickNote(cur + (cur.isEmpty() || cur.endsWith("\n") ? "" : "\n") + "[📍 " + cordStr + "]");
+        if (mc != null && mc.keyboard != null) {
+            mc.keyboard.setClipboard(cordStr);
+        }
+    }
+
+    @Unique
+    private static void rockstar$addPlayerMarker() {
+        MinecraftClient mc = MinecraftClient.getInstance();
+        String cordStr = rockstar$getCurrentCoordsString();
+        int idx = NotesManager.getMarkers().size() + 1;
+        NotesManager.addMarker("Метка " + idx, cordStr);
+        if (mc != null && mc.keyboard != null) {
+            mc.keyboard.setClipboard(cordStr);
         }
     }
 
@@ -1679,6 +1729,15 @@ implements iIIiIIiIi_Class294 {
         if (this.client == null) return;
         boolean singleplayer = this.client.isInSingleplayer();
         ServerInfo serverInfo = this.client.getCurrentServerEntry();
+        
+        // Hide escape screen so it is never captured in screenshots/framebuffer
+        this.client.setScreen(null);
+        if (this.client.gameRenderer != null && this.client.world != null) {
+            try {
+                this.client.gameRenderer.renderWorld(RenderTickCounter.ONE);
+            } catch (Throwable ignored) {}
+        }
+
         IiiIIiIii_Class204.captureLastGameFrame();
         IiiIIiIii_Class204.triggerReturnAnimation = true;
         if (this.client.world != null) {
@@ -1703,13 +1762,9 @@ implements iIIiIIiIi_Class294 {
         }
         if (rockstar$notesEditing) {
             if (chr >= 32 && chr != 127) {
-                List<NotesManager.Note> list = NotesManager.getNotes();
-                if (!list.isEmpty()) {
-                    NotesManager.Note n = list.get(MathHelper.clamp(rockstar$notesActiveIdx, 0, list.size() - 1));
-                    n.content += chr;
-                    NotesManager.updateNote(n.id, n.title, n.content, n.cords);
-                    return true;
-                }
+                String cur = NotesManager.getQuickNote();
+                NotesManager.setQuickNote(cur + chr);
+                return true;
             }
         }
         return super.charTyped(chr, modifiers);
@@ -1762,47 +1817,38 @@ implements iIIiIIiIi_Class294 {
                     if (mc != null && mc.keyboard != null) {
                         String clip = mc.keyboard.getClipboard();
                         if (clip != null && !clip.isEmpty()) {
-                            List<NotesManager.Note> list = NotesManager.getNotes();
-                            if (!list.isEmpty()) {
-                                NotesManager.Note n = list.get(MathHelper.clamp(rockstar$notesActiveIdx, 0, list.size() - 1));
-                                n.content += clip.replace("\r", "");
-                                NotesManager.updateNote(n.id, n.title, n.content, n.cords);
-                                return true;
-                            }
+                            String cur = NotesManager.getQuickNote();
+                            NotesManager.setQuickNote(cur + clip.replace("\r", ""));
+                            return true;
                         }
                     }
                 } else if (keyCode == GLFW.GLFW_KEY_C) {
                     MinecraftClient mc = MinecraftClient.getInstance();
                     if (mc != null && mc.keyboard != null) {
-                        List<NotesManager.Note> list = NotesManager.getNotes();
-                        if (!list.isEmpty()) {
-                            NotesManager.Note n = list.get(MathHelper.clamp(rockstar$notesActiveIdx, 0, list.size() - 1));
-                            if (!n.content.isEmpty()) {
-                                mc.keyboard.setClipboard(n.content);
-                                return true;
-                            }
+                        String cur = NotesManager.getQuickNote();
+                        if (!cur.isEmpty()) {
+                            mc.keyboard.setClipboard(cur);
+                            return true;
                         }
                     }
                 }
             }
 
-            List<NotesManager.Note> list = NotesManager.getNotes();
-            if (!list.isEmpty()) {
-                NotesManager.Note n = list.get(MathHelper.clamp(rockstar$notesActiveIdx, 0, list.size() - 1));
-                if (keyCode == GLFW.GLFW_KEY_BACKSPACE && !n.content.isEmpty()) {
-                    n.content = n.content.substring(0, n.content.length() - 1);
-                    NotesManager.updateNote(n.id, n.title, n.content, n.cords);
+            if (keyCode == GLFW.GLFW_KEY_BACKSPACE) {
+                String cur = NotesManager.getQuickNote();
+                if (!cur.isEmpty()) {
+                    NotesManager.setQuickNote(cur.substring(0, cur.length() - 1));
                     return true;
                 }
-                if (keyCode == GLFW.GLFW_KEY_ENTER || keyCode == GLFW.GLFW_KEY_KP_ENTER) {
-                    n.content += "\n";
-                    NotesManager.updateNote(n.id, n.title, n.content, n.cords);
-                    return true;
-                }
-                if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
-                    rockstar$notesEditing = false;
-                    return true;
-                }
+            }
+            if (keyCode == GLFW.GLFW_KEY_ENTER || keyCode == GLFW.GLFW_KEY_KP_ENTER) {
+                String cur = NotesManager.getQuickNote();
+                NotesManager.setQuickNote(cur + "\n");
+                return true;
+            }
+            if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
+                rockstar$notesEditing = false;
+                return true;
             }
         }
 

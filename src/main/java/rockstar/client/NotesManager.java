@@ -38,8 +38,34 @@ public class NotesManager {
         }
     }
 
+    public static class Marker {
+        public String id;
+        public String name;
+        public String cords;
+        public long timestamp;
+
+        public Marker(String name, String cords) {
+            this.id = UUID.randomUUID().toString();
+            this.name = name;
+            this.cords = cords;
+            this.timestamp = System.currentTimeMillis();
+        }
+
+        public String getFormattedDate() {
+            return new SimpleDateFormat("dd.MM HH:mm").format(new Date(this.timestamp));
+        }
+    }
+
+    private static class StorageData {
+        public List<Note> notes = new ArrayList<>();
+        public List<Marker> markers = new ArrayList<>();
+        public String quickNote = "";
+    }
+
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final List<Note> NOTES = new ArrayList<>();
+    private static final List<Marker> MARKERS = new ArrayList<>();
+    private static String quickNote = "Заметки:\n- ";
     private static boolean loaded = false;
 
     private static File getStorageFile() {
@@ -48,7 +74,7 @@ public class NotesManager {
         if (!dir.exists()) {
             dir.mkdirs();
         }
-        return new File(dir, "notes.json");
+        return new File(dir, "notes_v2.json");
     }
 
     public static synchronized List<Note> getNotes() {
@@ -56,6 +82,38 @@ public class NotesManager {
             load();
         }
         return NOTES;
+    }
+
+    public static synchronized List<Marker> getMarkers() {
+        if (!loaded) {
+            load();
+        }
+        return MARKERS;
+    }
+
+    public static synchronized Marker addMarker(String name, String cords) {
+        if (!loaded) load();
+        Marker marker = new Marker(name, cords);
+        MARKERS.add(0, marker);
+        save();
+        return marker;
+    }
+
+    public static synchronized void deleteMarker(String id) {
+        if (!loaded) load();
+        MARKERS.removeIf(m -> m.id.equals(id));
+        save();
+    }
+
+    public static synchronized String getQuickNote() {
+        if (!loaded) load();
+        return quickNote;
+    }
+
+    public static synchronized void setQuickNote(String text) {
+        if (!loaded) load();
+        quickNote = text != null ? text : "";
+        save();
     }
 
     public static synchronized Note createNote(String title, String content, String cords) {
@@ -89,20 +147,22 @@ public class NotesManager {
         loaded = true;
         File file = getStorageFile();
         if (!file.exists()) {
-            // Initial default notes
-            NOTES.clear();
-            NOTES.add(new Note("Координаты базы", "Основной бункер и сундуки с ресурсами.\nНезерит в нижнем сундуке.", "X: 124, Y: 68, Z: -312 | Верхний мир"));
-            NOTES.add(new Note("Список для крафта", "1. Тотемы бессмертия\n2. Золотые яблоки (чарки)\n3. Стрелы урона II\n4. Зелья скорости II и огнестойкости", ""));
+            // Default initial content
+            MARKERS.clear();
+            MARKERS.add(new Marker("База", "X: 124, Y: 68, Z: -312 | Верхний мир"));
+            quickNote = "Быстрые заметки:\n- Проверить сундуки на базе\n- Зачаровать новую кирку";
             save();
             return;
         }
 
         try (FileReader reader = new FileReader(file, StandardCharsets.UTF_8)) {
-            Type listType = new TypeToken<ArrayList<Note>>(){}.getType();
-            List<Note> loadedList = GSON.fromJson(reader, listType);
-            NOTES.clear();
-            if (loadedList != null) {
-                NOTES.addAll(loadedList);
+            StorageData data = GSON.fromJson(reader, StorageData.class);
+            if (data != null) {
+                NOTES.clear();
+                if (data.notes != null) NOTES.addAll(data.notes);
+                MARKERS.clear();
+                if (data.markers != null) MARKERS.addAll(data.markers);
+                if (data.quickNote != null) quickNote = data.quickNote;
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -112,7 +172,11 @@ public class NotesManager {
     public static synchronized void save() {
         File file = getStorageFile();
         try (FileWriter writer = new FileWriter(file, StandardCharsets.UTF_8)) {
-            GSON.toJson(NOTES, writer);
+            StorageData data = new StorageData();
+            data.notes.addAll(NOTES);
+            data.markers.addAll(MARKERS);
+            data.quickNote = quickNote;
+            GSON.toJson(data, writer);
         } catch (Exception e) {
             e.printStackTrace();
         }

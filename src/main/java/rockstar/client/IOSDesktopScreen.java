@@ -28,6 +28,7 @@ import net.minecraft.client.texture.NativeImage;
 import net.minecraft.client.texture.NativeImageBackedTexture;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.math.MathHelper;
 import net.minecraft.world.level.storage.LevelStorage;
 import net.minecraft.world.level.storage.LevelSummary;
 import org.lwjgl.glfw.GLFW;
@@ -399,8 +400,12 @@ public class IOSDesktopScreen extends Screen {
     }
 
     private void renderTopBar(III custom, int mx, int my, float h) {
+        long elapsed = System.currentTimeMillis() - this.screenOpenTime;
+        float topEnter = MathHelper.clamp(elapsed / 320.0F, 0.0F, 1.0F);
+        float topEase = 1.0F - (float)Math.pow(1.0F - topEnter, 3);
+
         float barX = 16.0F;
-        float barY = 8.0F;
+        float barY = 8.0F + (1.0F - topEase) * -35.0F;
         float barW = this.width - 32.0F;
         float barH = h - 10.0F;
         IIiii_Class8 rad = IIiii_Class8.I_method_893b2757(barH / 2.0F);
@@ -576,11 +581,18 @@ public class IOSDesktopScreen extends Screen {
             custom.drawText(IIiIiI_Class11.II_field_857c0621.I_method_3a2d5e3(10.0F), "Нет доступных миров или серверов", (this.width - emptyW) / 2.0F, top + h / 2.0F - 10.0F, new ColorRGBA(255.0F, 255.0F, 255.0F, 120.0F));
             custom.drawText(IIiIiI_Class11.i_field_857c0621.I_method_3a2d5e3(7.5F), "Используйте нижнюю панель для создания мира или добавления сервера", (this.width - 240.0F) / 2.0F, top + h / 2.0F + 8.0F, new ColorRGBA(255.0F, 255.0F, 255.0F, 85.0F));
         } else {
+            long elapsed = System.currentTimeMillis() - this.screenOpenTime;
             for (int i = 0; i < items.size(); i++) {
                 int col = i % cols;
                 int row = i / cols;
                 float cx = padX + col * (cardW + gap);
-                float cy = top - this.scrollY + row * (cardH + gap);
+                float baseCy = top - this.scrollY + row * (cardH + gap);
+
+                // Cascade pop-in animation per card
+                long delay = 50L + (long)(i * 24L);
+                float cardProgress = MathHelper.clamp((elapsed - delay) / 300.0F, 0.0F, 1.0F);
+                float cardEase = 1.0F - (float)Math.pow(1.0F - cardProgress, 3);
+                float cy = baseCy + (1.0F - cardEase) * 32.0F;
 
                 if (cy + cardH < top || cy > top + h) {
                     continue; // Culled
@@ -602,15 +614,24 @@ public class IOSDesktopScreen extends Screen {
         boolean hov = mx >= x && mx <= x + wCard && my >= y && my <= y + hCard;
         IIiii_Class8 rad = IIiii_Class8.I_method_893b2757(12.0F);
 
+        float drawY = y + (hov ? -2.5F : 0.0F);
+
+        // Atmospheric drop shadow & hover glow lift
+        if (hov) {
+            custom.drawShadow(x, drawY, wCard, hCard, 14.0F, rad, IiiiiIIIi_Class242.I_method_7df8e08e().withAlpha(75.0F));
+        } else {
+            custom.drawShadow(x, drawY, wCard, hCard, 8.0F, rad, new ColorRGBA(0.0F, 0.0F, 0.0F, 45.0F));
+        }
+
         // Card glass background
-        ColorRGBA bg = hov ? new ColorRGBA(28.0F, 34.0F, 48.0F, 205.0F) : new ColorRGBA(18.0F, 22.0F, 32.0F, 175.0F);
-        custom.drawRoundedRect(x, y, wCard, hCard, rad, bg);
-        custom.drawRoundedBorder(x, y, wCard, hCard, 0.8F, rad, hov ? IiiiiIIIi_Class242.I_method_7df8e08e().withAlpha(160.0F) : new ColorRGBA(255.0F, 255.0F, 255.0F, 24.0F));
+        ColorRGBA bg = hov ? new ColorRGBA(28.0F, 34.0F, 48.0F, 225.0F) : new ColorRGBA(18.0F, 22.0F, 32.0F, 175.0F);
+        custom.drawRoundedRect(x, drawY, wCard, hCard, rad, bg);
+        custom.drawRoundedBorder(x, drawY, wCard, hCard, 0.8F, rad, hov ? IiiiiIIIi_Class242.I_method_7df8e08e().withAlpha(190.0F) : new ColorRGBA(255.0F, 255.0F, 255.0F, 24.0F));
 
         // Squircle Icon (Singleplayer Earth / World Screenshot Icon)
         float iconSize = 46.0F;
         float iconX = x + 10.0F;
-        float iconY = y + (hCard - iconSize) / 2.0F;
+        float iconY = drawY + (hCard - iconSize) / 2.0F;
         IIiii_Class8 iconRad = IIiii_Class8.I_method_893b2757(12.0F);
 
         w.loadIconTexture();
@@ -626,24 +647,23 @@ public class IOSDesktopScreen extends Screen {
 
         // World Info Text
         float textX = iconX + iconSize + 10.0F;
-        float titleMaxW = wCard - iconSize - 75.0F;
         String title = w.displayName;
-        custom.drawText(IIiIiI_Class11.II_field_857c0621.I_method_3a2d5e3(8.5F), title, textX, y + 10.0F, ColorRGBA.WHITE);
+        custom.drawText(IIiIiI_Class11.II_field_857c0621.I_method_3a2d5e3(8.5F), title, textX, drawY + 10.0F, ColorRGBA.WHITE);
 
         // Subtitle & Mode Badge
         ColorRGBA modeColor = w.hardcore ? new ColorRGBA(240.0F, 70.0F, 70.0F, 255.0F) : new ColorRGBA(90.0F, 210.0F, 140.0F, 255.0F);
         String modeName = w.hardcore ? "Хардкор" : "Одиночный мир";
-        custom.drawText(IIiIiI_Class11.i_field_857c0621.I_method_3a2d5e3(6.5F), modeName, textX, y + 26.0F, modeColor);
+        custom.drawText(IIiIiI_Class11.i_field_857c0621.I_method_3a2d5e3(6.5F), modeName, textX, drawY + 26.0F, modeColor);
 
         // Last played date
         String dateStr = w.lastPlayed > 0 ? DATE_FORMAT.format(new Date(w.lastPlayed)) : "Никогда";
-        custom.drawText(IIiIiI_Class11.i_field_857c0621.I_method_3a2d5e3(6.5F), dateStr + " • " + w.version, textX, y + 39.0F, new ColorRGBA(255.0F, 255.0F, 255.0F, 125.0F));
+        custom.drawText(IIiIiI_Class11.i_field_857c0621.I_method_3a2d5e3(6.5F), dateStr + " • " + w.version, textX, drawY + 39.0F, new ColorRGBA(255.0F, 255.0F, 255.0F, 125.0F));
 
         // Quick Launch Action Button (Play)
         float btnW = 60.0F;
         float btnH = 24.0F;
         float btnX = x + wCard - btnW - 12.0F;
-        float btnY = y + (hCard - btnH) / 2.0F;
+        float btnY = drawY + (hCard - btnH) / 2.0F;
         boolean bHov = mx >= btnX && mx <= btnX + btnW && my >= btnY && my <= btnY + btnH;
         this.renderActionButton(custom, btnX, btnY, btnW, btnH, "Играть", bHov, new ColorRGBA(34.0F, 197.0F, 94.0F, 240.0F));
     }
@@ -652,15 +672,24 @@ public class IOSDesktopScreen extends Screen {
         boolean hov = mx >= x && mx <= x + wCard && my >= y && my <= y + hCard;
         IIiii_Class8 rad = IIiii_Class8.I_method_893b2757(12.0F);
 
+        float drawY = y + (hov ? -2.5F : 0.0F);
+
+        // Atmospheric drop shadow & hover glow lift
+        if (hov) {
+            custom.drawShadow(x, drawY, wCard, hCard, 14.0F, rad, IiiiiIIIi_Class242.I_method_7df8e08e().withAlpha(75.0F));
+        } else {
+            custom.drawShadow(x, drawY, wCard, hCard, 8.0F, rad, new ColorRGBA(0.0F, 0.0F, 0.0F, 45.0F));
+        }
+
         // Card glass background
         ColorRGBA bg = hov ? new ColorRGBA(28.0F, 34.0F, 48.0F, 205.0F) : new ColorRGBA(18.0F, 22.0F, 32.0F, 175.0F);
-        custom.drawRoundedRect(x, y, wCard, hCard, rad, bg);
-        custom.drawRoundedBorder(x, y, wCard, hCard, 0.8F, rad, hov ? IiiiiIIIi_Class242.I_method_7df8e08e().withAlpha(160.0F) : new ColorRGBA(255.0F, 255.0F, 255.0F, 24.0F));
+        custom.drawRoundedRect(x, drawY, wCard, hCard, rad, bg);
+        custom.drawRoundedBorder(x, drawY, wCard, hCard, 0.8F, rad, hov ? IiiiiIIIi_Class242.I_method_7df8e08e().withAlpha(190.0F) : new ColorRGBA(255.0F, 255.0F, 255.0F, 24.0F));
 
         // Squircle Icon (Multiplayer Server / Network Favicon)
         float iconSize = 46.0F;
         float iconX = x + 10.0F;
-        float iconY = y + (hCard - iconSize) / 2.0F;
+        float iconY = drawY + (hCard - iconSize) / 2.0F;
         IIiii_Class8 iconRad = IIiii_Class8.I_method_893b2757(12.0F);
 
         // Update / register dynamic favicon if server provided one
@@ -682,10 +711,10 @@ public class IOSDesktopScreen extends Screen {
 
         // Server Info Text
         float textX = iconX + iconSize + 10.0F;
-        custom.drawText(IIiIiI_Class11.II_field_857c0621.I_method_3a2d5e3(8.5F), s.name, textX, y + 10.0F, ColorRGBA.WHITE);
+        custom.drawText(IIiIiI_Class11.II_field_857c0621.I_method_3a2d5e3(8.5F), s.name, textX, drawY + 10.0F, ColorRGBA.WHITE);
 
         // Server Address
-        custom.drawText(IIiIiI_Class11.i_field_857c0621.I_method_3a2d5e3(6.5F), s.address, textX, y + 26.0F, new ColorRGBA(180.0F, 210.0F, 255.0F, 200.0F));
+        custom.drawText(IIiIiI_Class11.i_field_857c0621.I_method_3a2d5e3(6.5F), s.address, textX, drawY + 26.0F, new ColorRGBA(180.0F, 210.0F, 255.0F, 200.0F));
 
         // Ping badge & players count
         String statusText;
@@ -707,22 +736,26 @@ public class IOSDesktopScreen extends Screen {
             statusCol = new ColorRGBA(240.0F, 70.0F, 70.0F, 255.0F);
         }
 
-        custom.drawText(IIiIiI_Class11.i_field_857c0621.I_method_3a2d5e3(6.5F), statusText, textX, y + 39.0F, statusCol);
+        custom.drawText(IIiIiI_Class11.i_field_857c0621.I_method_3a2d5e3(6.5F), statusText, textX, drawY + 39.0F, statusCol);
 
         // Quick Launch Action Button (Connect)
         float btnW = 60.0F;
         float btnH = 24.0F;
         float btnX = x + wCard - btnW - 12.0F;
-        float btnY = y + (hCard - btnH) / 2.0F;
+        float btnY = drawY + (hCard - btnH) / 2.0F;
         boolean bHov = mx >= btnX && mx <= btnX + btnW && my >= btnY && my <= btnY + btnH;
         this.renderActionButton(custom, btnX, btnY, btnW, btnH, "Войти", bHov, new ColorRGBA(37.0F, 115.0F, 245.0F, 240.0F));
     }
 
     private void renderDock(III custom, int mx, int my) {
+        long elapsed = System.currentTimeMillis() - this.screenOpenTime;
+        float dockEnter = MathHelper.clamp((elapsed - 60L) / 380.0F, 0.0F, 1.0F);
+        float dockEase = 1.0F - (float)Math.pow(1.0F - dockEnter, 3);
+
         float dockW = Math.min(480.0F, this.width - 40.0F);
         float dockH = 40.0F;
         float dockX = (this.width - dockW) / 2.0F;
-        float dockY = this.height - dockH - 12.0F;
+        float dockY = (this.height - dockH - 12.0F) + (1.0F - dockEase) * 55.0F;
         IIiii_Class8 dRad = IIiii_Class8.I_method_893b2757(dockH / 2.0F);
 
         // Glass Dock Container

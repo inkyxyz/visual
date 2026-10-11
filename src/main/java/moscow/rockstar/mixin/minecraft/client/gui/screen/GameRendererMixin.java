@@ -85,5 +85,13 @@ public abstract class GameRendererMixin {
             callbackInfo.cancel();
         }
     }
+
+    @Inject(method = "updateWorldIcon(Ljava/nio/file/Path;)V", at = @At("HEAD"), cancellable = true)
+    private void rockstar$preventEscapeInWorldIcon(java.nio.file.Path path, CallbackInfo ci) {
+        MinecraftClient client = MinecraftClient.getInstance();
+        if (client.currentScreen instanceof net.minecraft.client.gui.screen.GameMenuScreen) {
+            ci.cancel();
+        }
+    }
 }
 
