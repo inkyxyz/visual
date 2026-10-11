@@ -275,117 +275,123 @@ implements iIIiIIiIi_Class294 {
         }
 
         // ==========================================
-        // 2. MAIN ROW:
-        // Left Pod (Volume & Camera) | Calculator | Embedded Notes | Action Rectangles
+        // 2. MAIN CONTENT ROW (Symmetric 504px Grid Layout):
+        // Left (Volume & Toggles: 94w) | Center (Calc: 152w) | Right (Notes: 238w)
+        // 94 + 10 + 152 + 10 + 238 = 504px (Exact Symmetry!)
         // ==========================================
-        float mainY = cy - 54.0F;
-        float mainH = 186.0F;
-        float mainFlyY = (1.0F - rockstar$flyInAnim) * 36.0F;
+        float mainTotalW = 504.0F;
+        float gridStartX = cx - mainTotalW / 2.0F;
+        float mainY = cy - 46.0F;
+        float mainH = 165.0F;
+        float mainFlyY = (1.0F - rockstar$flyInAnim) * 32.0F;
 
-        // 3: Left Pod: Volume Pill (50w x 186h) + Quick Camera/Fullscreen Pod (50w)
-        float leftPodX = cx - 275.0F;
+        // 1. Left Pod: Theme-Adapted Volume Pill (44w) + Quick Toggles (46w)
+        float curX = gridStartX;
+        float leftPodW = 94.0F;
         float vY = mainY + mainFlyY;
 
-        // Volume Pill
         if (cfg.showVolume) {
-            float volW = 50.0F;
-            boolean vHov = (mouseX >= leftPodX && mouseX <= leftPodX + volW && mouseY >= vY && mouseY <= vY + mainH);
+            float volW = 44.0F;
+            boolean vHov = (mouseX >= curX && mouseX <= curX + volW && mouseY >= vY && mouseY <= vY + mainH);
             rockstar$tileHoverAnim[3] += ((vHov ? 1.0F : 0.0F) - rockstar$tileHoverAnim[3]) * 0.20F;
-            float dY = vY - rockstar$tileHoverAnim[3] * 3.0F;
-            rockstar$renderVolumePill(custom, leftPodX, dY, volW, mainH, subFont, mouseX, mouseY, rockstar$tileHoverAnim[3]);
+            float dY = vY - rockstar$tileHoverAnim[3] * 2.5F;
+            rockstar$renderVolumePill(custom, curX, dY, volW, mainH, subFont, mouseX, mouseY, rockstar$tileHoverAnim[3]);
         }
 
-        // Camera & Fullscreen stacked tiles
-        float qX = leftPodX + 54.0F;
-        float qW = 50.0F;
-        float qTileH = (mainH - 6.0F) / 2.0F;
+        // Camera & Fullscreen stacked quick toggles
+        float qX = curX + 48.0F;
+        float qW = 46.0F;
+        float qTileH = (mainH - 5.0F) / 2.0F;
         if (cfg.showCamera) {
             float camY = vY;
             boolean cHov = (mouseX >= qX && mouseX <= qX + qW && mouseY >= camY && mouseY <= camY + qTileH);
             rockstar$tileHoverAnim[4] += ((cHov ? 1.0F : 0.0F) - rockstar$tileHoverAnim[4]) * 0.20F;
-            float dY = camY - rockstar$tileHoverAnim[4] * 3.0F;
+            float dY = camY - rockstar$tileHoverAnim[4] * 2.5F;
             rockstar$renderCameraTile(custom, qX, dY, qW, qTileH, mouseX, mouseY, rockstar$tileHoverAnim[4]);
 
-            float fsY = camY + qTileH + 6.0F;
+            float fsY = camY + qTileH + 5.0F;
             boolean fsHov = (mouseX >= qX && mouseX <= qX + qW && mouseY >= fsY && mouseY <= fsY + qTileH);
             rockstar$tileHoverAnim[5] += ((fsHov ? 1.0F : 0.0F) - rockstar$tileHoverAnim[5]) * 0.20F;
-            float dFsY = fsY - rockstar$tileHoverAnim[5] * 3.0F;
+            float dFsY = fsY - rockstar$tileHoverAnim[5] * 2.5F;
             rockstar$renderFullscreenTile(custom, qX, dFsY, qW, qTileH, mouseX, mouseY, rockstar$tileHoverAnim[5]);
         }
+        curX += leftPodW + 10.0F;
 
-        // 4: iOS Calculator Card
-        float calcX = cx - 163.0F;
-        float calcW = 142.0F;
+        // 2. Center Pod: iOS Calculator Card (152w x 165h)
+        float calcW = 152.0F;
         if (cfg.showCalculator) {
             float cY = mainY + mainFlyY;
-            boolean calcHov = (mouseX >= calcX && mouseX <= calcX + calcW && mouseY >= cY && mouseY <= cY + mainH);
+            boolean calcHov = (mouseX >= curX && mouseX <= curX + calcW && mouseY >= cY && mouseY <= cY + mainH);
             rockstar$tileHoverAnim[6] += ((calcHov ? 1.0F : 0.0F) - rockstar$tileHoverAnim[6]) * 0.20F;
-            float dY = cY - rockstar$tileHoverAnim[6] * 3.0F;
-            rockstar$renderCalculatorCard(custom, calcX, dY, calcW, mainH, boldFont, font, mouseX, mouseY, rockstar$tileHoverAnim[6]);
+            float dY = cY - rockstar$tileHoverAnim[6] * 2.5F;
+            rockstar$renderCalculatorCard(custom, curX, dY, calcW, mainH, boldFont, font, mouseX, mouseY, rockstar$tileHoverAnim[6]);
+            curX += calcW + 10.0F;
         }
 
-        // 5: Embedded Notes Widget ("чуть больше калькулятора, справа, строчный фон тетради")
-        float notesX = cx - 13.0F;
-        float notesW = 172.0F;
-        if (cfg.showNotes) {
+        // 3. Right Pod: Embedded Notes & 1-Click Markers (238w x 165h)
+        float notesW = (gridStartX + mainTotalW) - curX;
+        if (cfg.showNotes && notesW > 60.0F) {
             float nY = mainY + mainFlyY;
-            boolean nHov = (mouseX >= notesX && mouseX <= notesX + notesW && mouseY >= nY && mouseY <= nY + mainH);
+            boolean nHov = (mouseX >= curX && mouseX <= curX + notesW && mouseY >= nY && mouseY <= nY + mainH);
             rockstar$tileHoverAnim[7] += ((nHov ? 1.0F : 0.0F) - rockstar$tileHoverAnim[7]) * 0.20F;
-            float dY = nY - rockstar$tileHoverAnim[7] * 3.0F;
-            rockstar$renderNotesCard(custom, notesX, dY, notesW, mainH, boldFont, font, subFont, tinyFont, mouseX, mouseY, rockstar$tileHoverAnim[7]);
+            float dY = nY - rockstar$tileHoverAnim[7] * 2.5F;
+            rockstar$renderNotesCard(custom, curX, dY, notesW, mainH, boldFont, font, subFont, tinyFont, mouseX, mouseY, rockstar$tileHoverAnim[7]);
         }
 
-        // 6: Right Action Rectangular Frosted Glass Buttons (В игру, Опции, Меню, Выйти)
-        float actX = cx + 167.0F;
-        float actW = 108.0F;
-        float actBtnH = 40.0F;
+        // ==========================================
+        // 3. PRIMARY ACTION BUTTONS DOCK (Horizontal Hero Row):
+        // [▶ В игру] (120w) | [⚙ Настройки] (120w) | [🎨 Кастомизация] (120w) | [✕ Выйти] (120w)
+        // Perfectly aligned across the exact 504px grid!
+        // ==========================================
+        float actY = mainY + mainH + 10.0F + mainFlyY;
+        float actBtnH = 38.0F;
         float actGap = 8.0F;
-        float actY = mainY + mainFlyY + 3.0F;
-        IIiii_Class8 aRad = IIiii_Class8.I_method_893b2757(10.0F);
+        float actBtnW = (mainTotalW - 3.0F * actGap) / 4.0F; // Exactly 120.0F!
+        IIiii_Class8 aRad = IIiii_Class8.I_method_893b2757(11.0F);
 
-        String[] actionLabels = { "В игру", "Опции", "Меню", "Выйти" };
+        String[] actionLabels = { "В игру", "Настройки", "Кастомизация", "Выйти" };
         String[] actionIcons = { "play", "setting", "hud/target", "back" };
         ColorRGBA[] actionColors = {
-            new ColorRGBA(34.0F, 197.0F, 94.0F, 220.0F),
-            new ColorRGBA(59.0F, 130.0F, 246.0F, 220.0F),
-            new ColorRGBA(168.0F, 85.0F, 247.0F, 220.0F),
-            new ColorRGBA(239.0F, 68.0F, 68.0F, 220.0F)
+            new ColorRGBA(34.0F, 197.0F, 94.0F, 240.0F),  // Green
+            new ColorRGBA(59.0F, 130.0F, 246.0F, 240.0F), // Blue
+            new ColorRGBA(168.0F, 85.0F, 247.0F, 240.0F), // Purple
+            new ColorRGBA(239.0F, 68.0F, 68.0F, 240.0F)   // Red
         };
 
         for (int i = 0; i < 4; i++) {
-            float bY = actY + i * (actBtnH + actGap);
-            boolean isHov = (mouseX >= actX && mouseX <= actX + actW && mouseY >= bY && mouseY <= bY + actBtnH);
+            float bX = gridStartX + i * (actBtnW + actGap);
+            boolean isHov = (mouseX >= bX && mouseX <= bX + actBtnW && mouseY >= actY && mouseY <= actY + actBtnH);
             rockstar$actionBtnHover[i] += ((isHov ? 1.0F : 0.0F) - rockstar$actionBtnHover[i]) * 0.22F;
             float hA = rockstar$actionBtnHover[i];
-            float drawY = bY - hA * 2.5F;
+            float drawY = actY - hA * 2.0F;
 
-            // Translucent glass, NO fat border!
-            custom.drawShadow(actX, drawY, actW, actBtnH, 10.0F, aRad, new ColorRGBA(0.0F, 0.0F, 0.0F, 50.0F));
-            custom.drawBlurredRect(actX, drawY, actW, actBtnH, 14.0F, 3.0F, aRad, new ColorRGBA(255.0F, 255.0F, 255.0F, 12.0F));
-            custom.drawRoundedRect(actX, drawY, actW, actBtnH, aRad, new ColorRGBA(18.0F, 22.0F, 32.0F, 125.0F + 35.0F * hA));
-            custom.drawRoundedBorder(actX, drawY, actW, actBtnH, 0.6F, aRad, hA > 0.01F ? actionColors[i].withAlpha(120.0F * hA) : new ColorRGBA(255.0F, 255.0F, 255.0F, 18.0F));
+            // Ultra-clean Apple Frosted Glass Button
+            custom.drawShadow(bX, drawY, actBtnW, actBtnH, 10.0F, aRad, isHov ? actionColors[i].withAlpha(65.0F) : new ColorRGBA(0.0F, 0.0F, 0.0F, 45.0F));
+            custom.drawBlurredRect(bX, drawY, actBtnW, actBtnH, 14.0F, 3.0F, aRad, new ColorRGBA(255.0F, 255.0F, 255.0F, 10.0F));
+            custom.drawRoundedRect(bX, drawY, actBtnW, actBtnH, aRad, new ColorRGBA(18.0F, 22.0F, 32.0F, 140.0F + 35.0F * hA));
+            custom.drawRoundedBorder(bX, drawY, actBtnW, actBtnH, 0.6F, aRad, hA > 0.01F ? actionColors[i].withAlpha(140.0F * hA) : new ColorRGBA(255.0F, 255.0F, 255.0F, 18.0F));
 
-            custom.drawIcon(actionIcons[i], actX + 12.0F, drawY + (actBtnH - 14.0F) / 2.0F, 14.0F, hA > 0.01F ? actionColors[i] : ColorRGBA.WHITE);
+            float iconSz = 14.0F;
+            custom.drawIcon(actionIcons[i], bX + 14.0F, drawY + (actBtnH - iconSz) / 2.0F, iconSz, hA > 0.01F ? actionColors[i] : ColorRGBA.WHITE);
             if (font != null) {
-                custom.drawText(font, actionLabels[i], actX + 32.0F, drawY + 15.0F, ColorRGBA.WHITE);
+                custom.drawText(font, actionLabels[i], bX + 34.0F, drawY + 14.0F, ColorRGBA.WHITE);
             }
         }
 
         // ==========================================
-        // 3. BOTTOM QUICK CONTROL DOCK (Rectangular Frosted Glass Buttons)
-        // All with uniform iOS squircle icons: ai.png, snake.png, mine.png, settings.png
+        // 4. BOTTOM MINI-APPS DOCK:
+        // [ (✦) AI Помощник ] | [ (🐍) Змейка ] | [ (💣) Сапёр ]
         // ==========================================
-        float bRowY = cy + 140.0F;
-        float bRowH = 36.0F;
-        float dockFlyY = (1.0F - rockstar$flyInAnim) * 44.0F;
-        IIiii_Class8 sRad = IIiii_Class8.I_method_893b2757(10.0F);
+        float bRowY = actY + actBtnH + 9.0F;
+        float bRowH = 28.0F;
+        float dockFlyY = (1.0F - rockstar$flyInAnim) * 40.0F;
+        IIiii_Class8 sRad = IIiii_Class8.I_method_893b2757(8.0F);
 
-        float dockAiW = 104.0F;
-        float dockSnW = 80.0F;
-        float dockMnW = 80.0F;
-        float dockSetW = 96.0F;
+        float dockAiW = 106.0F;
+        float dockSnW = 82.0F;
+        float dockMnW = 82.0F;
         float dockGap = 6.0F;
-        float dockTotalW = dockAiW + dockSnW + dockMnW + dockSetW + dockGap * 3.0F;
+        float dockTotalW = dockAiW + dockSnW + dockMnW + dockGap * 2.0F;
         float bStartX = cx - dockTotalW / 2.0F;
 
         // 1. [ (✦) Agravity AI ] (Toggles Slide-in Drawer!)
@@ -393,18 +399,18 @@ implements iIIiIIiIi_Class294 {
         boolean aiHov = (mouseX >= aiX && mouseX <= aiX + dockAiW && mouseY >= bRowY + dockFlyY && mouseY <= bRowY + dockFlyY + bRowH);
         rockstar$dockBtnHover[0] += ((aiHov ? 1.0F : 0.0F) - rockstar$dockBtnHover[0]) * 0.22F;
         float hA0 = rockstar$dockBtnHover[0];
-        float drawYAi = bRowY + dockFlyY - hA0 * 2.5F;
+        float drawYAi = bRowY + dockFlyY - hA0 * 2.0F;
         boolean aiActive = rockstar$aiDrawerOpen;
 
-        custom.drawShadow(aiX, drawYAi, dockAiW, bRowH, 10.0F, sRad, new ColorRGBA(0.0F, 0.0F, 0.0F, 40.0F));
-        custom.drawBlurredRect(aiX, drawYAi, dockAiW, bRowH, 14.0F, 3.0F, sRad, new ColorRGBA(theme.getRed(), theme.getGreen(), theme.getBlue(), aiActive ? 30.0F : 12.0F));
+        custom.drawShadow(aiX, drawYAi, dockAiW, bRowH, 8.0F, sRad, new ColorRGBA(0.0F, 0.0F, 0.0F, 35.0F));
+        custom.drawBlurredRect(aiX, drawYAi, dockAiW, bRowH, 12.0F, 3.0F, sRad, new ColorRGBA(theme.getRed(), theme.getGreen(), theme.getBlue(), aiActive ? 30.0F : 12.0F));
         custom.drawRoundedRect(aiX, drawYAi, dockAiW, bRowH, sRad, aiActive ? theme.withAlpha(150.0F) : new ColorRGBA(16.0F, 20.0F, 30.0F, 110.0F + 30.0F * hA0));
         custom.drawRoundedBorder(aiX, drawYAi, dockAiW, bRowH, 0.5F, sRad, aiActive ? theme.withAlpha(180.0F) : (hA0 > 0.01F ? theme.withAlpha(90.0F * hA0) : new ColorRGBA(255.0F, 255.0F, 255.0F, 15.0F)));
 
-        float sqIconSz = 22.0F;
-        custom.drawTexture(RockstarClient.id("icons/ai.png"), aiX + 7.0F, drawYAi + (bRowH - sqIconSz) / 2.0F, sqIconSz, sqIconSz, ColorRGBA.WHITE);
+        float sqIconSz = 18.0F;
+        custom.drawTexture(RockstarClient.id("icons/ai.png"), aiX + 6.0F, drawYAi + (bRowH - sqIconSz) / 2.0F, sqIconSz, sqIconSz, ColorRGBA.WHITE);
         if (subFont != null) {
-            custom.drawText(subFont, "Agravity AI", aiX + 33.0F, drawYAi + 13.5F, ColorRGBA.WHITE);
+            custom.drawText(subFont, "Agravity AI", aiX + 28.0F, drawYAi + 10.0F, ColorRGBA.WHITE);
         }
 
         // 2. [ (🐍) Змейка ] Mini-game
@@ -412,16 +418,16 @@ implements iIIiIIiIi_Class294 {
         boolean snakeHov = (mouseX >= snakeX && mouseX <= snakeX + dockSnW && mouseY >= bRowY + dockFlyY && mouseY <= bRowY + dockFlyY + bRowH);
         rockstar$dockBtnHover[1] += ((snakeHov ? 1.0F : 0.0F) - rockstar$dockBtnHover[1]) * 0.22F;
         float hA1 = rockstar$dockBtnHover[1];
-        float drawYSn = bRowY + dockFlyY - hA1 * 2.5F;
+        float drawYSn = bRowY + dockFlyY - hA1 * 2.0F;
 
-        custom.drawShadow(snakeX, drawYSn, dockSnW, bRowH, 10.0F, sRad, new ColorRGBA(0.0F, 0.0F, 0.0F, 40.0F));
-        custom.drawBlurredRect(snakeX, drawYSn, dockSnW, bRowH, 14.0F, 3.0F, sRad, new ColorRGBA(52.0F, 211.0F, 153.0F, 12.0F));
+        custom.drawShadow(snakeX, drawYSn, dockSnW, bRowH, 8.0F, sRad, new ColorRGBA(0.0F, 0.0F, 0.0F, 35.0F));
+        custom.drawBlurredRect(snakeX, drawYSn, dockSnW, bRowH, 12.0F, 3.0F, sRad, new ColorRGBA(52.0F, 211.0F, 153.0F, 12.0F));
         custom.drawRoundedRect(snakeX, drawYSn, dockSnW, bRowH, sRad, new ColorRGBA(16.0F, 20.0F, 30.0F, 110.0F + 30.0F * hA1));
         custom.drawRoundedBorder(snakeX, drawYSn, dockSnW, bRowH, 0.5F, sRad, hA1 > 0.01F ? new ColorRGBA(52.0F, 211.0F, 153.0F, 90.0F * hA1) : new ColorRGBA(255.0F, 255.0F, 255.0F, 15.0F));
 
-        custom.drawTexture(RockstarClient.id("icons/snake.png"), snakeX + 7.0F, drawYSn + (bRowH - sqIconSz) / 2.0F, sqIconSz, sqIconSz, ColorRGBA.WHITE);
+        custom.drawTexture(RockstarClient.id("icons/snake.png"), snakeX + 6.0F, drawYSn + (bRowH - sqIconSz) / 2.0F, sqIconSz, sqIconSz, ColorRGBA.WHITE);
         if (subFont != null) {
-            custom.drawText(subFont, "Змейка", snakeX + 33.0F, drawYSn + 13.5F, ColorRGBA.WHITE);
+            custom.drawText(subFont, "Змейка", snakeX + 28.0F, drawYSn + 10.0F, ColorRGBA.WHITE);
         }
 
         // 3. [ (💣) Сапёр ] Mini-game
@@ -429,33 +435,16 @@ implements iIIiIIiIi_Class294 {
         boolean mineHov = (mouseX >= mineX && mouseX <= mineX + dockMnW && mouseY >= bRowY + dockFlyY && mouseY <= bRowY + dockFlyY + bRowH);
         rockstar$dockBtnHover[2] += ((mineHov ? 1.0F : 0.0F) - rockstar$dockBtnHover[2]) * 0.22F;
         float hA2 = rockstar$dockBtnHover[2];
-        float drawYMn = bRowY + dockFlyY - hA2 * 2.5F;
+        float drawYMn = bRowY + dockFlyY - hA2 * 2.0F;
 
-        custom.drawShadow(mineX, drawYMn, dockMnW, bRowH, 10.0F, sRad, new ColorRGBA(0.0F, 0.0F, 0.0F, 40.0F));
-        custom.drawBlurredRect(mineX, drawYMn, dockMnW, bRowH, 14.0F, 3.0F, sRad, new ColorRGBA(244.0F, 63.0F, 94.0F, 12.0F));
+        custom.drawShadow(mineX, drawYMn, dockMnW, bRowH, 8.0F, sRad, new ColorRGBA(0.0F, 0.0F, 0.0F, 35.0F));
+        custom.drawBlurredRect(mineX, drawYMn, dockMnW, bRowH, 12.0F, 3.0F, sRad, new ColorRGBA(244.0F, 63.0F, 94.0F, 12.0F));
         custom.drawRoundedRect(mineX, drawYMn, dockMnW, bRowH, sRad, new ColorRGBA(16.0F, 20.0F, 30.0F, 110.0F + 30.0F * hA2));
         custom.drawRoundedBorder(mineX, drawYMn, dockMnW, bRowH, 0.5F, sRad, hA2 > 0.01F ? new ColorRGBA(244.0F, 63.0F, 94.0F, 90.0F * hA2) : new ColorRGBA(255.0F, 255.0F, 255.0F, 15.0F));
 
-        custom.drawTexture(RockstarClient.id("icons/mine.png"), mineX + 7.0F, drawYMn + (bRowH - sqIconSz) / 2.0F, sqIconSz, sqIconSz, ColorRGBA.WHITE);
+        custom.drawTexture(RockstarClient.id("icons/mine.png"), mineX + 6.0F, drawYMn + (bRowH - sqIconSz) / 2.0F, sqIconSz, sqIconSz, ColorRGBA.WHITE);
         if (subFont != null) {
-            custom.drawText(subFont, "Сапёр", mineX + 33.0F, drawYMn + 13.5F, ColorRGBA.WHITE);
-        }
-
-        // 4. [ (⚙) Настройка ] Settings & Menu Customizer Button
-        float setX = mineX + dockMnW + dockGap;
-        boolean setHov = (mouseX >= setX && mouseX <= setX + dockSetW && mouseY >= bRowY + dockFlyY && mouseY <= bRowY + dockFlyY + bRowH);
-        rockstar$dockBtnHover[3] += ((setHov ? 1.0F : 0.0F) - rockstar$dockBtnHover[3]) * 0.22F;
-        float hA3 = rockstar$dockBtnHover[3];
-        float drawYSet = bRowY + dockFlyY - hA3 * 2.5F;
-
-        custom.drawShadow(setX, drawYSet, dockSetW, bRowH, 10.0F, sRad, new ColorRGBA(0.0F, 0.0F, 0.0F, 40.0F));
-        custom.drawBlurredRect(setX, drawYSet, dockSetW, bRowH, 14.0F, 3.0F, sRad, new ColorRGBA(148.0F, 163.0F, 184.0F, 12.0F));
-        custom.drawRoundedRect(setX, drawYSet, dockSetW, bRowH, sRad, new ColorRGBA(16.0F, 20.0F, 30.0F, 110.0F + 30.0F * hA3));
-        custom.drawRoundedBorder(setX, drawYSet, dockSetW, bRowH, 0.5F, sRad, hA3 > 0.01F ? new ColorRGBA(148.0F, 163.0F, 184.0F, 90.0F * hA3) : new ColorRGBA(255.0F, 255.0F, 255.0F, 15.0F));
-
-        custom.drawTexture(RockstarClient.id("icons/settings.png"), setX + 7.0F, drawYSet + (bRowH - sqIconSz) / 2.0F, sqIconSz, sqIconSz, ColorRGBA.WHITE);
-        if (subFont != null) {
-            custom.drawText(subFont, "Настройка", setX + 33.0F, drawYSet + 13.5F, ColorRGBA.WHITE);
+            custom.drawText(subFont, "Сапёр", mineX + 28.0F, drawYMn + 10.0F, ColorRGBA.WHITE);
         }
 
         // ==========================================
@@ -768,31 +757,42 @@ implements iIIiIIiIi_Class294 {
         custom.drawIcon("keyboard", px + 5.0F, py + 5.0F, 18.0F, ColorRGBA.WHITE);
     }
 
-    // Module 5: Master Volume Vertical Slider Pill
+    // Module 5: Master Volume Vertical Slider Pill (Adapts to Active Client Theme!)
     @Unique
     private void rockstar$renderVolumePill(III custom, float x, float y, float w, float h, IIiIIi_Class10 subFont, int mx, int my, float hoverA) {
         IIiii_Class8 rad = IIiii_Class8.I_method_893b2757(w / 2.0F);
         float currentVol = (float)MinecraftClient.getInstance().options.getSoundVolume(SoundCategory.MASTER);
+        ColorRGBA theme = IiiiiIIIi_Class242.I_method_7df8e08e();
 
-        custom.drawShadow(x, y, w, h, 12.0F, rad, new ColorRGBA(0.0F, 0.0F, 0.0F, 40.0F));
+        // 1. Drop shadow & glass track
+        custom.drawShadow(x, y, w, h, 12.0F, rad, new ColorRGBA(0.0F, 0.0F, 0.0F, 45.0F));
         custom.drawBlurredRect(x, y, w, h, 14.0F, 3.0F, rad, new ColorRGBA(255.0F, 255.0F, 255.0F, 10.0F));
-        custom.drawRoundedRect(x, y, w, h, rad, new ColorRGBA(16.0F, 20.0F, 30.0F, 110.0F));
+        custom.drawRoundedRect(x, y, w, h, rad, new ColorRGBA(16.0F, 20.0F, 30.0F, 125.0F));
 
+        // 2. Dynamic theme-adapted fill track
         float fillH = h * MathHelper.clamp(currentVol, 0.0F, 1.0F);
         if (fillH > 4.0F) {
             float fillY = y + h - fillH;
-            custom.drawRoundedRect(x, fillY, w, fillH, rad, new ColorRGBA(245.0F, 248.0F, 255.0F, 220.0F));
+            custom.drawShadow(x, fillY, w, fillH, 10.0F, rad, theme.withAlpha(85.0F));
+            custom.drawBlurredRect(x, fillY, w, fillH, 12.0F, 2.0F, rad, theme.withAlpha(55.0F));
+            custom.drawRoundedRect(x, fillY, w, fillH, rad, theme.withAlpha(225.0F));
         }
 
-        custom.drawRoundedBorder(x, y, w, h, 0.5F, rad, new ColorRGBA(255.0F, 255.0F, 255.0F, 15.0F));
+        // 3. Delicate rounded border with theme hover glow
+        boolean active = hoverA > 0.05F || rockstar$isDraggingVolume;
+        custom.drawRoundedBorder(x, y, w, h, 0.6F, rad, active ? theme.withAlpha(190.0F) : new ColorRGBA(255.0F, 255.0F, 255.0F, 18.0F));
 
-        ColorRGBA iconCol = (currentVol > 0.25F) ? new ColorRGBA(0.0F, 122.0F, 255.0F, 255.0F) : ColorRGBA.WHITE;
+        // 4. Music note icon with high contrast
+        boolean iconInFill = fillH > 32.0F;
+        ColorRGBA iconCol = iconInFill ? ColorRGBA.WHITE : theme.withAlpha(240.0F);
         custom.drawIcon("music", x + (w - 18.0F) / 2.0F, y + h - 26.0F, 18.0F, iconCol);
 
+        // 5. Volume percentage text
         if (subFont != null) {
             String pct = (int)(currentVol * 100.0F) + "%";
             float pw = subFont.I_method_2c375926(pct);
-            custom.drawText(subFont, pct, x + (w - pw) / 2.0F, y + 10.0F, (currentVol > 0.85F) ? new ColorRGBA(30.0F, 30.0F, 36.0F, 240.0F) : ColorRGBA.WHITE);
+            boolean pctInFill = fillH >= h - 16.0F;
+            custom.drawText(subFont, pct, x + (w - pw) / 2.0F, y + 10.0F, pctInFill ? new ColorRGBA(20.0F, 20.0F, 28.0F, 240.0F) : ColorRGBA.WHITE);
         }
     }
 
@@ -1343,15 +1343,18 @@ implements iIIiIIiIi_Class294 {
             }
         }
 
-        // 3. Main Row Widget Clicks:
-        float mainY = cy - 54.0F;
-        float mainH = 186.0F;
-        float leftPodX = cx - 275.0F;
+        // 3. Main Content Row Widget Clicks:
+        float mainTotalW = 504.0F;
+        float gridStartX = cx - mainTotalW / 2.0F;
+        float mainY = cy - 46.0F;
+        float mainH = 165.0F;
 
-        // Volume Pill Click
+        // Volume Pill Click (left edge of main content)
+        float curX = gridStartX;
+        float leftPodW = 94.0F;
         if (cfg.showVolume) {
-            float volW = 50.0F;
-            if (mouseX >= leftPodX && mouseX <= leftPodX + volW && mouseY >= mainY && mouseY <= mainY + mainH) {
+            float volW = 44.0F;
+            if (mouseX >= curX && mouseX <= curX + volW && mouseY >= mainY && mouseY <= mainY + mainH) {
                 rockstar$isDraggingVolume = true;
                 rockstar$updateVolume(mouseY, mainY, mainH);
                 return true;
@@ -1359,9 +1362,9 @@ implements iIIiIIiIi_Class294 {
         }
 
         // Camera / Fullscreen Tiles Click
-        float qX = leftPodX + 54.0F;
-        float qW = 50.0F;
-        float qTileH = (mainH - 6.0F) / 2.0F;
+        float qX = curX + 48.0F;
+        float qW = 46.0F;
+        float qTileH = (mainH - 5.0F) / 2.0F;
         if (cfg.showCamera) {
             // Camera
             if (mouseX >= qX && mouseX <= qX + qW && mouseY >= mainY && mouseY <= mainY + qTileH) {
@@ -1375,7 +1378,7 @@ implements iIIiIIiIi_Class294 {
                 return true;
             }
             // Fullscreen
-            float fsY = mainY + qTileH + 6.0F;
+            float fsY = mainY + qTileH + 5.0F;
             if (mouseX >= qX && mouseX <= qX + qW && mouseY >= fsY && mouseY <= fsY + qTileH) {
                 UISoundManager.playButtonClick();
                 if (this.client != null) {
@@ -1384,24 +1387,26 @@ implements iIIiIIiIi_Class294 {
                 return true;
             }
         }
+        curX += leftPodW + 10.0F;
 
         // Calculator Card Click
-        float calcX = cx - 163.0F;
-        float calcW = 142.0F;
-        if (cfg.showCalculator && mouseX >= calcX && mouseX <= calcX + calcW && mouseY >= mainY && mouseY <= mainY + mainH) {
-            if (rockstar$handleCalcClick(mouseX, mouseY, calcX, mainY, calcW, mainH)) {
-                return true;
+        float calcW = 152.0F;
+        if (cfg.showCalculator) {
+            if (mouseX >= curX && mouseX <= curX + calcW && mouseY >= mainY && mouseY <= mainY + mainH) {
+                if (rockstar$handleCalcClick(mouseX, mouseY, curX, mainY, calcW, mainH)) {
+                    return true;
+                }
             }
+            curX += calcW + 10.0F;
         }
 
-        // Embedded Notes Widget Click ("чуть больше калькулятора, справа, строчный фон тетради")
-        float notesX = cx - 13.0F;
-        float notesW = 172.0F;
-        if (cfg.showNotes && mouseX >= notesX && mouseX <= notesX + notesW && mouseY >= mainY && mouseY <= mainY + mainH) {
+        // Embedded Notes Widget Click
+        float notesW = (gridStartX + mainTotalW) - curX;
+        if (cfg.showNotes && notesW > 60.0F && mouseX >= curX && mouseX <= curX + notesW && mouseY >= mainY && mouseY <= mainY + mainH) {
             float headerY = mainY + 7.0F;
             float btnMarkerW = 46.0F;
             float btnMarkerH = 15.0F;
-            float btnMarkerX = notesX + notesW - btnMarkerW - 8.0F;
+            float btnMarkerX = curX + notesW - btnMarkerW - 8.0F;
             float btnMarkerY = headerY;
 
             // 1. [+ Метка] Click
@@ -1433,7 +1438,7 @@ implements iIIiIIiIi_Class294 {
 
                 for (int mi = 0; mi < maxShow; mi++) {
                     NotesManager.Marker m = markers.get(mi);
-                    float chipX = notesX + 10.0F + mi * (chipW + chipGap);
+                    float chipX = curX + 10.0F + mi * (chipW + chipGap);
 
                     // 1-Click Delete button [✕] on marker
                     float delSz = 11.0F;
@@ -1466,24 +1471,24 @@ implements iIIiIIiIi_Class294 {
             rockstar$notesEditing = false;
         }
 
-        // Right Action Buttons Pod (В игру, Настройки, Меню, Выход)
-        float actX = cx + 167.0F;
-        float actW = 108.0F;
-        float actBtnH = 40.0F;
+        // 4. Primary Action Buttons Dock (Horizontal 4-Button Row)
+        // [▶ В игру] | [⚙ Настройки] | [🎨 Кастомизация] | [✕ Выйти]
+        float actY = mainY + mainH + 10.0F;
+        float actBtnH = 38.0F;
         float actGap = 8.0F;
-        float actY = mainY + 3.0F;
+        float actBtnW = (mainTotalW - 3.0F * actGap) / 4.0F;
 
-        if (mouseX >= actX && mouseX <= actX + actW) {
+        if (mouseY >= actY && mouseY <= actY + actBtnH) {
             for (int i = 0; i < 4; i++) {
-                float bY = actY + i * (actBtnH + actGap);
-                if (mouseY >= bY && mouseY <= bY + actBtnH) {
+                float bX = gridStartX + i * (actBtnW + actGap);
+                if (mouseX >= bX && mouseX <= bX + actBtnW) {
                     UISoundManager.playButtonClick();
                     switch (i) {
                         case 0 -> this.close(); // Resume
                         case 1 -> { // Options
                             if (this.client != null) this.client.setScreen(new OptionsScreen(this, this.client.options));
                         }
-                        case 2 -> { // Customizer ("меню перенеси в настройки")
+                        case 2 -> { // Customizer
                             if (this.client != null) this.client.setScreen(new EscapeMenuCustomizerScreen(this));
                         }
                         case 3 -> this.disconnect(); // Disconnect
@@ -1493,15 +1498,14 @@ implements iIIiIIiIi_Class294 {
             }
         }
 
-        // 4. Bottom Dock Buttons Clicks
-        float bRowY = cy + 140.0F;
-        float bRowH = 36.0F;
-        float dockAiW = 104.0F;
-        float dockSnW = 78.0F;
-        float dockMnW = 78.0F;
-        float dockSetW = 88.0F;
+        // 5. Bottom Mini-Apps Dock Clicks: [AI] | [Змейка] | [Сапер]
+        float bRowY = actY + actBtnH + 9.0F;
+        float bRowH = 28.0F;
+        float dockAiW = 106.0F;
+        float dockSnW = 82.0F;
+        float dockMnW = 82.0F;
         float dockGap = 6.0F;
-        float dockTotalW = dockAiW + dockSnW + dockMnW + dockSetW + dockGap * 3.0F;
+        float dockTotalW = dockAiW + dockSnW + dockMnW + dockGap * 2.0F;
         float bStartX = cx - dockTotalW / 2.0F;
 
         // [ (✦) Agravity AI ] Click: Toggle Slide-in Drawer!
@@ -1528,16 +1532,6 @@ implements iIIiIIiIi_Class294 {
             UISoundManager.playButtonClick();
             if (this.client != null) {
                 this.client.setScreen(new MinesweeperScreen(this));
-            }
-            return true;
-        }
-
-        // [ (⚙) Настройки ] Click
-        float setX = mineX + dockMnW + dockGap;
-        if (mouseX >= setX && mouseX <= setX + dockSetW && mouseY >= bRowY && mouseY <= bRowY + bRowH) {
-            UISoundManager.playButtonClick();
-            if (this.client != null) {
-                this.client.setScreen(new EscapeMenuCustomizerScreen(this));
             }
             return true;
         }
@@ -1595,8 +1589,8 @@ implements iIIiIIiIi_Class294 {
     public boolean mouseDragged(double mouseX, double mouseY, int button, double deltaX, double deltaY) {
         if (rockstar$isDraggingVolume) {
             float cy = this.height / 2.0F;
-            float volY = cy - 54.0F;
-            rockstar$updateVolume(mouseY, volY, 186.0F);
+            float volY = cy - 46.0F;
+            rockstar$updateVolume(mouseY, volY, 165.0F);
             return true;
         }
 

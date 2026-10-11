@@ -856,9 +856,6 @@ public class IiiIiIiiI_Class215 extends IiiIIiiiI_Class207 implements IiiIiIIiI_
       if (this.floatingSearchOpen) {
          this.renderFloatingSearch(var1, (int)var1.I_method_b1c3e152(), (int)var1.i_method_b1d26d32());
       }
-      if (InterfaceModule.isTerminalMode()) {
-         TerminalOverlayWindow.render(var1, (int)var1.I_method_b1c3e152(), (int)var1.i_method_b1d26d32());
-      }
       this.renderToastNotification(var1);
       this.clickBubbleEffect.render(var1);
    }
@@ -1557,9 +1554,6 @@ public class IiiIiIiiI_Class215 extends IiiIIiiiI_Class207 implements IiiIiIIiI_
    )
    @Override
    public void onMouseClicked(double origVar1, double origVar3, IiIII_Class9 var5) {
-      if (InterfaceModule.isTerminalMode() && TerminalOverlayWindow.mouseClicked(origVar1, origVar3, var5.I_method_6d899712())) {
-         return;
-      }
       if (var5 == IiIII_Class9.I_field_2f4c8d6c) {
          float topX = this.Ii_field_b584628c != null ? this.Ii_field_b584628c.x() : guiPosX;
          float topY = this.Ii_field_b584628c != null ? this.Ii_field_b584628c.y() : guiPosY;
@@ -1654,9 +1648,6 @@ public class IiiIiIiiI_Class215 extends IiiIIiiiI_Class207 implements IiiIiIIiI_
 
    @Override
    public void onMouseReleased(double origVar1, double origVar3, IiIII_Class9 var5) {
-      if (InterfaceModule.isTerminalMode()) {
-         TerminalOverlayWindow.mouseReleased(origVar1, origVar3, var5.I_method_6d899712());
-      }
       this.floatingSearchDragging = false;
       this.guiDragging = false;
       double var1 = this.mapCoordX(origVar1);
@@ -1677,9 +1668,6 @@ public class IiiIiIiiI_Class215 extends IiiIIiiiI_Class207 implements IiiIiIIiI_
 
    @Override
    public void onMouseDragged(double origVar1, double origVar3, IiIII_Class9 var5, double var6, double var8) {
-      if (InterfaceModule.isTerminalMode() && TerminalOverlayWindow.mouseDragged(origVar1, origVar3, var5.I_method_6d899712(), var6, var8)) {
-         return;
-      }
       if (this.guiDragging) {
          guiPosX = (float)origVar1 - this.guiDragOffsetX;
          guiPosY = (float)origVar3 - this.guiDragOffsetY;
@@ -1702,9 +1690,6 @@ public class IiiIiIiiI_Class215 extends IiiIIiiiI_Class207 implements IiiIiIIiI_
 
    @Override
    public boolean mouseScrolled(double origMouseX, double origMouseY, double horizontalAmount, double verticalAmount) {
-      if (InterfaceModule.isTerminalMode() && TerminalOverlayWindow.mouseScrolled(origMouseX, origMouseY, verticalAmount)) {
-         return true;
-      }
       if (this.floatingSearchOpen) {
          if (origMouseX >= this.floatingSearchX && origMouseX <= this.floatingSearchX + this.floatingSearchW
              && origMouseY >= this.floatingSearchY && origMouseY <= this.floatingSearchY + this.floatingSearchH) {
@@ -1719,9 +1704,6 @@ public class IiiIiIiiI_Class215 extends IiiIIiiiI_Class207 implements IiiIiIIiI_
 
    @Override
    public boolean charTyped(char chr, int modifiers) {
-      if (InterfaceModule.isTerminalMode() && TerminalOverlayWindow.charTyped(chr, modifiers)) {
-         return true;
-      }
       if (this.floatingSearchOpen) {
          if (chr >= 32 && chr != 127) {
             this.floatingSearchQuery += chr;
@@ -1762,9 +1744,6 @@ public class IiiIiIiiI_Class215 extends IiiIIiiiI_Class207 implements IiiIiIIiI_
    )
    @Override
    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-      if (InterfaceModule.isTerminalMode() && TerminalOverlayWindow.keyPressed(keyCode, scanCode, modifiers)) {
-         return true;
-      }
       if (this.floatingSearchOpen) {
          if (keyCode == 256) {
             this.floatingSearchOpen = false;

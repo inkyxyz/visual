@@ -478,16 +478,33 @@ public class IiiIIiIii_Class204 extends ii_Class4 implements iIIiIIiIi_Class294 
             returnAnimStartTime = System.currentTimeMillis();
          }
          long elapsed = System.currentTimeMillis() - returnAnimStartTime;
-         this.returnAnimProgress = MathHelper.clamp((float) elapsed / 3000.0F, 0.0F, 1.0F);
+         this.returnAnimProgress = MathHelper.clamp((float) elapsed / 2200.0F, 0.0F, 1.0F);
          if (this.returnAnimProgress >= 1.0F) {
             triggerReturnAnimation = false;
             returnAnimStartTime = 0L;
             this.returnAnimProgress = 1.0F;
          }
          float t = this.returnAnimProgress;
-         float frameScale = 1.0F - 0.45F * (float) Math.pow(t, 2.2);
-         float frameY = -this.height * 0.65F * (float) Math.pow(t, 2.5);
-         float frameAlpha = (1.0F - t);
+
+         // Phase 1 (0.0 to 0.42): Strictly zoom out / отдаляется while staying centered!
+         // Phase 2 (0.42 to 1.0): Flies upwards / уходит вверх off-screen and fades!
+         float frameScale;
+         float frameY;
+         float frameAlpha;
+
+         if (t <= 0.42F) {
+             float p1 = t / 0.42F;
+             float p1Ease = 1.0F - (float) Math.pow(1.0F - p1, 3);
+             frameScale = 1.0F - 0.26F * p1Ease;
+             frameY = 0.0F;
+             frameAlpha = 1.0F;
+         } else {
+             float p2 = (t - 0.42F) / 0.58F;
+             float p2Ease = (float) Math.pow(p2, 2.5);
+             frameScale = 0.74F - 0.14F * p2;
+             frameY = -(this.height + 60.0F) * p2Ease;
+             frameAlpha = MathHelper.clamp(1.0F - (float) Math.pow(p2, 1.8), 0.0F, 1.0F);
+         }
 
          float cx = this.width / 2.0F;
          float cy = this.height / 2.0F;

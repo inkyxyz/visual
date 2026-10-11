@@ -184,6 +184,7 @@ public class IOSDesktopScreen extends Screen {
 
     private final Screen parent;
     private Tab currentTab = Tab.ALL;
+    private float animatedTabIndicatorX = -1.0F;
     private String searchQuery = "";
     private boolean searchFocused = false;
 
@@ -456,34 +457,48 @@ public class IOSDesktopScreen extends Screen {
             custom.drawIcon("xmark", clrX + (clrSize - 8.0F) / 2.0F, clrY + (clrSize - 8.0F) / 2.0F, 8.0F, clrHov ? ColorRGBA.WHITE : new ColorRGBA(255.0F, 255.0F, 255.0F, 180.0F));
         }
 
-        // Right: Segmented Control Tabs [Все] [Миры] [Серверы]
-        float tabW = 60.0F;
+        // Right: Segmented Control Tabs [Все] [Миры] [Серверы] with Smooth Sliding Indicator!
+        float tabW = 64.0F;
         float tabsTotalW = tabW * 3.0F + 8.0F;
         float tabsX = barX + barW - tabsTotalW - 38.0F;
         float tabsY = barY + 4.0F;
         float tabsH = barH - 8.0F;
         IIiii_Class8 tRad = IIiii_Class8.I_method_893b2757(tabsH / 2.0F);
 
-        custom.drawRoundedRect(tabsX, tabsY, tabsTotalW, tabsH, tRad, new ColorRGBA(16.0F, 18.0F, 26.0F, 180.0F));
+        custom.drawRoundedRect(tabsX, tabsY, tabsTotalW, tabsH, tRad, new ColorRGBA(16.0F, 18.0F, 26.0F, 190.0F));
 
+        // Smooth sliding active tab pill
         Tab[] tabs = Tab.values();
+        int activeIdx = this.currentTab.ordinal();
+        float targetIndicatorX = tabsX + 2.0F + activeIdx * tabW;
+        if (this.animatedTabIndicatorX < 0.0F) {
+            this.animatedTabIndicatorX = targetIndicatorX;
+        } else {
+            this.animatedTabIndicatorX += (targetIndicatorX - this.animatedTabIndicatorX) * 0.24F;
+        }
+
+        // Draw smooth sliding active pill
+        float th = tabsH - 4.0F;
+        IIiii_Class8 pillRad = IIiii_Class8.I_method_893b2757(th / 2.0F);
+        ColorRGBA theme = IiiiiIIIi_Class242.I_method_7df8e08e();
+        custom.drawShadow(this.animatedTabIndicatorX, tabsY + 2.0F, tabW, th, 8.0F, pillRad, theme.withAlpha(90.0F));
+        custom.drawRoundedRect(this.animatedTabIndicatorX, tabsY + 2.0F, tabW, th, pillRad, theme);
+        custom.drawRoundedBorder(this.animatedTabIndicatorX, tabsY + 2.0F, tabW, th, 0.7F, pillRad, new ColorRGBA(255.0F, 255.0F, 255.0F, 75.0F));
+
         for (int i = 0; i < tabs.length; i++) {
             Tab t = tabs[i];
             float tx = tabsX + 2.0F + i * tabW;
             float ty = tabsY + 2.0F;
             float tw = tabW;
-            float th = tabsH - 4.0F;
             boolean selected = this.currentTab == t;
             boolean tHov = mx >= tx && mx <= tx + tw && my >= ty && my <= ty + th;
 
-            if (selected) {
-                custom.drawRoundedRect(tx, ty, tw, th, IIiii_Class8.I_method_893b2757(th / 2.0F), IiiiiIIIi_Class242.I_method_7df8e08e());
-            } else if (tHov) {
-                custom.drawRoundedRect(tx, ty, tw, th, IIiii_Class8.I_method_893b2757(th / 2.0F), new ColorRGBA(255.0F, 255.0F, 255.0F, 25.0F));
+            if (tHov && !selected) {
+                custom.drawRoundedRect(tx, ty, tw, th, pillRad, new ColorRGBA(255.0F, 255.0F, 255.0F, 22.0F));
             }
 
-            float titleW = IIiIiI_Class11.II_field_857c0621.I_method_3a2d5e3(7.0F).I_method_2c375926(t.title);
-            custom.drawText(IIiIiI_Class11.II_field_857c0621.I_method_3a2d5e3(7.0F), t.title, tx + (tw - titleW) / 2.0F, ty + (th - 7.0F) / 2.0F, selected ? ColorRGBA.WHITE : new ColorRGBA(255.0F, 255.0F, 255.0F, 160.0F));
+            float titleW = IIiIiI_Class11.II_field_857c0621.I_method_3a2d5e3(7.2F).I_method_2c375926(t.title);
+            custom.drawText(IIiIiI_Class11.II_field_857c0621.I_method_3a2d5e3(7.2F), t.title, tx + (tw - titleW) / 2.0F, ty + (th - 7.2F) / 2.0F, selected ? ColorRGBA.WHITE : new ColorRGBA(255.0F, 255.0F, 255.0F, 160.0F));
         }
 
         // Close Button (Apple-style Circular Close Button)
@@ -512,32 +527,39 @@ public class IOSDesktopScreen extends Screen {
     private void renderActionButton(III custom, float btnX, float btnY, float btnW, float btnH, String text, boolean hov, ColorRGBA accentColor) {
         IIiii_Class8 bRad = IIiii_Class8.I_method_893b2757(7.0F);
 
+        // Tactile button press animation
+        boolean isMouseDown = GLFW.glfwGetMouseButton(MinecraftClient.getInstance().getWindow().getHandle(), 0) == 1;
+        boolean pressed = hov && isMouseDown;
+        float actualY = btnY + (pressed ? 1.0F : 0.0F);
+
         // 1. Atmospheric soft glow shadow on hover
         if (hov) {
-            custom.drawShadow(btnX, btnY, btnW, btnH, 8.0F, bRad, accentColor.withAlpha(95.0F));
+            custom.drawShadow(btnX, actualY, btnW, btnH, 8.0F, bRad, accentColor.withAlpha(pressed ? 120.0F : 95.0F));
         }
 
         // 2. Apple glass background: frosted translucent glass idle, vibrant saturated accent on hover
         ColorRGBA bg = hov
-            ? accentColor.withAlpha(235.0F)
+            ? (pressed ? accentColor.withAlpha(255.0F) : accentColor.withAlpha(235.0F))
             : new ColorRGBA(34.0F, 42.0F, 60.0F, 200.0F);
-        custom.drawRoundedRect(btnX, btnY, btnW, btnH, bRad, bg);
+        custom.drawRoundedRect(btnX, actualY, btnW, btnH, bRad, bg);
 
         // 3. Delicate border (never harsh or thick)
         ColorRGBA border = hov
-            ? new ColorRGBA(255.0F, 255.0F, 255.0F, 120.0F)
+            ? new ColorRGBA(255.0F, 255.0F, 255.0F, pressed ? 160.0F : 120.0F)
             : new ColorRGBA(255.0F, 255.0F, 255.0F, 26.0F);
-        custom.drawRoundedBorder(btnX, btnY, btnW, btnH, 0.7F, bRad, border);
+        custom.drawRoundedBorder(btnX, actualY, btnW, btnH, 0.7F, bRad, border);
 
         // 4. Subtle top specular gleam line (iOS glass feel)
-        custom.drawRoundedRect(btnX + 3.0F, btnY + 1.0F, btnW - 6.0F, 1.0F, IIiii_Class8.I_method_893b2757(0.5F),
-            hov ? new ColorRGBA(255.0F, 255.0F, 255.0F, 75.0F) : new ColorRGBA(255.0F, 255.0F, 255.0F, 20.0F));
+        if (!pressed) {
+            custom.drawRoundedRect(btnX + 3.0F, actualY + 1.0F, btnW - 6.0F, 1.0F, IIiii_Class8.I_method_893b2757(0.5F),
+                hov ? new ColorRGBA(255.0F, 255.0F, 255.0F, 75.0F) : new ColorRGBA(255.0F, 255.0F, 255.0F, 20.0F));
+        }
 
         // 5. Crisp SemiBold typography
         IIiIIi_Class10 font = IIiIiI_Class11.II_field_857c0621.I_method_3a2d5e3(7.2F);
         ColorRGBA textCol = hov ? ColorRGBA.WHITE : new ColorRGBA(235.0F, 242.0F, 255.0F, 230.0F);
         float tw = font.I_method_2c375926(text);
-        custom.drawText(font, text, btnX + (btnW - tw) / 2.0F, btnY + (btnH - 7.2F) / 2.0F, textCol);
+        custom.drawText(font, text, btnX + (btnW - tw) / 2.0F, actualY + (btnH - 7.2F) / 2.0F, textCol);
     }
 
     private void renderDesktopCards(III custom, int mx, int my, float top, float h) {
@@ -614,13 +636,13 @@ public class IOSDesktopScreen extends Screen {
         boolean hov = mx >= x && mx <= x + wCard && my >= y && my <= y + hCard;
         IIiii_Class8 rad = IIiii_Class8.I_method_893b2757(12.0F);
 
-        float drawY = y + (hov ? -2.5F : 0.0F);
+        float drawY = y;
 
-        // Atmospheric drop shadow & hover glow lift
+        // Atmospheric drop shadow & hover glow (no position jumping!)
         if (hov) {
-            custom.drawShadow(x, drawY, wCard, hCard, 14.0F, rad, IiiiiIIIi_Class242.I_method_7df8e08e().withAlpha(75.0F));
+            custom.drawShadow(x, drawY, wCard, hCard, 10.0F, rad, IiiiiIIIi_Class242.I_method_7df8e08e().withAlpha(65.0F));
         } else {
-            custom.drawShadow(x, drawY, wCard, hCard, 8.0F, rad, new ColorRGBA(0.0F, 0.0F, 0.0F, 45.0F));
+            custom.drawShadow(x, drawY, wCard, hCard, 6.0F, rad, new ColorRGBA(0.0F, 0.0F, 0.0F, 40.0F));
         }
 
         // Card glass background
@@ -672,13 +694,13 @@ public class IOSDesktopScreen extends Screen {
         boolean hov = mx >= x && mx <= x + wCard && my >= y && my <= y + hCard;
         IIiii_Class8 rad = IIiii_Class8.I_method_893b2757(12.0F);
 
-        float drawY = y + (hov ? -2.5F : 0.0F);
+        float drawY = y;
 
-        // Atmospheric drop shadow & hover glow lift
+        // Atmospheric drop shadow & hover glow (no position jumping!)
         if (hov) {
-            custom.drawShadow(x, drawY, wCard, hCard, 14.0F, rad, IiiiiIIIi_Class242.I_method_7df8e08e().withAlpha(75.0F));
+            custom.drawShadow(x, drawY, wCard, hCard, 10.0F, rad, IiiiiIIIi_Class242.I_method_7df8e08e().withAlpha(65.0F));
         } else {
-            custom.drawShadow(x, drawY, wCard, hCard, 8.0F, rad, new ColorRGBA(0.0F, 0.0F, 0.0F, 45.0F));
+            custom.drawShadow(x, drawY, wCard, hCard, 6.0F, rad, new ColorRGBA(0.0F, 0.0F, 0.0F, 40.0F));
         }
 
         // Card glass background
@@ -774,12 +796,16 @@ public class IOSDesktopScreen extends Screen {
             IIiii_Class8 pRad = IIiii_Class8.I_method_893b2757(ph / 2.0F);
 
             boolean pHov = mx >= px && mx <= px + pw && my >= py && my <= py + ph;
-            ColorRGBA pBg = pHov ? new ColorRGBA(55.0F, 64.0F, 90.0F, 220.0F) : new ColorRGBA(28.0F, 32.0F, 46.0F, 160.0F);
-            custom.drawRoundedRect(px, py, pw, ph, pRad, pBg);
-            custom.drawRoundedBorder(px, py, pw, ph, 0.7F, pRad, pHov ? IiiiiIIIi_Class242.I_method_7df8e08e() : new ColorRGBA(255.0F, 255.0F, 255.0F, 20.0F));
+            boolean isMouseDown = GLFW.glfwGetMouseButton(MinecraftClient.getInstance().getWindow().getHandle(), 0) == 1;
+            boolean pressed = pHov && isMouseDown;
+            float drawPy = py + (pressed ? 1.0F : 0.0F);
+
+            ColorRGBA pBg = pHov ? new ColorRGBA(55.0F, 64.0F, 90.0F, pressed ? 255.0F : 220.0F) : new ColorRGBA(28.0F, 32.0F, 46.0F, 160.0F);
+            custom.drawRoundedRect(px, drawPy, pw, ph, pRad, pBg);
+            custom.drawRoundedBorder(px, drawPy, pw, ph, 0.7F, pRad, pHov ? IiiiiIIIi_Class242.I_method_7df8e08e() : new ColorRGBA(255.0F, 255.0F, 255.0F, 20.0F));
 
             float tw = IIiIiI_Class11.II_field_857c0621.I_method_3a2d5e3(6.5F).I_method_2c375926(actions[i]);
-            custom.drawText(IIiIiI_Class11.II_field_857c0621.I_method_3a2d5e3(6.5F), actions[i], px + (pw - tw) / 2.0F, py + (ph - 6.5F) / 2.0F, pHov ? ColorRGBA.WHITE : new ColorRGBA(255.0F, 255.0F, 255.0F, 185.0F));
+            custom.drawText(IIiIiI_Class11.II_field_857c0621.I_method_3a2d5e3(6.5F), actions[i], px + (pw - tw) / 2.0F, drawPy + (ph - 6.5F) / 2.0F, pHov ? ColorRGBA.WHITE : new ColorRGBA(255.0F, 255.0F, 255.0F, 185.0F));
         }
     }
 
