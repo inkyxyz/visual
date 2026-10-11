@@ -439,16 +439,22 @@ public class IOSDesktopScreen extends Screen {
             String cursor = this.searchFocused && (System.currentTimeMillis() % 1000L < 500L) ? "|" : "";
             custom.drawText(IIiIiI_Class11.i_field_857c0621.I_method_3a2d5e3(7.5F), this.searchQuery + cursor, searchX + 22.0F, searchY + (searchH - 7.5F) / 2.0F, ColorRGBA.WHITE);
 
-            // Clear search (✕)
-            float clrX = searchX + searchW - 16.0F;
-            float clrY = searchY + (searchH - 8.0F) / 2.0F;
-            custom.drawText(IIiIiI_Class11.II_field_857c0621.I_method_3a2d5e3(8.0F), "✕", clrX, clrY, new ColorRGBA(255.0F, 255.0F, 255.0F, 160.0F));
+            // Clear search (xmark)
+            float clrSize = 14.0F;
+            float clrX = searchX + searchW - clrSize - 6.0F;
+            float clrY = searchY + (searchH - clrSize) / 2.0F;
+            boolean clrHov = mx >= clrX && mx <= clrX + clrSize && my >= clrY && my <= clrY + clrSize;
+            IIiii_Class8 clrRad = IIiii_Class8.I_method_893b2757(clrSize / 2.0F);
+
+            ColorRGBA clrBg = clrHov ? new ColorRGBA(255.0F, 255.0F, 255.0F, 36.0F) : new ColorRGBA(255.0F, 255.0F, 255.0F, 16.0F);
+            custom.drawRoundedRect(clrX, clrY, clrSize, clrSize, clrRad, clrBg);
+            custom.drawIcon("xmark", clrX + (clrSize - 8.0F) / 2.0F, clrY + (clrSize - 8.0F) / 2.0F, 8.0F, clrHov ? ColorRGBA.WHITE : new ColorRGBA(255.0F, 255.0F, 255.0F, 180.0F));
         }
 
         // Right: Segmented Control Tabs [Все] [Миры] [Серверы]
         float tabW = 60.0F;
         float tabsTotalW = tabW * 3.0F + 8.0F;
-        float tabsX = barX + barW - tabsTotalW - 36.0F;
+        float tabsX = barX + barW - tabsTotalW - 38.0F;
         float tabsY = barY + 4.0F;
         float tabsH = barH - 8.0F;
         IIiii_Class8 tRad = IIiii_Class8.I_method_893b2757(tabsH / 2.0F);
@@ -475,12 +481,58 @@ public class IOSDesktopScreen extends Screen {
             custom.drawText(IIiIiI_Class11.II_field_857c0621.I_method_3a2d5e3(7.0F), t.title, tx + (tw - titleW) / 2.0F, ty + (th - 7.0F) / 2.0F, selected ? ColorRGBA.WHITE : new ColorRGBA(255.0F, 255.0F, 255.0F, 160.0F));
         }
 
-        // Close Button ✕
-        float closeX = barX + barW - 26.0F;
-        float closeY = barY + (barH - 18.0F) / 2.0F;
-        boolean closeHov = mx >= closeX && mx <= closeX + 18.0F && my >= closeY && my <= closeY + 18.0F;
-        custom.drawRoundedRect(closeX, closeY, 18.0F, 18.0F, IIiii_Class8.I_method_893b2757(9.0F), closeHov ? new ColorRGBA(220.0F, 60.0F, 60.0F, 180.0F) : new ColorRGBA(40.0F, 44.0F, 60.0F, 160.0F));
-        custom.drawText(IIiIiI_Class11.II_field_857c0621.I_method_3a2d5e3(8.0F), "✕", closeX + 5.5F, closeY + 4.5F, ColorRGBA.WHITE);
+        // Close Button (Apple-style Circular Close Button)
+        float closeSize = 22.0F;
+        float closeX = barX + barW - closeSize - 8.0F;
+        float closeY = barY + (barH - closeSize) / 2.0F;
+        boolean closeHov = mx >= closeX && mx <= closeX + closeSize && my >= closeY && my <= closeY + closeSize;
+        IIiii_Class8 cRad = IIiii_Class8.I_method_893b2757(closeSize / 2.0F);
+
+        ColorRGBA cBg = closeHov
+            ? new ColorRGBA(239.0F, 68.0F, 68.0F, 220.0F)
+            : new ColorRGBA(255.0F, 255.0F, 255.0F, 18.0F);
+        ColorRGBA cBorder = closeHov
+            ? new ColorRGBA(254.0F, 160.0F, 160.0F, 180.0F)
+            : new ColorRGBA(255.0F, 255.0F, 255.0F, 28.0F);
+        ColorRGBA iconCol = closeHov ? ColorRGBA.WHITE : new ColorRGBA(225.0F, 230.0F, 245.0F, 200.0F);
+
+        if (closeHov) {
+            custom.drawShadow(closeX, closeY, closeSize, closeSize, 6.0F, cRad, new ColorRGBA(239.0F, 68.0F, 68.0F, 90.0F));
+        }
+        custom.drawRoundedRect(closeX, closeY, closeSize, closeSize, cRad, cBg);
+        custom.drawRoundedBorder(closeX, closeY, closeSize, closeSize, 0.7F, cRad, cBorder);
+        custom.drawIcon("xmark", closeX + (closeSize - 10.0F) / 2.0F, closeY + (closeSize - 10.0F) / 2.0F, 10.0F, iconCol);
+    }
+
+    private void renderActionButton(III custom, float btnX, float btnY, float btnW, float btnH, String text, boolean hov, ColorRGBA accentColor) {
+        IIiii_Class8 bRad = IIiii_Class8.I_method_893b2757(7.0F);
+
+        // 1. Atmospheric soft glow shadow on hover
+        if (hov) {
+            custom.drawShadow(btnX, btnY, btnW, btnH, 8.0F, bRad, accentColor.withAlpha(95.0F));
+        }
+
+        // 2. Apple glass background: frosted translucent glass idle, vibrant saturated accent on hover
+        ColorRGBA bg = hov
+            ? accentColor.withAlpha(235.0F)
+            : new ColorRGBA(34.0F, 42.0F, 60.0F, 200.0F);
+        custom.drawRoundedRect(btnX, btnY, btnW, btnH, bRad, bg);
+
+        // 3. Delicate border (never harsh or thick)
+        ColorRGBA border = hov
+            ? new ColorRGBA(255.0F, 255.0F, 255.0F, 120.0F)
+            : new ColorRGBA(255.0F, 255.0F, 255.0F, 26.0F);
+        custom.drawRoundedBorder(btnX, btnY, btnW, btnH, 0.7F, bRad, border);
+
+        // 4. Subtle top specular gleam line (iOS glass feel)
+        custom.drawRoundedRect(btnX + 3.0F, btnY + 1.0F, btnW - 6.0F, 1.0F, IIiii_Class8.I_method_893b2757(0.5F),
+            hov ? new ColorRGBA(255.0F, 255.0F, 255.0F, 75.0F) : new ColorRGBA(255.0F, 255.0F, 255.0F, 20.0F));
+
+        // 5. Crisp SemiBold typography
+        IIiIIi_Class10 font = IIiIiI_Class11.II_field_857c0621.I_method_3a2d5e3(7.2F);
+        ColorRGBA textCol = hov ? ColorRGBA.WHITE : new ColorRGBA(235.0F, 242.0F, 255.0F, 230.0F);
+        float tw = font.I_method_2c375926(text);
+        custom.drawText(font, text, btnX + (btnW - tw) / 2.0F, btnY + (btnH - 7.2F) / 2.0F, textCol);
     }
 
     private void renderDesktopCards(III custom, int mx, int my, float top, float h) {
@@ -587,20 +639,13 @@ public class IOSDesktopScreen extends Screen {
         String dateStr = w.lastPlayed > 0 ? DATE_FORMAT.format(new Date(w.lastPlayed)) : "Никогда";
         custom.drawText(IIiIiI_Class11.i_field_857c0621.I_method_3a2d5e3(6.5F), dateStr + " • " + w.version, textX, y + 39.0F, new ColorRGBA(255.0F, 255.0F, 255.0F, 125.0F));
 
-        // Quick Launch Action Pill (Play)
-        float btnW = 52.0F;
-        float btnH = 22.0F;
-        float btnX = x + wCard - btnW - 10.0F;
+        // Quick Launch Action Button (Play)
+        float btnW = 60.0F;
+        float btnH = 24.0F;
+        float btnX = x + wCard - btnW - 12.0F;
         float btnY = y + (hCard - btnH) / 2.0F;
-        IIiii_Class8 bRad = IIiii_Class8.I_method_893b2757(btnH / 2.0F);
-
         boolean bHov = mx >= btnX && mx <= btnX + btnW && my >= btnY && my <= btnY + btnH;
-        ColorRGBA btnBg = bHov ? IiiiiIIIi_Class242.I_method_7df8e08e() : IiiiiIIIi_Class242.I_method_7df8e08e().withAlpha(180.0F);
-        custom.drawRoundedRect(btnX, btnY, btnW, btnH, bRad, btnBg);
-        custom.drawRoundedBorder(btnX, btnY, btnW, btnH, 0.8F, bRad, ColorRGBA.WHITE.withAlpha(140.0F));
-
-        float playTextW = IIiIiI_Class11.II_field_857c0621.I_method_3a2d5e3(7.5F).I_method_2c375926("Играть");
-        custom.drawText(IIiIiI_Class11.II_field_857c0621.I_method_3a2d5e3(7.5F), "Играть", btnX + (btnW - playTextW) / 2.0F, btnY + (btnH - 7.5F) / 2.0F, ColorRGBA.WHITE);
+        this.renderActionButton(custom, btnX, btnY, btnW, btnH, "Играть", bHov, new ColorRGBA(34.0F, 197.0F, 94.0F, 240.0F));
     }
 
     private void renderServerCard(III custom, ServerItem s, float x, float y, float wCard, float hCard, int mx, int my) {
@@ -664,20 +709,13 @@ public class IOSDesktopScreen extends Screen {
 
         custom.drawText(IIiIiI_Class11.i_field_857c0621.I_method_3a2d5e3(6.5F), statusText, textX, y + 39.0F, statusCol);
 
-        // Quick Launch Action Pill (Connect)
-        float btnW = 54.0F;
-        float btnH = 22.0F;
-        float btnX = x + wCard - btnW - 10.0F;
+        // Quick Launch Action Button (Connect)
+        float btnW = 60.0F;
+        float btnH = 24.0F;
+        float btnX = x + wCard - btnW - 12.0F;
         float btnY = y + (hCard - btnH) / 2.0F;
-        IIiii_Class8 bRad = IIiii_Class8.I_method_893b2757(btnH / 2.0F);
-
         boolean bHov = mx >= btnX && mx <= btnX + btnW && my >= btnY && my <= btnY + btnH;
-        ColorRGBA btnBg = bHov ? new ColorRGBA(40.0F, 140.0F, 250.0F, 240.0F) : new ColorRGBA(30.0F, 110.0F, 210.0F, 190.0F);
-        custom.drawRoundedRect(btnX, btnY, btnW, btnH, bRad, btnBg);
-        custom.drawRoundedBorder(btnX, btnY, btnW, btnH, 0.8F, bRad, ColorRGBA.WHITE.withAlpha(140.0F));
-
-        float joinTextW = IIiIiI_Class11.II_field_857c0621.I_method_3a2d5e3(7.0F).I_method_2c375926("Войти");
-        custom.drawText(IIiIiI_Class11.II_field_857c0621.I_method_3a2d5e3(7.0F), "Войти", btnX + (btnW - joinTextW) / 2.0F, btnY + (btnH - 7.0F) / 2.0F, ColorRGBA.WHITE);
+        this.renderActionButton(custom, btnX, btnY, btnW, btnH, "Войти", bHov, new ColorRGBA(37.0F, 115.0F, 245.0F, 240.0F));
     }
 
     private void renderDock(III custom, int mx, int my) {
@@ -705,9 +743,7 @@ public class IOSDesktopScreen extends Screen {
             boolean pHov = mx >= px && mx <= px + pw && my >= py && my <= py + ph;
             ColorRGBA pBg = pHov ? new ColorRGBA(55.0F, 64.0F, 90.0F, 220.0F) : new ColorRGBA(28.0F, 32.0F, 46.0F, 160.0F);
             custom.drawRoundedRect(px, py, pw, ph, pRad, pBg);
-            if (pHov) {
-                custom.drawRoundedBorder(px, py, pw, ph, 0.8F, pRad, IiiiiIIIi_Class242.I_method_7df8e08e());
-            }
+            custom.drawRoundedBorder(px, py, pw, ph, 0.7F, pRad, pHov ? IiiiiIIIi_Class242.I_method_7df8e08e() : new ColorRGBA(255.0F, 255.0F, 255.0F, 20.0F));
 
             float tw = IIiIiI_Class11.II_field_857c0621.I_method_3a2d5e3(6.5F).I_method_2c375926(actions[i]);
             custom.drawText(IIiIiI_Class11.II_field_857c0621.I_method_3a2d5e3(6.5F), actions[i], px + (pw - tw) / 2.0F, py + (ph - 6.5F) / 2.0F, pHov ? ColorRGBA.WHITE : new ColorRGBA(255.0F, 255.0F, 255.0F, 185.0F));
@@ -726,9 +762,10 @@ public class IOSDesktopScreen extends Screen {
         float barH = topBarH - 10.0F;
 
         // 1. Check Close button
-        float closeX = barX + barW - 26.0F;
-        float closeY = barY + (barH - 18.0F) / 2.0F;
-        if (mx >= closeX && mx <= closeX + 18.0F && my >= closeY && my <= closeY + 18.0F) {
+        float closeSize = 22.0F;
+        float closeX = barX + barW - closeSize - 8.0F;
+        float closeY = barY + (barH - closeSize) / 2.0F;
+        if (mx >= closeX && mx <= closeX + closeSize && my >= closeY && my <= closeY + closeSize) {
             this.close();
             return true;
         }
@@ -739,8 +776,9 @@ public class IOSDesktopScreen extends Screen {
         float searchY = barY + 4.0F;
         float searchH = barH - 8.0F;
         if (mx >= searchX && mx <= searchX + searchW && my >= searchY && my <= searchY + searchH) {
-            // Check clear button ✕
-            float clrX = searchX + searchW - 18.0F;
+            // Check clear button xmark
+            float clrSize = 14.0F;
+            float clrX = searchX + searchW - clrSize - 6.0F;
             if (!this.searchQuery.isEmpty() && mx >= clrX) {
                 this.searchQuery = "";
             } else {
