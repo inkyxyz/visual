@@ -275,33 +275,36 @@ implements iIIiIIiIi_Class294 {
         }
 
         // ==========================================
-        // 2. MAIN CONTENT ROW (Symmetric 504px Grid Layout):
-        // Left (Volume & Toggles: 94w) | Center (Calc: 152w) | Right (Notes: 238w)
-        // 94 + 10 + 152 + 10 + 238 = 504px (Exact Symmetry!)
         // ==========================================
-        float mainTotalW = 504.0F;
+        // 2. MAIN CONTENT ROW (Apple Glass Symmetry):
+        // Left Pod: Volume Card .vs-wrap (68w) + Toggles (44w) -> 118w
+        // Center Pod: Calculator Card .calc (186w)
+        // Right Pod: Notes & Markers .notes (226w)
+        // 118 + 10 + 186 + 10 + 226 = 550px Total Width!
+        // ==========================================
+        float mainTotalW = 550.0F;
         float gridStartX = cx - mainTotalW / 2.0F;
-        float mainY = cy - 46.0F;
-        float mainH = 165.0F;
+        float mainY = cy - 48.0F;
+        float mainH = 172.0F;
         float mainFlyY = (1.0F - rockstar$flyInAnim) * 32.0F;
 
-        // 1. Left Pod: Theme-Adapted Volume Pill (44w) + Quick Toggles (46w)
+        // 1. Left Pod: Apple Glass Volume Card (.vs-wrap) + Stacked Quick Tiles
         float curX = gridStartX;
-        float leftPodW = 94.0F;
+        float leftPodW = 118.0F;
         float vY = mainY + mainFlyY;
 
         if (cfg.showVolume) {
-            float volW = 44.0F;
+            float volW = 68.0F;
             boolean vHov = (mouseX >= curX && mouseX <= curX + volW && mouseY >= vY && mouseY <= vY + mainH);
             rockstar$tileHoverAnim[3] += ((vHov ? 1.0F : 0.0F) - rockstar$tileHoverAnim[3]) * 0.20F;
             float dY = vY - rockstar$tileHoverAnim[3] * 2.5F;
-            rockstar$renderVolumePill(custom, curX, dY, volW, mainH, subFont, mouseX, mouseY, rockstar$tileHoverAnim[3]);
+            rockstar$renderVolumePod(custom, curX, dY, volW, mainH, boldFont, subFont, mouseX, mouseY, rockstar$tileHoverAnim[3]);
         }
 
         // Camera & Fullscreen stacked quick toggles
-        float qX = curX + 48.0F;
-        float qW = 46.0F;
-        float qTileH = (mainH - 5.0F) / 2.0F;
+        float qX = curX + 74.0F;
+        float qW = 44.0F;
+        float qTileH = (mainH - 6.0F) / 2.0F;
         if (cfg.showCamera) {
             float camY = vY;
             boolean cHov = (mouseX >= qX && mouseX <= qX + qW && mouseY >= camY && mouseY <= camY + qTileH);
@@ -309,7 +312,7 @@ implements iIIiIIiIi_Class294 {
             float dY = camY - rockstar$tileHoverAnim[4] * 2.5F;
             rockstar$renderCameraTile(custom, qX, dY, qW, qTileH, mouseX, mouseY, rockstar$tileHoverAnim[4]);
 
-            float fsY = camY + qTileH + 5.0F;
+            float fsY = camY + qTileH + 6.0F;
             boolean fsHov = (mouseX >= qX && mouseX <= qX + qW && mouseY >= fsY && mouseY <= fsY + qTileH);
             rockstar$tileHoverAnim[5] += ((fsHov ? 1.0F : 0.0F) - rockstar$tileHoverAnim[5]) * 0.20F;
             float dFsY = fsY - rockstar$tileHoverAnim[5] * 2.5F;
@@ -317,8 +320,8 @@ implements iIIiIIiIi_Class294 {
         }
         curX += leftPodW + 10.0F;
 
-        // 2. Center Pod: iOS Calculator Card (152w x 165h)
-        float calcW = 152.0F;
+        // 2. Center Pod: iOS Calculator Card (.calc glass, 186w x 172h)
+        float calcW = 186.0F;
         if (cfg.showCalculator) {
             float cY = mainY + mainFlyY;
             boolean calcHov = (mouseX >= curX && mouseX <= curX + calcW && mouseY >= cY && mouseY <= cY + mainH);
@@ -346,7 +349,7 @@ implements iIIiIIiIi_Class294 {
         float dockH = 50.0F;
         float dockX = cx - dockW / 2.0F;
         float dockY = mainY + mainH + 12.0F + mainFlyY;
-        IIiii_Class8 dockRad = IIiii_Class8.I_method_893b2757(15.0F);
+        IIiii_Class8 dockRad = IIiii_Class8.I_method_893b2757(dockH / 2.0F);
 
         // 1. Apple Glass Dock Container
         custom.drawShadow(dockX, dockY, dockW, dockH, 18.0F, dockRad, theme.withAlpha(55.0F));
@@ -765,65 +768,99 @@ implements iIIiIIiIi_Class294 {
         custom.drawIcon("keyboard", px + 5.0F, py + 5.0F, 18.0F, ColorRGBA.WHITE);
     }
 
-    // Module 5: Master Volume Vertical Slider Pill (Adapts to Active Client Theme!)
+    // Module 5: Apple Glass Vertical Volume Card Pod (.vs-wrap glass matching HTML mockup)
     @Unique
-    private void rockstar$renderVolumePill(III custom, float x, float y, float w, float h, IIiIIi_Class10 subFont, int mx, int my, float hoverA) {
-        IIiii_Class8 rad = IIiii_Class8.I_method_893b2757(w / 2.0F);
+    private void rockstar$renderVolumePod(III custom, float x, float y, float w, float h, IIiIIi_Class10 boldFont, IIiIIi_Class10 subFont, int mx, int my, float hoverA) {
+        IIiii_Class8 rad = IIiii_Class8.I_method_893b2757(16.0F);
         float currentVol = (float)MinecraftClient.getInstance().options.getSoundVolume(SoundCategory.MASTER);
         ColorRGBA theme = IiiiiIIIi_Class242.I_method_7df8e08e();
 
-        // 1. Drop shadow & glass track
-        custom.drawShadow(x, y, w, h, 12.0F, rad, new ColorRGBA(0.0F, 0.0F, 0.0F, 45.0F));
-        custom.drawBlurredRect(x, y, w, h, 14.0F, 3.0F, rad, new ColorRGBA(255.0F, 255.0F, 255.0F, 10.0F));
-        custom.drawRoundedRect(x, y, w, h, rad, new ColorRGBA(16.0F, 20.0F, 30.0F, 125.0F));
+        // 1. Apple Glass Pod Container (.vs-wrap glass)
+        custom.drawShadow(x, y, w, h, 14.0F, rad, new ColorRGBA(0.0F, 0.0F, 0.0F, 40.0F));
+        custom.drawBlurredRect(x, y, w, h, 16.0F, 3.0F, rad, new ColorRGBA(255.0F, 255.0F, 255.0F, 10.0F));
+        custom.drawRoundedRect(x, y, w, h, rad, new ColorRGBA(16.0F, 20.0F, 32.0F, 140.0F));
+        custom.drawRoundedBorder(x, y, w, h, 0.7F, rad, (hoverA > 0.01F || rockstar$isDraggingVolume) ? theme.withAlpha(140.0F) : new ColorRGBA(255.0F, 255.0F, 255.0F, 18.0F));
+        custom.drawRoundedRect(x + 8.0F, y + 1.2F, w - 16.0F, 1.0F, IIiii_Class8.I_method_893b2757(0.5F), new ColorRGBA(255.0F, 255.0F, 255.0F, 35.0F));
 
-        // 2. Dynamic theme-adapted fill track
-        float fillH = h * MathHelper.clamp(currentVol, 0.0F, 1.0F);
-        if (fillH > 4.0F) {
-            float fillY = y + h - fillH;
-            custom.drawShadow(x, fillY, w, fillH, 10.0F, rad, theme.withAlpha(85.0F));
-            custom.drawBlurredRect(x, fillY, w, fillH, 12.0F, 2.0F, rad, theme.withAlpha(55.0F));
-            custom.drawRoundedRect(x, fillY, w, fillH, rad, theme.withAlpha(225.0F));
+        // 2. Top Percentage Text (.vslider-value)
+        String pctStr = (int)(currentVol * 100.0F) + "%";
+        if (boldFont != null) {
+            float tw = boldFont.I_method_2c375926(pctStr);
+            custom.drawText(boldFont, pctStr, x + (w - tw) / 2.0F, y + 9.0F, ColorRGBA.WHITE);
         }
 
-        // 3. Delicate rounded border with theme hover glow
-        boolean active = hoverA > 0.05F || rockstar$isDraggingVolume;
-        custom.drawRoundedBorder(x, y, w, h, 0.6F, rad, active ? theme.withAlpha(190.0F) : new ColorRGBA(255.0F, 255.0F, 255.0F, 18.0F));
+        // 3. Vertical Slider Track (.vslider)
+        float trackW = 42.0F;
+        float trackX = x + (w - trackW) / 2.0F;
+        float trackY = y + 26.0F;
+        float trackH = h - 26.0F - 46.0F;
+        IIiii_Class8 tRad = IIiii_Class8.I_method_893b2757(trackW / 2.0F);
 
-        // 4. Music note icon with high contrast
-        boolean iconInFill = fillH > 32.0F;
-        ColorRGBA iconCol = iconInFill ? ColorRGBA.WHITE : theme.withAlpha(240.0F);
-        custom.drawIcon("music", x + (w - 18.0F) / 2.0F, y + h - 26.0F, 18.0F, iconCol);
+        // Inset track background
+        custom.drawRoundedRect(trackX, trackY, trackW, trackH, tRad, new ColorRGBA(120.0F, 120.0F, 128.0F, 45.0F));
+        custom.drawRoundedBorder(trackX, trackY, trackW, trackH, 0.6F, tRad, new ColorRGBA(255.0F, 255.0F, 255.0F, 20.0F));
 
-        // 5. Volume percentage text
-        if (subFont != null) {
-            String pct = (int)(currentVol * 100.0F) + "%";
-            float pw = subFont.I_method_2c375926(pct);
-            boolean pctInFill = fillH >= h - 16.0F;
-            custom.drawText(subFont, pct, x + (w - pw) / 2.0F, y + 10.0F, pctInFill ? new ColorRGBA(20.0F, 20.0F, 28.0F, 240.0F) : ColorRGBA.WHITE);
+        // Bottom-up Fill (.vslider-fill)
+        float fillH = MathHelper.clamp(trackH * currentVol, 0.0F, trackH);
+        if (fillH > 3.0F) {
+            float fillY = trackY + trackH - fillH;
+            custom.drawShadow(trackX, fillY, trackW, fillH, 10.0F, tRad, theme.withAlpha(85.0F));
+            custom.drawRoundedRect(trackX, fillY, trackW, fillH, tRad, theme);
+            custom.drawRoundedBorder(trackX, fillY, trackW, fillH, 0.7F, tRad, theme.withAlpha(220.0F));
+            custom.drawRoundedRect(trackX + 4.0F, fillY + 1.0F, trackW - 8.0F, 1.0F, IIiii_Class8.I_method_893b2757(0.5F), new ColorRGBA(255.0F, 255.0F, 255.0F, 75.0F));
         }
+
+        // 4. Bottom Circular Icon Button (.vslider-icon)
+        float iconSz = 34.0F;
+        float iconX = x + (w - iconSz) / 2.0F;
+        float iconY = y + h - iconSz - 8.0F;
+        IIiii_Class8 iRad = IIiii_Class8.I_method_893b2757(iconSz / 2.0F);
+
+        custom.drawRoundedRect(iconX, iconY, iconSz, iconSz, iRad, new ColorRGBA(255.0F, 255.0F, 255.0F, 22.0F));
+        custom.drawRoundedBorder(iconX, iconY, iconSz, iconSz, 0.8F, iRad, new ColorRGBA(255.0F, 255.0F, 255.0F, 35.0F));
+        custom.drawIcon("music", iconX + (iconSz - 16.0F) / 2.0F, iconY + (iconSz - 16.0F) / 2.0F, 16.0F, ColorRGBA.WHITE);
     }
 
-    // Module 6: Interactive iOS Calculator
+    // Module 6: Apple Glass Calculator (.calc glass matching HTML mockup)
     @Unique
     private void rockstar$renderCalculatorCard(III custom, float x, float y, float w, float h, IIiIIi_Class10 boldFont, IIiIIi_Class10 font, int mx, int my, float hoverA) {
-        IIiii_Class8 rad = IIiii_Class8.I_method_893b2757(12.0F);
-        custom.drawShadow(x, y, w, h, 14.0F, rad, new ColorRGBA(0.0F, 0.0F, 0.0F, 50.0F));
-        custom.drawBlurredRect(x, y, w, h, 16.0F, 3.0F, rad, new ColorRGBA(255.0F, 255.0F, 255.0F, 10.0F));
-        custom.drawRoundedRect(x, y, w, h, rad, new ColorRGBA(16.0F, 18.0F, 26.0F, 115.0F));
-        custom.drawRoundedBorder(x, y, w, h, 0.5F, rad, hoverA > 0.01F ? new ColorRGBA(255.0F, 255.0F, 255.0F, 50.0F) : new ColorRGBA(255.0F, 255.0F, 255.0F, 15.0F));
+        IIiii_Class8 rad = IIiii_Class8.I_method_893b2757(16.0F);
+        ColorRGBA theme = IiiiiIIIi_Class242.I_method_7df8e08e();
 
-        // LCD Display Area
-        float lcdH = 26.0F;
-        float lcdY = y + 6.0F;
+        // 1. Apple Glass Container (.calc glass)
+        custom.drawShadow(x, y, w, h, 14.0F, rad, new ColorRGBA(0.0F, 0.0F, 0.0F, 45.0F));
+        custom.drawBlurredRect(x, y, w, h, 16.0F, 3.0F, rad, new ColorRGBA(255.0F, 255.0F, 255.0F, 10.0F));
+        custom.drawRoundedRect(x, y, w, h, rad, new ColorRGBA(16.0F, 20.0F, 32.0F, 140.0F));
+        custom.drawRoundedBorder(x, y, w, h, 0.7F, rad, hoverA > 0.01F ? theme.withAlpha(120.0F * hoverA) : new ColorRGBA(255.0F, 255.0F, 255.0F, 18.0F));
+        custom.drawRoundedRect(x + 10.0F, y + 1.2F, w - 20.0F, 1.0F, IIiii_Class8.I_method_893b2757(0.5F), new ColorRGBA(255.0F, 255.0F, 255.0F, 40.0F));
+
+        // 2. LCD Display Area (.calc-display)
+        float padX = 10.0F;
+        float dispW = w - padX * 2.0F;
+        float dispH = 26.0F;
+        float dispY = y + 8.0F;
+        IIiii_Class8 dRad = IIiii_Class8.I_method_893b2757(8.0F);
+
+        custom.drawRoundedRect(x + padX, dispY, dispW, dispH, dRad, new ColorRGBA(10.0F, 14.0F, 24.0F, 160.0F));
+        custom.drawRoundedBorder(x + padX, dispY, dispW, dispH, 0.5F, dRad, new ColorRGBA(255.0F, 255.0F, 255.0F, 14.0F));
+
         String disp = rockstar$calcDisplay;
-        if (disp.length() > 9) disp = disp.substring(0, 9);
+        if (disp.length() > 14) disp = disp.substring(0, 14);
         if (boldFont != null) {
-            float txtW = boldFont.I_method_2c375926(disp);
-            custom.drawText(boldFont, disp, x + w - txtW - 12.0F, lcdY + 7.0F, ColorRGBA.WHITE);
+            float tw = boldFont.I_method_2c375926(disp);
+            custom.drawText(boldFont, disp, x + padX + dispW - tw - 8.0F, dispY + 7.0F, ColorRGBA.WHITE);
         }
 
-        // Circular Button Grid (5 rows x 4 columns)
+        // 3. Button Grid (.calc-grid) — Exactly 4 columns x 5 rows
+        float gap = 4.5F;
+        float gridW = w - padX * 2.0F;
+        float colW = (gridW - 3.0F * gap) / 4.0F;
+        float btnH = 20.5F;
+        float gridStartY = dispY + dispH + 6.0F;
+        IIiii_Class8 btnRad = IIiii_Class8.I_method_893b2757(6.0F);
+
+        boolean isMouseDown = org.lwjgl.glfw.GLFW.glfwGetMouseButton(MinecraftClient.getInstance().getWindow().getHandle(), 0) == 1;
+
         String[][] btnGrid = new String[][]{
             { "C", "+/-", "%", "÷" },
             { "7", "8", "9", "×" },
@@ -832,36 +869,50 @@ implements iIIiIIiIi_Class294 {
             { "0", ".", "=" }
         };
 
-        float gridStartY = lcdY + lcdH + 4.0F;
-        float btnSz = 24.0F;
-        float gap = 4.0F;
-
         for (int r = 0; r < 5; r++) {
-            float rowY = gridStartY + r * (btnSz + gap);
-            int cols = btnGrid[r].length;
-            for (int c = 0; c < cols; c++) {
+            float rowY = gridStartY + r * (btnH + gap);
+            for (int c = 0; c < btnGrid[r].length; c++) {
                 String label = btnGrid[r][c];
-                float bW = label.equals("0") ? (btnSz * 2.0F + gap) : btnSz;
-                float bX = x + 8.0F + (c == 0 ? 0.0F : (r == 4 ? (btnSz * 2.0F + gap + gap + (c - 1) * (btnSz + gap)) : (c * (btnSz + gap))));
-                boolean bHov = mx >= bX && mx <= bX + bW && my >= rowY && my <= rowY + btnSz;
+                boolean isEquals = label.equals("=");
+                float bW = isEquals ? (colW * 2.0F + gap) : colW;
+                float bX = x + padX + (r == 4 && c == 2 ? (2 * (colW + gap)) : (c * (colW + gap)));
+
+                boolean bHov = mx >= bX && mx <= bX + bW && my >= rowY && my <= rowY + btnH;
+                boolean pressed = bHov && isMouseDown;
+                float drawY = rowY + (pressed ? 1.0F : 0.0F);
 
                 ColorRGBA bg;
+                ColorRGBA border;
                 ColorRGBA fg = ColorRGBA.WHITE;
+
                 if (r == 0 && c < 3) {
-                    bg = new ColorRGBA(165.0F, 165.0F, 165.0F, bHov ? 220.0F : 160.0F);
-                    fg = ColorRGBA.BLACK;
-                } else if (c == 3 || label.equals("=")) {
-                    bg = new ColorRGBA(255.0F, 159.0F, 10.0F, bHov ? 240.0F : 190.0F);
+                    // Function buttons (C, +/-, %): subtle light glass (.calc-btn.fn)
+                    bg = new ColorRGBA(220.0F, 225.0F, 235.0F, bHov ? 140.0F : 85.0F);
+                    border = new ColorRGBA(255.0F, 255.0F, 255.0F, 40.0F);
+                    fg = new ColorRGBA(245.0F, 248.0F, 255.0F, 255.0F);
+                } else if (c == 3 || isEquals) {
+                    // Operator buttons (÷, ×, -, +, =): vibrant orange (.calc-btn.op)
+                    bg = new ColorRGBA(255.0F, 149.0F, 0.0F, bHov ? 255.0F : 215.0F);
+                    border = new ColorRGBA(255.0F, 190.0F, 60.0F, 180.0F);
                 } else {
-                    bg = new ColorRGBA(255.0F, 255.0F, 255.0F, bHov ? 40.0F : 20.0F);
+                    // Number buttons: Apple frosted glass (.calc-btn)
+                    bg = new ColorRGBA(255.0F, 255.0F, 255.0F, bHov ? 55.0F : 25.0F);
+                    border = new ColorRGBA(255.0F, 255.0F, 255.0F, bHov ? 60.0F : 24.0F);
                 }
 
-                IIiii_Class8 bRad = IIiii_Class8.I_method_893b2757(btnSz / 2.0F);
-                custom.drawRoundedRect(bX, rowY, bW, btnSz, bRad, bg);
+                if (bHov) {
+                    custom.drawShadow(bX, drawY, bW, btnH, 6.0F, btnRad, bg.withAlpha(80.0F));
+                }
+                custom.drawRoundedRect(bX, drawY, bW, btnH, btnRad, bg);
+                custom.drawRoundedBorder(bX, drawY, bW, btnH, 0.7F, btnRad, border);
+
+                if (!pressed) {
+                    custom.drawRoundedRect(bX + 2.0F, drawY + 0.8F, bW - 4.0F, 0.8F, IIiii_Class8.I_method_893b2757(0.4F), new ColorRGBA(255.0F, 255.0F, 255.0F, 45.0F));
+                }
+
                 if (font != null) {
                     float lw = font.I_method_2c375926(label);
-                    float lx = label.equals("0") ? (bX + 10.0F) : (bX + (bW - lw) / 2.0F);
-                    custom.drawText(font, label, lx, rowY + 6.0F, fg);
+                    custom.drawText(font, label, bX + (bW - lw) / 2.0F, drawY + 6.0F, fg);
                 }
             }
         }
@@ -1352,27 +1403,29 @@ implements iIIiIIiIi_Class294 {
         }
 
         // 3. Main Content Row Widget Clicks:
-        float mainTotalW = 504.0F;
+        float mainTotalW = 550.0F;
         float gridStartX = cx - mainTotalW / 2.0F;
-        float mainY = cy - 46.0F;
-        float mainH = 165.0F;
+        float mainY = cy - 48.0F;
+        float mainH = 172.0F;
 
-        // Volume Pill Click (left edge of main content)
+        // Volume Pod Click (.vs-wrap)
         float curX = gridStartX;
-        float leftPodW = 94.0F;
+        float leftPodW = 118.0F;
         if (cfg.showVolume) {
-            float volW = 44.0F;
+            float volW = 68.0F;
+            float trackY = mainY + 26.0F;
+            float trackH = mainH - 26.0F - 46.0F;
             if (mouseX >= curX && mouseX <= curX + volW && mouseY >= mainY && mouseY <= mainY + mainH) {
                 rockstar$isDraggingVolume = true;
-                rockstar$updateVolume(mouseY, mainY, mainH);
+                rockstar$updateVolume(mouseY, trackY, trackH);
                 return true;
             }
         }
 
         // Camera / Fullscreen Tiles Click
-        float qX = curX + 48.0F;
-        float qW = 46.0F;
-        float qTileH = (mainH - 5.0F) / 2.0F;
+        float qX = curX + 74.0F;
+        float qW = 44.0F;
+        float qTileH = (mainH - 6.0F) / 2.0F;
         if (cfg.showCamera) {
             // Camera
             if (mouseX >= qX && mouseX <= qX + qW && mouseY >= mainY && mouseY <= mainY + qTileH) {
@@ -1386,7 +1439,7 @@ implements iIIiIIiIi_Class294 {
                 return true;
             }
             // Fullscreen
-            float fsY = mainY + qTileH + 5.0F;
+            float fsY = mainY + qTileH + 6.0F;
             if (mouseX >= qX && mouseX <= qX + qW && mouseY >= fsY && mouseY <= fsY + qTileH) {
                 UISoundManager.playButtonClick();
                 if (this.client != null) {
@@ -1397,8 +1450,8 @@ implements iIIiIIiIi_Class294 {
         }
         curX += leftPodW + 10.0F;
 
-        // Calculator Card Click
-        float calcW = 152.0F;
+        // Calculator Card Click (.calc)
+        float calcW = 186.0F;
         if (cfg.showCalculator) {
             if (mouseX >= curX && mouseX <= curX + calcW && mouseY >= mainY && mouseY <= mainY + mainH) {
                 if (rockstar$handleCalcClick(mouseX, mouseY, curX, mainY, calcW, mainH)) {
@@ -1577,8 +1630,11 @@ implements iIIiIIiIi_Class294 {
     public boolean mouseDragged(double mouseX, double mouseY, int button, double deltaX, double deltaY) {
         if (rockstar$isDraggingVolume) {
             float cy = this.height / 2.0F;
-            float volY = cy - 46.0F;
-            rockstar$updateVolume(mouseY, volY, 165.0F);
+            float mainY = cy - 48.0F;
+            float mainH = 172.0F;
+            float trackY = mainY + 26.0F;
+            float trackH = mainH - 26.0F - 46.0F;
+            rockstar$updateVolume(mouseY, trackY, trackH);
             return true;
         }
 
@@ -1601,8 +1657,8 @@ implements iIIiIIiIi_Class294 {
     }
 
     @Unique
-    private static void rockstar$updateVolume(double mouseY, float y, float h) {
-        float rel = 1.0F - (float)((mouseY - y) / h);
+    private static void rockstar$updateVolume(double mouseY, float trackY, float trackH) {
+        float rel = 1.0F - (float)((mouseY - trackY) / trackH);
         float newVol = MathHelper.clamp(rel, 0.0F, 1.0F);
         if (MinecraftClient.getInstance() != null) {
             MinecraftClient.getInstance().options.getSoundVolumeOption(SoundCategory.MASTER).setValue((double)newVol);
@@ -1611,10 +1667,14 @@ implements iIIiIIiIi_Class294 {
 
     @Unique
     private static boolean rockstar$handleCalcClick(double mx, double my, float x, float y, float w, float h) {
-        float lcdH = 26.0F;
-        float gridStartY = y + 6.0F + lcdH + 4.0F;
-        float btnSz = 24.0F;
-        float gap = 4.0F;
+        float padX = 10.0F;
+        float dispH = 26.0F;
+        float dispY = y + 8.0F;
+        float gap = 4.5F;
+        float gridW = w - padX * 2.0F;
+        float colW = (gridW - 3.0F * gap) / 4.0F;
+        float btnH = 20.5F;
+        float gridStartY = dispY + dispH + 6.0F;
 
         String[][] btnGrid = new String[][]{
             { "C", "+/-", "%", "÷" },
@@ -1625,14 +1685,14 @@ implements iIIiIIiIi_Class294 {
         };
 
         for (int r = 0; r < 5; r++) {
-            float rowY = gridStartY + r * (btnSz + gap);
-            int cols = btnGrid[r].length;
-            for (int c = 0; c < cols; c++) {
+            float rowY = gridStartY + r * (btnH + gap);
+            for (int c = 0; c < btnGrid[r].length; c++) {
                 String label = btnGrid[r][c];
-                float bW = label.equals("0") ? (btnSz * 2.0F + gap) : btnSz;
-                float bX = x + 8.0F + (c == 0 ? 0.0F : (r == 4 ? (btnSz * 2.0F + gap + gap + (c - 1) * (btnSz + gap)) : (c * (btnSz + gap))));
+                boolean isEquals = label.equals("=");
+                float bW = isEquals ? (colW * 2.0F + gap) : colW;
+                float bX = x + padX + (r == 4 && c == 2 ? (2 * (colW + gap)) : (c * (colW + gap)));
 
-                if (mx >= bX && mx <= bX + bW && my >= rowY && my <= rowY + btnSz) {
+                if (mx >= bX && mx <= bX + bW && my >= rowY && my <= rowY + btnH) {
                     UISoundManager.playButtonClick();
                     rockstar$processCalcInput(label);
                     return true;
