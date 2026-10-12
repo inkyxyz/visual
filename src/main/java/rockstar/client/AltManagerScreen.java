@@ -282,10 +282,8 @@ public class AltManagerScreen extends ii_Class4 {
         IIiIIi_Class10 boldFont = IIiIiI_Class11.i_field_857c0621.I_method_3a2d5e3(10.5F);
         IIiIIi_Class10 smallFont = IIiIiI_Class11.i_field_857c0621.I_method_3a2d5e3(6.5F);
 
-        // 1. ACTIVE WALLPAPER BACKGROUND (WITH PARALLAX)
-        IiiIIiIii_Class204.renderWallpaperBackground(var1, this.width, this.height, (float)mx, (float)my);
-        // Translucent dark vignette tint
-        var1.drawRect(0.0F, 0.0F, (float)this.width, (float)this.height, new ColorRGBA(6.0F, 8.0F, 14.0F, 115.0F * screenAlpha));
+        // 1. UNIFIED BACKGROUND (WITH PARALLAX)
+        ThemeAndBackgroundManager.getInstance().renderActiveBackground(var1, this.width, this.height, (float)mx, (float)my);
 
         // Master Window Layout: compact & minimalist
         float cardW = Math.min(500.0F, this.width - 24.0F);

@@ -73,10 +73,9 @@ implements iIIiIIiIi_Class294 {
                 || screenClass.contains("KeybindsScreen")) {
             ci.cancel();
             rockstar.client.III custom = rockstar.client.III.I_method_5728d20f(drawContext, mouseX, mouseY, delta);
-            rockstar.client.IiiIIiIii_Class204.renderWallpaperBackground(custom, self.width, self.height, (float)mouseX, (float)mouseY);
-            custom.drawRect(0.0F, 0.0F, (float)self.width, (float)self.height, new pyrock.utility.render.ColorRGBA(6.0F, 8.0F, 14.0F, 120.0F));
+            rockstar.client.ThemeAndBackgroundManager.getInstance().renderActiveBackground(custom, self.width, self.height, (float)mouseX, (float)mouseY);
             if (self instanceof net.minecraft.client.gui.screen.option.OptionsScreen) {
-                rockstar.client.OptionsScreenCards.renderCards(custom);
+                rockstar.client.OptionsScreenCards.renderCards(custom, self.width, self.height, mouseX, mouseY);
             }
         }
     }

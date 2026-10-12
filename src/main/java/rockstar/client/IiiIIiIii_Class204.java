@@ -257,11 +257,17 @@ public class IiiIIiIii_Class204 extends ii_Class4 implements iIIiIIiIi_Class294 
 
    private static IiiIIiiIi_Class206 I_method_f0183f35() {
       if (I_field_710ea66c == null) {
-         int var0 = LocalTime.now().getHour();
-         boolean var1 = var0 >= 6 && var0 < 19;
-         int var2 = IiiIIiiIi_Class206.I_method_2d8cb612();
-         int var3 = IiiIIiiIi_Class206.i_method_2d9b41f2() - var2;
-         int var4 = var1 ? ThreadLocalRandom.current().nextInt(var2) : var2 + ThreadLocalRandom.current().nextInt(Math.max(1, var3));
+         int bgIdx = ThemeAndBackgroundManager.getInstance().getBackgroundIndex();
+         int var4;
+         if (bgIdx > 0) {
+            var4 = bgIdx - 1;
+         } else {
+            int var0 = LocalTime.now().getHour();
+            boolean var1 = var0 >= 6 && var0 < 19;
+            int var2 = IiiIIiiIi_Class206.I_method_2d8cb612();
+            int var3 = IiiIIiiIi_Class206.i_method_2d9b41f2() - var2;
+            var4 = var1 ? ThreadLocalRandom.current().nextInt(var2) : var2 + ThreadLocalRandom.current().nextInt(Math.max(1, var3));
+         }
          I_field_710ea66c = new IiiIIiiIi_Class206(var4);
       }
 

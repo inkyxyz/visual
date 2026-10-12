@@ -78,8 +78,8 @@ implements iIIiIIiIi_Class294 {
 
     // Per-tile hover float animations (0: Media, 1: Weather, 2: Radar, 3: Vol, 4: Cam, 5: Fs, 6: Calc, 7: Notes, 8: RAM)
     @Unique private static final float[] rockstar$tileHoverAnim = new float[12];
-    @Unique private static final float[] rockstar$dockBtnHover = new float[4];
-    @Unique private static final float[] rockstar$actionBtnHover = new float[4];
+    @Unique private static final float[] rockstar$dockBtnHover = new float[10];
+    @Unique private static final float[] rockstar$actionBtnHover = new float[10];
 
     // Smooth Entrance Fly-in animation
     @Unique private static float rockstar$flyInAnim = 0.0F;
@@ -135,8 +135,8 @@ implements iIIiIIiIi_Class294 {
         float targetDrawer = rockstar$aiDrawerOpen ? 1.0F : 0.0F;
         rockstar$aiDrawerAnim += (targetDrawer - rockstar$aiDrawerAnim) * 0.22F;
 
-        // Subtle, beautiful translucent backdrop (no pitch black!)
-        custom.drawRect(0.0F, 0.0F, (float)this.width, (float)this.height, new ColorRGBA(4.0F, 6.0F, 12.0F, 75.0F));
+        // Active theme/wallpaper background
+        rockstar.client.ThemeAndBackgroundManager.getInstance().renderActiveBackground(custom, this.width, this.height, (float)mouseX, (float)mouseY);
 
         IIiIIi_Class10 font = null;
         IIiIIi_Class10 boldFont = null;
@@ -339,112 +339,120 @@ implements iIIiIIiIi_Class294 {
         }
 
         // ==========================================
-        // 3. PRIMARY ACTION BUTTONS DOCK (Horizontal Hero Row):
-        // [▶ В игру] (120w) | [⚙ Настройки] (120w) | [🎨 Кастомизация] (120w) | [✕ Выйти] (120w)
-        // Perfectly aligned across the exact 504px grid!
+        // 3. UNIFIED HERO ICON DOCK (Стеклянный прямоугольник с кнопками-иконками!)
+        // Никаких названий у кнопок — только чистые iOS иконки с супер-анимацией!
         // ==========================================
-        float actY = mainY + mainH + 10.0F + mainFlyY;
-        float actBtnH = 38.0F;
-        float actGap = 8.0F;
-        float actBtnW = (mainTotalW - 3.0F * actGap) / 4.0F; // Exactly 120.0F!
-        IIiii_Class8 aRad = IIiii_Class8.I_method_893b2757(11.0F);
+        float dockW = 440.0F;
+        float dockH = 50.0F;
+        float dockX = cx - dockW / 2.0F;
+        float dockY = mainY + mainH + 12.0F + mainFlyY;
+        IIiii_Class8 dockRad = IIiii_Class8.I_method_893b2757(15.0F);
 
-        String[] actionLabels = { "В игру", "Настройки", "Кастомизация", "Выйти" };
-        String[] actionIcons = { "play", "setting", "hud/target", "back" };
-        ColorRGBA[] actionColors = {
-            new ColorRGBA(34.0F, 197.0F, 94.0F, 240.0F),  // Green
-            new ColorRGBA(59.0F, 130.0F, 246.0F, 240.0F), // Blue
-            new ColorRGBA(168.0F, 85.0F, 247.0F, 240.0F), // Purple
-            new ColorRGBA(239.0F, 68.0F, 68.0F, 240.0F)   // Red
+        // 1. Apple Glass Dock Container
+        custom.drawShadow(dockX, dockY, dockW, dockH, 18.0F, dockRad, theme.withAlpha(55.0F));
+        custom.drawBlurredRect(dockX, dockY, dockW, dockH, 16.0F, 3.0F, dockRad, new ColorRGBA(255.0F, 255.0F, 255.0F, 12.0F));
+        custom.drawRoundedRect(dockX, dockY, dockW, dockH, dockRad, new ColorRGBA(16.0F, 20.0F, 32.0F, 210.0F));
+        custom.drawRoundedBorder(dockX, dockY, dockW, dockH, 0.8F, dockRad, theme.withAlpha(110.0F));
+
+        // Top specular gleam line
+        custom.drawRoundedRect(dockX + 14.0F, dockY + 1.2F, dockW - 28.0F, 1.0F, IIiii_Class8.I_method_893b2757(0.5F), new ColorRGBA(255.0F, 255.0F, 255.0F, 40.0F));
+
+        // 2. The 8 Icon Buttons:
+        // [ ▶ ] В игру | [ ⚙ ] Опции | [ 🎨 ] Кастом | [ 🖼 ] Темы/Фоны | [ ✦ ] AI | [ 🐍 ] Змейка | [ 💣 ] Сапёр | [ ✕ ] Выйти
+        String[] dockIcons = { "play", "setting", "hud/target", "keyboard", "icons/ai.png", "icons/snake.png", "icons/mine.png", "back" };
+        String[] dockTooltips = { "Продолжить игру", "Настройки игры", "Кастомизация меню", "Темы и фоны (ЛКМ/ПКМ)", "Agravity AI", "Змейка", "Сапёр", "Выйти из мира" };
+        ColorRGBA[] dockColors = {
+            new ColorRGBA(34.0F, 197.0F, 94.0F, 255.0F),  // Green (Play)
+            new ColorRGBA(59.0F, 130.0F, 246.0F, 255.0F), // Blue (Settings)
+            new ColorRGBA(168.0F, 85.0F, 247.0F, 255.0F), // Purple (Customizer)
+            new ColorRGBA(6.0F, 182.0F, 212.0F, 255.0F),  // Cyan (Theme/Wallpaper)
+            theme,                                         // AI (Theme)
+            new ColorRGBA(52.0F, 211.0F, 153.0F, 255.0F), // Mint (Snake)
+            new ColorRGBA(244.0F, 63.0F, 94.0F, 255.0F),  // Rose (Minesweeper)
+            new ColorRGBA(239.0F, 68.0F, 68.0F, 255.0F)   // Red (Exit)
         };
 
-        for (int i = 0; i < 4; i++) {
-            float bX = gridStartX + i * (actBtnW + actGap);
-            boolean isHov = (mouseX >= bX && mouseX <= bX + actBtnW && mouseY >= actY && mouseY <= actY + actBtnH);
-            rockstar$actionBtnHover[i] += ((isHov ? 1.0F : 0.0F) - rockstar$actionBtnHover[i]) * 0.22F;
+        float btnSize = 34.0F;
+        int count = dockIcons.length;
+        float btnGap = (dockW - 16.0F - count * btnSize) / (count - 1);
+        int hoveredBtnIdx = -1;
+        float hoveredBtnCenterX = 0.0F;
+        String hoveredTooltip = null;
+        ColorRGBA hoveredColor = null;
+
+        boolean isMouseDown = org.lwjgl.glfw.GLFW.glfwGetMouseButton(MinecraftClient.getInstance().getWindow().getHandle(), 0) == 1;
+
+        for (int i = 0; i < count; i++) {
+            float bx = dockX + 8.0F + i * (btnSize + btnGap);
+            float by = dockY + (dockH - btnSize) / 2.0F;
+            IIiii_Class8 bRad = IIiii_Class8.I_method_893b2757(btnSize / 2.0F);
+
+            boolean isHov = (mouseX >= bx && mouseX <= bx + btnSize && mouseY >= by && mouseY <= by + btnSize);
+            rockstar$actionBtnHover[i] += ((isHov ? 1.0F : 0.0F) - rockstar$actionBtnHover[i]) * 0.24F;
             float hA = rockstar$actionBtnHover[i];
-            float drawY = actY - hA * 2.0F;
 
-            // Ultra-clean Apple Frosted Glass Button
-            custom.drawShadow(bX, drawY, actBtnW, actBtnH, 10.0F, aRad, isHov ? actionColors[i].withAlpha(65.0F) : new ColorRGBA(0.0F, 0.0F, 0.0F, 45.0F));
-            custom.drawBlurredRect(bX, drawY, actBtnW, actBtnH, 14.0F, 3.0F, aRad, new ColorRGBA(255.0F, 255.0F, 255.0F, 10.0F));
-            custom.drawRoundedRect(bX, drawY, actBtnW, actBtnH, aRad, new ColorRGBA(18.0F, 22.0F, 32.0F, 140.0F + 35.0F * hA));
-            custom.drawRoundedBorder(bX, drawY, actBtnW, actBtnH, 0.6F, aRad, hA > 0.01F ? actionColors[i].withAlpha(140.0F * hA) : new ColorRGBA(255.0F, 255.0F, 255.0F, 18.0F));
+            boolean pressed = isHov && isMouseDown;
+            float scale = 1.0F + 0.12F * hA - (pressed ? 0.08F : 0.0F);
 
-            float iconSz = 14.0F;
-            custom.drawIcon(actionIcons[i], bX + 14.0F, drawY + (actBtnH - iconSz) / 2.0F, iconSz, hA > 0.01F ? actionColors[i] : ColorRGBA.WHITE);
-            if (font != null) {
-                custom.drawText(font, actionLabels[i], bX + 34.0F, drawY + 14.0F, ColorRGBA.WHITE);
+            if (isHov) {
+                hoveredBtnIdx = i;
+                hoveredBtnCenterX = bx + btnSize / 2.0F;
+                hoveredTooltip = dockTooltips[i];
+                hoveredColor = dockColors[i];
             }
+
+            // Spring scale around button center
+            custom.getMatrices().push();
+            float bcx = bx + btnSize / 2.0F;
+            float bcy = by + btnSize / 2.0F;
+            custom.getMatrices().translate(bcx, bcy, 0.0F);
+            custom.getMatrices().scale(scale, scale, 1.0F);
+            custom.getMatrices().translate(-bcx, -bcy, 0.0F);
+
+            // Atmospheric colored bloom glow on hover
+            if (hA > 0.01F) {
+                custom.drawShadow(bx, by, btnSize, btnSize, 12.0F, bRad, dockColors[i].withAlpha(120.0F * hA));
+            }
+
+            // Glass button pill
+            ColorRGBA btnBg = hA > 0.01F
+                ? dockColors[i].withAlpha(pressed ? 230.0F : (60.0F + 130.0F * hA))
+                : new ColorRGBA(255.0F, 255.0F, 255.0F, 14.0F);
+            custom.drawRoundedRect(bx, by, btnSize, btnSize, bRad, btnBg);
+
+            ColorRGBA btnBorder = hA > 0.01F
+                ? dockColors[i].withAlpha(180.0F * hA)
+                : new ColorRGBA(255.0F, 255.0F, 255.0F, 24.0F);
+            custom.drawRoundedBorder(bx, by, btnSize, btnSize, 0.8F, bRad, btnBorder);
+
+            // Draw Icon (SVG or Texture)
+            ColorRGBA iconColor = hA > 0.05F ? ColorRGBA.WHITE : new ColorRGBA(230.0F, 235.0F, 250.0F, 210.0F);
+            float iconSz = 16.0F;
+            float iconX = bx + (btnSize - iconSz) / 2.0F;
+            float iconY = by + (btnSize - iconSz) / 2.0F;
+
+            if (dockIcons[i].endsWith(".png")) {
+                custom.drawTexture(RockstarClient.id(dockIcons[i]), iconX, iconY, iconSz, iconSz, iconColor);
+            } else {
+                custom.drawIcon(dockIcons[i], iconX, iconY, iconSz, iconColor);
+            }
+
+            custom.getMatrices().pop();
         }
 
-        // ==========================================
-        // 4. BOTTOM MINI-APPS DOCK:
-        // [ (✦) AI Помощник ] | [ (🐍) Змейка ] | [ (💣) Сапёр ]
-        // ==========================================
-        float bRowY = actY + actBtnH + 9.0F;
-        float bRowH = 28.0F;
-        float dockFlyY = (1.0F - rockstar$flyInAnim) * 40.0F;
-        IIiii_Class8 sRad = IIiii_Class8.I_method_893b2757(8.0F);
+        // 3. Apple Floating Tooltip Pill (Smoothly shows action name above button on hover!)
+        if (hoveredTooltip != null && subFont != null) {
+            float tipTextW = subFont.I_method_2c375926(hoveredTooltip);
+            float tipW = tipTextW + 16.0F;
+            float tipH = 20.0F;
+            float tipX = MathHelper.clamp(hoveredBtnCenterX - tipW / 2.0F, dockX, dockX + dockW - tipW);
+            float tipY = dockY - tipH - 7.0F;
+            IIiii_Class8 tRad = IIiii_Class8.I_method_893b2757(tipH / 2.0F);
 
-        float dockAiW = 106.0F;
-        float dockSnW = 82.0F;
-        float dockMnW = 82.0F;
-        float dockGap = 6.0F;
-        float dockTotalW = dockAiW + dockSnW + dockMnW + dockGap * 2.0F;
-        float bStartX = cx - dockTotalW / 2.0F;
-
-        // 1. [ (✦) Agravity AI ] (Toggles Slide-in Drawer!)
-        float aiX = bStartX;
-        boolean aiHov = (mouseX >= aiX && mouseX <= aiX + dockAiW && mouseY >= bRowY + dockFlyY && mouseY <= bRowY + dockFlyY + bRowH);
-        rockstar$dockBtnHover[0] += ((aiHov ? 1.0F : 0.0F) - rockstar$dockBtnHover[0]) * 0.22F;
-        float hA0 = rockstar$dockBtnHover[0];
-        float drawYAi = bRowY + dockFlyY - hA0 * 2.0F;
-        boolean aiActive = rockstar$aiDrawerOpen;
-
-        custom.drawShadow(aiX, drawYAi, dockAiW, bRowH, 8.0F, sRad, new ColorRGBA(0.0F, 0.0F, 0.0F, 35.0F));
-        custom.drawBlurredRect(aiX, drawYAi, dockAiW, bRowH, 12.0F, 3.0F, sRad, new ColorRGBA(theme.getRed(), theme.getGreen(), theme.getBlue(), aiActive ? 30.0F : 12.0F));
-        custom.drawRoundedRect(aiX, drawYAi, dockAiW, bRowH, sRad, aiActive ? theme.withAlpha(150.0F) : new ColorRGBA(16.0F, 20.0F, 30.0F, 110.0F + 30.0F * hA0));
-        custom.drawRoundedBorder(aiX, drawYAi, dockAiW, bRowH, 0.5F, sRad, aiActive ? theme.withAlpha(180.0F) : (hA0 > 0.01F ? theme.withAlpha(90.0F * hA0) : new ColorRGBA(255.0F, 255.0F, 255.0F, 15.0F)));
-
-        float sqIconSz = 18.0F;
-        custom.drawTexture(RockstarClient.id("icons/ai.png"), aiX + 6.0F, drawYAi + (bRowH - sqIconSz) / 2.0F, sqIconSz, sqIconSz, ColorRGBA.WHITE);
-        if (subFont != null) {
-            custom.drawText(subFont, "Agravity AI", aiX + 28.0F, drawYAi + 10.0F, ColorRGBA.WHITE);
-        }
-
-        // 2. [ (🐍) Змейка ] Mini-game
-        float snakeX = aiX + dockAiW + dockGap;
-        boolean snakeHov = (mouseX >= snakeX && mouseX <= snakeX + dockSnW && mouseY >= bRowY + dockFlyY && mouseY <= bRowY + dockFlyY + bRowH);
-        rockstar$dockBtnHover[1] += ((snakeHov ? 1.0F : 0.0F) - rockstar$dockBtnHover[1]) * 0.22F;
-        float hA1 = rockstar$dockBtnHover[1];
-        float drawYSn = bRowY + dockFlyY - hA1 * 2.0F;
-
-        custom.drawShadow(snakeX, drawYSn, dockSnW, bRowH, 8.0F, sRad, new ColorRGBA(0.0F, 0.0F, 0.0F, 35.0F));
-        custom.drawBlurredRect(snakeX, drawYSn, dockSnW, bRowH, 12.0F, 3.0F, sRad, new ColorRGBA(52.0F, 211.0F, 153.0F, 12.0F));
-        custom.drawRoundedRect(snakeX, drawYSn, dockSnW, bRowH, sRad, new ColorRGBA(16.0F, 20.0F, 30.0F, 110.0F + 30.0F * hA1));
-        custom.drawRoundedBorder(snakeX, drawYSn, dockSnW, bRowH, 0.5F, sRad, hA1 > 0.01F ? new ColorRGBA(52.0F, 211.0F, 153.0F, 90.0F * hA1) : new ColorRGBA(255.0F, 255.0F, 255.0F, 15.0F));
-
-        custom.drawTexture(RockstarClient.id("icons/snake.png"), snakeX + 6.0F, drawYSn + (bRowH - sqIconSz) / 2.0F, sqIconSz, sqIconSz, ColorRGBA.WHITE);
-        if (subFont != null) {
-            custom.drawText(subFont, "Змейка", snakeX + 28.0F, drawYSn + 10.0F, ColorRGBA.WHITE);
-        }
-
-        // 3. [ (💣) Сапёр ] Mini-game
-        float mineX = snakeX + dockSnW + dockGap;
-        boolean mineHov = (mouseX >= mineX && mouseX <= mineX + dockMnW && mouseY >= bRowY + dockFlyY && mouseY <= bRowY + dockFlyY + bRowH);
-        rockstar$dockBtnHover[2] += ((mineHov ? 1.0F : 0.0F) - rockstar$dockBtnHover[2]) * 0.22F;
-        float hA2 = rockstar$dockBtnHover[2];
-        float drawYMn = bRowY + dockFlyY - hA2 * 2.0F;
-
-        custom.drawShadow(mineX, drawYMn, dockMnW, bRowH, 8.0F, sRad, new ColorRGBA(0.0F, 0.0F, 0.0F, 35.0F));
-        custom.drawBlurredRect(mineX, drawYMn, dockMnW, bRowH, 12.0F, 3.0F, sRad, new ColorRGBA(244.0F, 63.0F, 94.0F, 12.0F));
-        custom.drawRoundedRect(mineX, drawYMn, dockMnW, bRowH, sRad, new ColorRGBA(16.0F, 20.0F, 30.0F, 110.0F + 30.0F * hA2));
-        custom.drawRoundedBorder(mineX, drawYMn, dockMnW, bRowH, 0.5F, sRad, hA2 > 0.01F ? new ColorRGBA(244.0F, 63.0F, 94.0F, 90.0F * hA2) : new ColorRGBA(255.0F, 255.0F, 255.0F, 15.0F));
-
-        custom.drawTexture(RockstarClient.id("icons/mine.png"), mineX + 6.0F, drawYMn + (bRowH - sqIconSz) / 2.0F, sqIconSz, sqIconSz, ColorRGBA.WHITE);
-        if (subFont != null) {
-            custom.drawText(subFont, "Сапёр", mineX + 28.0F, drawYMn + 10.0F, ColorRGBA.WHITE);
+            custom.drawShadow(tipX, tipY, tipW, tipH, 8.0F, tRad, hoveredColor.withAlpha(80.0F));
+            custom.drawRoundedRect(tipX, tipY, tipW, tipH, tRad, new ColorRGBA(12.0F, 16.0F, 26.0F, 235.0F));
+            custom.drawRoundedBorder(tipX, tipY, tipW, tipH, 0.6F, tRad, hoveredColor.withAlpha(160.0F));
+            custom.drawText(subFont, hoveredTooltip, tipX + (tipW - tipTextW) / 2.0F, tipY + 6.0F, ColorRGBA.WHITE);
         }
 
         // ==========================================
@@ -1471,17 +1479,19 @@ implements iIIiIIiIi_Class294 {
             rockstar$notesEditing = false;
         }
 
-        // 4. Primary Action Buttons Dock (Horizontal 4-Button Row)
-        // [▶ В игру] | [⚙ Настройки] | [🎨 Кастомизация] | [✕ Выйти]
-        float actY = mainY + mainH + 10.0F;
-        float actBtnH = 38.0F;
-        float actGap = 8.0F;
-        float actBtnW = (mainTotalW - 3.0F * actGap) / 4.0F;
+        // 4. Unified Hero Icon Dock Clicks (8 Buttons)
+        float dockW = 440.0F;
+        float dockH = 50.0F;
+        float dockX = cx - dockW / 2.0F;
+        float dockY = mainY + mainH + 12.0F;
+        float btnSize = 34.0F;
+        int count = 8;
+        float btnGap = (dockW - 16.0F - count * btnSize) / (count - 1);
 
-        if (mouseY >= actY && mouseY <= actY + actBtnH) {
-            for (int i = 0; i < 4; i++) {
-                float bX = gridStartX + i * (actBtnW + actGap);
-                if (mouseX >= bX && mouseX <= bX + actBtnW) {
+        if (mouseY >= dockY && mouseY <= dockY + dockH) {
+            for (int i = 0; i < count; i++) {
+                float bx = dockX + 8.0F + i * (btnSize + btnGap);
+                if (mouseX >= bx && mouseX <= bx + btnSize) {
                     UISoundManager.playButtonClick();
                     switch (i) {
                         case 0 -> this.close(); // Resume
@@ -1491,49 +1501,27 @@ implements iIIiIIiIi_Class294 {
                         case 2 -> { // Customizer
                             if (this.client != null) this.client.setScreen(new EscapeMenuCustomizerScreen(this));
                         }
-                        case 3 -> this.disconnect(); // Disconnect
+                        case 3 -> { // Themes and Wallpapers (Left click: next theme, Right click: next background)
+                            if (button == 1) {
+                                rockstar.client.ThemeAndBackgroundManager.getInstance().nextBackground();
+                            } else {
+                                rockstar.client.ThemeAndBackgroundManager.getInstance().nextTheme();
+                            }
+                        }
+                        case 4 -> { // AI Drawer
+                            rockstar$aiDrawerOpen = !rockstar$aiDrawerOpen;
+                        }
+                        case 5 -> { // Snake
+                            if (this.client != null) this.client.setScreen(new SnakeScreen(this));
+                        }
+                        case 6 -> { // Minesweeper
+                            if (this.client != null) this.client.setScreen(new MinesweeperScreen(this));
+                        }
+                        case 7 -> this.disconnect(); // Disconnect
                     }
                     return true;
                 }
             }
-        }
-
-        // 5. Bottom Mini-Apps Dock Clicks: [AI] | [Змейка] | [Сапер]
-        float bRowY = actY + actBtnH + 9.0F;
-        float bRowH = 28.0F;
-        float dockAiW = 106.0F;
-        float dockSnW = 82.0F;
-        float dockMnW = 82.0F;
-        float dockGap = 6.0F;
-        float dockTotalW = dockAiW + dockSnW + dockMnW + dockGap * 2.0F;
-        float bStartX = cx - dockTotalW / 2.0F;
-
-        // [ (✦) Agravity AI ] Click: Toggle Slide-in Drawer!
-        float aiX = bStartX;
-        if (mouseX >= aiX && mouseX <= aiX + dockAiW && mouseY >= bRowY && mouseY <= bRowY + bRowH) {
-            UISoundManager.playButtonClick();
-            rockstar$aiDrawerOpen = !rockstar$aiDrawerOpen;
-            return true;
-        }
-
-        // [ (🐍) Змейка ] Click
-        float snakeX = aiX + dockAiW + dockGap;
-        if (cfg.showGames && mouseX >= snakeX && mouseX <= snakeX + dockSnW && mouseY >= bRowY && mouseY <= bRowY + bRowH) {
-            UISoundManager.playButtonClick();
-            if (this.client != null) {
-                this.client.setScreen(new SnakeScreen(this));
-            }
-            return true;
-        }
-
-        // [ (💣) Сапёр ] Click
-        float mineX = snakeX + dockSnW + dockGap;
-        if (cfg.showGames && mouseX >= mineX && mouseX <= mineX + dockMnW && mouseY >= bRowY && mouseY <= bRowY + bRowH) {
-            UISoundManager.playButtonClick();
-            if (this.client != null) {
-                this.client.setScreen(new MinesweeperScreen(this));
-            }
-            return true;
         }
 
         return super.mouseClicked(mouseX, mouseY, button);

@@ -121,6 +121,12 @@ implements iIIiIIiIi_Class294 {
         return this.I_field_49;
     }
 
+    public void setWallpaperIndex(int index) {
+        this.I_field_49 = MathHelper.clamp(index, 0, i_field_6dccaaa5.length - 1);
+        this.i_field_46 = (float)this.I_field_49;
+        this.i_field_49 = this.I_field_49;
+    }
+
     public boolean I_method_2d8cb623() {
         return this.I_field_5a || this.I_field_46 > 0.001f;
     }

@@ -43,6 +43,14 @@ public abstract class OptionsScreenMixin extends Screen {
         OptionsScreenCards.hasLayout = false;
     }
 
+    @Override
+    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if (OptionsScreenCards.handleTopBarClick(mouseX, mouseY, button)) {
+            return true;
+        }
+        return super.mouseClicked(mouseX, mouseY, button);
+    }
+
     @Unique
     private void rockstar$repositionOptionsButtons() {
         if (this.client == null) return;
