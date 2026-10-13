@@ -135,8 +135,8 @@ implements iIIiIIiIi_Class294 {
         float targetDrawer = rockstar$aiDrawerOpen ? 1.0F : 0.0F;
         rockstar$aiDrawerAnim += (targetDrawer - rockstar$aiDrawerAnim) * 0.22F;
 
-        // Active theme/wallpaper background
-        rockstar.client.ThemeAndBackgroundManager.getInstance().renderActiveBackground(custom, this.width, this.height, (float)mouseX, (float)mouseY);
+        // Translucent dark frosted veil over in-game world (no wallpaper covering game)
+        custom.drawRect(0.0F, 0.0F, (float)this.width, (float)this.height, new ColorRGBA(4.0F, 6.0F, 12.0F, 90.0F * rockstar$flyInAnim));
 
         IIiIIi_Class10 font = null;
         IIiIIi_Class10 boldFont = null;

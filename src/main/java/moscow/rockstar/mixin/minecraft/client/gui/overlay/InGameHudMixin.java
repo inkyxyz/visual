@@ -235,7 +235,6 @@ implements iIIiIIiIi_Class294 {
         CustomDrawContext customDrawContext = CustomDrawContext.of(drawContext);
         IiIIiiIii_Class156.I_field_5a = false;
         RockstarClient.getInstance().I_method_7897deab().I_method_e7f802ad(new HudRenderEvent(customDrawContext, renderTickCounter.getTickDelta(false)));
-        rockstar.client.LiquidHudRenderer.render(customDrawContext, renderTickCounter.getTickDelta(false));
     }
 
     @Inject(method={"renderHotbar"}, at={@At(value="HEAD")}, cancellable=true)

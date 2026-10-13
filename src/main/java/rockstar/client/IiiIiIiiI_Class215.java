@@ -165,7 +165,7 @@ public class IiiIiIiiI_Class215 extends IiiIIiiiI_Class207 implements IiiIiIIiI_
    }
 
    public IiiIiIiiI_Class215() {
-      this.I_field_75f1ef41 = ModuleCategory.VISUALS;
+      this.I_field_75f1ef41 = ModuleCategory.MOVEMENT;
       this.IIiiI_field_46 = Float.NaN;
       this.IIiii_field_46 = Float.NaN;
       this.IiIII_field_46 = Float.NaN;
@@ -191,8 +191,8 @@ public class IiiIiIiiI_Class215 extends IiiIIiiiI_Class207 implements IiiIiIIiI_
       this.IIiiI_field_46 = Float.NaN;
       iIiiIIiii_Class360.I_field_6424b12c.i_method_6e3866bf();
       this.clearRoots();
-      this.IiiII_field_46 = Math.min(488.0F, Math.max(360.0F, this.width - 12.0F));
-      this.IiiIi_field_46 = Math.min(318.0F, Math.max(235.0F, this.height - 12.0F));
+      this.IiiII_field_46 = Math.min(525.0F, Math.max(380.0F, this.width - 12.0F));
+      this.IiiIi_field_46 = Math.min(335.0F, Math.max(245.0F, this.height - 12.0F));
       if (guiPosX < 0.0F || guiPosY < 0.0F || guiPosX > this.width || guiPosY > this.height) {
          guiPosX = Math.round((this.width - this.IiiII_field_46) / 2.0F);
          guiPosY = Math.round((this.height - this.IiiIi_field_46) / 2.0F);
@@ -362,6 +362,8 @@ public class IiiIiIiiI_Class215 extends IiiIIiiiI_Class207 implements IiiIiIIiI_
          .I_method_7e2bb176(IIII.I_method_12c9a0cb(2.0F, 0.0F, 2.0F, 0.0F));
 
       for (ModuleCategory cat : new ModuleCategory[]{
+         ModuleCategory.MOVEMENT,
+         ModuleCategory.COMBAT,
          ModuleCategory.VISUALS,
          ModuleCategory.PLAYER,
          ModuleCategory.INTERFACE,

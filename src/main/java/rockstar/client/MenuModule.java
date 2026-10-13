@@ -74,7 +74,7 @@ extends Module {
 
     @Override
     public void onEnable() {
-        if (MenuModule.I_field_3a9bda27.currentScreen instanceof LiquidFeaturesScreen || MenuModule.I_field_3a9bda27.currentScreen instanceof IiiIiIiiI_Class215) {
+        if (MenuModule.I_field_3a9bda27.currentScreen instanceof IiiIiIiiI_Class215) {
             return;
         }
         this.I_field_bf52cf84 = this.I_method_83034dbb();
@@ -89,7 +89,7 @@ extends Module {
 
     public Screen I_method_83034dbb() {
         IiiIIiiiI_Class207 iiiIIiiiI_Class207 = RockstarClient.getInstance().I_method_96982062();
-        IiiIIiiiI_Class207 iiiIIiiiI_Class2072 = iiiIIiiiI_Class207 instanceof LiquidFeaturesScreen ? iiiIIiiiI_Class207 : new LiquidFeaturesScreen();
+        IiiIIiiiI_Class207 iiiIIiiiI_Class2072 = iiiIIiiiI_Class207 instanceof IiiIiIiiI_Class215 ? iiiIIiiiI_Class207 : new IiiIiIiiI_Class215();
         RockstarClient.getInstance().I_method_577f3d5a(iiiIIiiiI_Class2072);
         return iiiIIiiiI_Class2072;
     }
