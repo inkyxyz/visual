@@ -111,13 +111,25 @@ public class WorldLoadingScreenHelper {
             custom.drawRoundedRect(dotX, dotY, 5.0F, 5.0F, IIiii_Class8.I_method_893b2757(2.5F), themeSec.withAlpha(dotAlpha));
         }
 
-        // Inner glowing core
-        float coreRadius = 15.0F;
-        custom.drawShadow(cx - coreRadius, iconCenterY - coreRadius, coreRadius * 2.0F, coreRadius * 2.0F, 10.0F,
-            IIiii_Class8.I_method_893b2757(coreRadius), theme.withAlpha(120.0F));
+        // Inner glowing core sphere (layered holographic cyber-sphere)
+        float coreRadius = 18.0F;
+        custom.drawShadow(cx - coreRadius, iconCenterY - coreRadius, coreRadius * 2.0F, coreRadius * 2.0F, 16.0F,
+            IIiii_Class8.I_method_893b2757(coreRadius), theme.withAlpha(140.0F * pulse));
         custom.drawRoundedRect(cx - coreRadius, iconCenterY - coreRadius, coreRadius * 2.0F, coreRadius * 2.0F,
-            IIiii_Class8.I_method_893b2757(coreRadius), theme.withAlpha(210.0F));
-        custom.drawIcon("world", cx - 9.0F, iconCenterY - 9.0F, 18.0F, ColorRGBA.WHITE);
+            IIiii_Class8.I_method_893b2757(coreRadius), new ColorRGBA(22.0F, 30.0F, 48.0F, 235.0F));
+        custom.drawRoundedBorder(cx - coreRadius, iconCenterY - coreRadius, coreRadius * 2.0F, coreRadius * 2.0F,
+            1.0F, IIiii_Class8.I_method_893b2757(coreRadius), theme.withAlpha(220.0F));
+
+        // Holographic latitude ring
+        custom.drawRoundedBorder(cx - coreRadius + 2.0F, iconCenterY - 7.0F, (coreRadius - 2.0F) * 2.0F, 14.0F,
+            0.8F, IIiii_Class8.I_method_893b2757(7.0F), themeSec.withAlpha(150.0F));
+
+        // Specular 3D gleam at top-left of sphere
+        custom.drawRoundedRect(cx - 10.0F, iconCenterY - 12.0F, 8.0F, 4.0F, IIiii_Class8.I_method_893b2757(2.0F),
+            new ColorRGBA(255.0F, 255.0F, 255.0F, 150.0F));
+
+        // Glowing world texture emblem
+        custom.drawIcon("hud/world", cx - 12.0F, iconCenterY - 12.0F, 24.0F, ColorRGBA.WHITE);
 
         // 5. Title & Status Text
         IIiIIi_Class10 boldFont = IIiIiI_Class11.i_field_857c0621 != null ? IIiIiI_Class11.i_field_857c0621.I_method_3a2d5e3(13.0F) : null;

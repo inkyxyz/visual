@@ -193,14 +193,12 @@ implements iIIiIIiIi_Class294 {
             this.drawLiquidGlass(f, f2, f3, f4, f7, 0.08F + 0.07F * f6, iIiii_Class8, ColorRGBA.WHITE.withAlpha(255.0F * f5 * InterfaceModule.I_method_fdcdb22f()));
         }
         // Base glass tint
-        this.drawSquircle(f, f2, f3, f4, f7, iIiii_Class8, new ColorRGBA(18.0F, 20.0F, 28.0F, 150.0F * f5 * opacityMul));
+        this.drawSquircle(f, f2, f3, f4, f7, iIiii_Class8, new ColorRGBA(18.0F, 20.0F, 28.0F, 120.0F * f5 * opacityMul));
         // Specular glass perimeter highlight + glow
-        if (bl) {
-            this.drawSquircleBorder(f, f2, f3, f4, 0.8F, f7, iIiii_Class8, new ColorRGBA(255.0F, 255.0F, 255.0F, 70.0F * f5));
-            if (glowMul > 0.01F) {
-                ColorRGBA themeAccent = IiiiiIIIi_Class242.I_method_7df8e08e();
-                this.drawBlurredRect(f, f2, f3, f4, 10.0F, f7, iIiii_Class8, themeAccent.withAlpha(40.0F * f5 * glowMul));
-            }
+        this.drawSquircleBorder(f, f2, f3, f4, 0.6F, f7, iIiii_Class8, new ColorRGBA(255.0F, 255.0F, 255.0F, (bl ? 70.0F : 28.0F) * f5));
+        if (bl && glowMul > 0.01F) {
+            ColorRGBA themeAccent = IiiiiIIIi_Class242.I_method_7df8e08e();
+            this.drawBlurredRect(f, f2, f3, f4, 10.0F, f7, iIiii_Class8, themeAccent.withAlpha(40.0F * f5 * glowMul));
         }
     }
 

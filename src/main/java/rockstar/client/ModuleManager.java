@@ -224,6 +224,24 @@ public class ModuleManager {
         this.registerModule(new BlockOverlayModule());
         this.registerModule(new WeatherAlertModule());
         this.registerModule(new ItemChangerModule());
+        this.registerModule(new AutoShiftTapModule());
+        this.registerModule(new WTapModule());
+        this.registerModule(new SoundReducerModule());
+        this.registerModule(new TapeMouseModule());
+        this.registerModule(new ShieldBreakerModule());
+        this.registerModule(new FullbrightModule());
+        this.registerModule(new TracersModule());
+        this.registerModule(new ChamsModule());
+        this.registerModule(new CustomNametagsModule());
+        this.registerModule(new AtmosphereModule());
+        this.registerModule(new AimAssistModule());
+        this.registerModule(new AutoSwapModule());
+        this.registerModule(new JumpResetModule());
+        this.registerModule(new NoJumpDelayModule());
+        this.registerModule(new AutoRespawnModule());
+        this.registerModule(new NoWebModule());
+        this.registerModule(new PearlTracerModule());
+        this.registerModule(new TerminalModule());
         this.snapshotModuleSettings();
     }
 

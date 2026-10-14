@@ -22,6 +22,16 @@ implements iIIiIIiIi_Class294 {
             WeatherRendererMixin.I_field_3a9bda27.world.setRainGradient(0.0f);
             WeatherRendererMixin.I_field_3a9bda27.world.setThunderGradient(0.0f);
         }
+
+        rockstar.client.AtmosphereModule atmo = RockstarClient.getInstance().getModuleManager().getModule(rockstar.client.AtmosphereModule.class);
+        if (atmo != null && atmo.isEnabled() && WeatherRendererMixin.I_field_3a9bda27.world != null) {
+            Float rain = atmo.getOverrideRainGradient();
+            if (rain != null) WeatherRendererMixin.I_field_3a9bda27.world.setRainGradient(rain);
+            Float thunder = atmo.getOverrideThunderGradient();
+            if (thunder != null) WeatherRendererMixin.I_field_3a9bda27.world.setThunderGradient(thunder);
+            long overrideTime = atmo.getOverrideTimeOfDay(WeatherRendererMixin.I_field_3a9bda27.world.getTimeOfDay());
+            WeatherRendererMixin.I_field_3a9bda27.world.setTime(WeatherRendererMixin.I_field_3a9bda27.world.getTime(), overrideTime, false);
+        }
     }
 }
 

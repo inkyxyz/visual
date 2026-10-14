@@ -16,9 +16,9 @@ public class SnakeScreen extends ii_Class4 {
     private static final int COLS = 22;
     private static final int ROWS = 18;
     private static int highScore = 0;
+    public static int getHighScore() { return highScore; }
 
     private enum Direction { UP, DOWN, LEFT, RIGHT }
-
     private final LinkedList<Point> snake = new LinkedList<>();
     private Point food = new Point(5, 5);
     private Direction dir = Direction.RIGHT;

@@ -11,8 +11,10 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
@@ -41,9 +43,9 @@ import pyrock.utility.render.ColorRGBA;
 public class IOSDesktopScreen extends Screen {
 
     public enum Tab {
-        ALL("Все"),
-        WORLDS("Миры"),
-        SERVERS("Серверы");
+        ALL("All"),
+        WORLDS("Worlds"),
+        SERVERS("Servers");
 
         public final String title;
         Tab(String title) {
@@ -191,6 +193,9 @@ public class IOSDesktopScreen extends Screen {
     private float scrollY = 0.0F;
     private float targetScrollY = 0.0F;
     private float maxScroll = 0.0F;
+
+    private final Map<Integer, Float> cardHoverAnim = new HashMap<>();
+    private final float[] dockPillHover = new float[5];
 
     private final List<WorldItem> worlds = new ArrayList<>();
     private final List<ServerItem> servers = new ArrayList<>();
@@ -377,15 +382,17 @@ public class IOSDesktopScreen extends Screen {
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
         III custom = III.I_method_5728d20f(context, mouseX, mouseY, delta);
 
-        // 1. Unified Background (Wallpaper or ambient)
-        ThemeAndBackgroundManager.getInstance().renderActiveBackground(custom, this.width, this.height, (float) mouseX, (float) mouseY);
+        // 1. Unified Background (Wallpaper or ambient with subtle mouse parallax)
+        float parallaxX = ((float)mouseX - this.width / 2.0F) * 0.018F;
+        float parallaxY = ((float)mouseY - this.height / 2.0F) * 0.018F;
+        ThemeAndBackgroundManager.getInstance().renderActiveBackground(custom, this.width, this.height, (float) mouseX + parallaxX, (float) mouseY + parallaxY);
 
         // Smooth scroll interpolation
         this.scrollY += (this.targetScrollY - this.scrollY) * Math.min(1.0F, delta * 12.0F);
 
         float topBarH = 46.0F;
         float dockH = 50.0F;
-        float contentTop = topBarH + 12.0F;
+        float contentTop = 72.0F;
         float contentBot = this.height - dockH - 12.0F;
         float contentH = contentBot - contentTop;
 
@@ -402,10 +409,10 @@ public class IOSDesktopScreen extends Screen {
     private void renderTopBar(III custom, int mx, int my, float h) {
         long elapsed = System.currentTimeMillis() - this.screenOpenTime;
         float topEnter = MathHelper.clamp(elapsed / 320.0F, 0.0F, 1.0F);
-        float topEase = 1.0F - (float)Math.pow(1.0F - topEnter, 3);
+        float topEase = springEase(topEnter, 0.65F);
 
         float barX = 16.0F;
-        float barY = 8.0F + (1.0F - topEase) * -35.0F;
+        float barY = 8.0F + (1.0F - topEase) * -38.0F;
         float barW = this.width - 32.0F;
         float barH = h - 10.0F;
         IIiii_Class8 rad = IIiii_Class8.I_method_893b2757(barH / 2.0F);
@@ -419,7 +426,7 @@ public class IOSDesktopScreen extends Screen {
         custom.drawText(IIiIiI_Class11.II_field_857c0621.I_method_3a2d5e3(8.5F), "Desktop", barX + 32.0F, barY + (barH - 8.5F) / 2.0F, ColorRGBA.WHITE);
 
         String timeStr = LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm"));
-        String dateStr = new SimpleDateFormat("E, d MMM", new Locale("ru")).format(new Date());
+        String dateStr = new SimpleDateFormat("E, d MMM", Locale.ENGLISH).format(new Date());
         custom.drawText(IIiIiI_Class11.i_field_857c0621.I_method_3a2d5e3(7.5F), timeStr + "  •  " + dateStr, barX + 80.0F, barY + (barH - 7.5F) / 2.0F, new ColorRGBA(255.0F, 255.0F, 255.0F, 170.0F));
 
         // Center: Spotlight Search Bar
@@ -439,7 +446,7 @@ public class IOSDesktopScreen extends Screen {
         custom.drawIcon("search", searchX + 8.0F, searchY + (searchH - 10.0F) / 2.0F, 10.0F, this.searchFocused ? IiiiiIIIi_Class242.I_method_7df8e08e() : new ColorRGBA(255.0F, 255.0F, 255.0F, 140.0F));
 
         if (this.searchQuery.isEmpty()) {
-            custom.drawText(IIiIiI_Class11.i_field_857c0621.I_method_3a2d5e3(7.0F), "Поиск миров и серверов...", searchX + 22.0F, searchY + (searchH - 7.0F) / 2.0F, new ColorRGBA(255.0F, 255.0F, 255.0F, 110.0F));
+            custom.drawText(IIiIiI_Class11.i_field_857c0621.I_method_3a2d5e3(7.0F), "Search worlds and servers...", searchX + 22.0F, searchY + (searchH - 7.0F) / 2.0F, new ColorRGBA(255.0F, 255.0F, 255.0F, 110.0F));
         } else {
             String cursor = this.searchFocused && (System.currentTimeMillis() % 1000L < 500L) ? "|" : "";
             custom.drawText(IIiIiI_Class11.i_field_857c0621.I_method_3a2d5e3(7.5F), this.searchQuery + cursor, searchX + 22.0F, searchY + (searchH - 7.5F) / 2.0F, ColorRGBA.WHITE);
@@ -524,50 +531,45 @@ public class IOSDesktopScreen extends Screen {
     }
 
     private void renderActionButton(III custom, float btnX, float btnY, float btnW, float btnH, String text, boolean hov, ColorRGBA accentColor) {
-        IIiii_Class8 bRad = IIiii_Class8.I_method_893b2757(7.0F);
+        IIiii_Class8 bRad = IIiii_Class8.I_method_893b2757(btnH / 2.0F);
 
-        // Tactile button press animation
         boolean isMouseDown = GLFW.glfwGetMouseButton(MinecraftClient.getInstance().getWindow().getHandle(), 0) == 1;
         boolean pressed = hov && isMouseDown;
-        float scale = pressed ? 0.94F : (hov ? 1.05F : 1.0F);
 
-        custom.getMatrices().push();
-        float bcx = btnX + btnW / 2.0F;
-        float bcy = btnY + btnH / 2.0F;
-        custom.getMatrices().translate(bcx, bcy, 0.0F);
-        custom.getMatrices().scale(scale, scale, 1.0F);
-        custom.getMatrices().translate(-bcx, -bcy, 0.0F);
+        // 1. Atmospheric soft glow shadow
+        float shadowAlpha = pressed ? 150.0F : (hov ? 120.0F : 45.0F);
+        custom.drawShadow(btnX, btnY, btnW, btnH, hov ? 10.0F : 5.0F, bRad, accentColor.withAlpha(shadowAlpha));
 
-        // 1. Atmospheric soft glow shadow on hover
-        if (hov) {
-            custom.drawShadow(btnX, btnY, btnW, btnH, 10.0F, bRad, accentColor.withAlpha(pressed ? 140.0F : 110.0F));
-        }
-
-        // 2. Apple glass background: frosted translucent glass idle, vibrant saturated accent on hover
+        // 2. Vibrant Theme Color Background
         ColorRGBA bg = hov
-            ? (pressed ? accentColor.withAlpha(255.0F) : accentColor.withAlpha(235.0F))
-            : new ColorRGBA(34.0F, 42.0F, 60.0F, 200.0F);
+            ? (pressed ? accentColor.withAlpha(255.0F) : accentColor.withAlpha(240.0F))
+            : accentColor.withAlpha(195.0F);
         custom.drawRoundedRect(btnX, btnY, btnW, btnH, bRad, bg);
 
-        // 3. Delicate border (never harsh or thick)
+        // 3. Delicate gleam border
         ColorRGBA border = hov
-            ? new ColorRGBA(255.0F, 255.0F, 255.0F, pressed ? 160.0F : 120.0F)
-            : new ColorRGBA(255.0F, 255.0F, 255.0F, 26.0F);
+            ? new ColorRGBA(255.0F, 255.0F, 255.0F, pressed ? 180.0F : 140.0F)
+            : new ColorRGBA(255.0F, 255.0F, 255.0F, 50.0F);
         custom.drawRoundedBorder(btnX, btnY, btnW, btnH, 0.7F, bRad, border);
 
-        // 4. Subtle top specular gleam line (iOS glass feel)
-        if (!pressed) {
-            custom.drawRoundedRect(btnX + 3.0F, btnY + 1.0F, btnW - 6.0F, 1.0F, IIiii_Class8.I_method_893b2757(0.5F),
-                hov ? new ColorRGBA(255.0F, 255.0F, 255.0F, 75.0F) : new ColorRGBA(255.0F, 255.0F, 255.0F, 20.0F));
-        }
-
-        // 5. Crisp SemiBold typography
-        IIiIIi_Class10 font = IIiIiI_Class11.II_field_857c0621.I_method_3a2d5e3(7.2F);
-        ColorRGBA textCol = hov ? ColorRGBA.WHITE : new ColorRGBA(235.0F, 242.0F, 255.0F, 230.0F);
+        // 4. Crisp Bold typography (white text)
+        IIiIIi_Class10 font = IIiIiI_Class11.II_field_857c0621.I_method_3a2d5e3(7.5F);
         float tw = font.I_method_2c375926(text);
-        custom.drawText(font, text, btnX + (btnW - tw) / 2.0F, btnY + (btnH - 7.2F) / 2.0F, textCol);
+        custom.drawText(font, text, btnX + (btnW - tw) / 2.0F, btnY + (btnH - 7.5F) / 2.0F, ColorRGBA.WHITE);
+    }
 
-        custom.getMatrices().pop();
+    public static float springEase(float t, float overshoot) {
+        t = MathHelper.clamp(t, 0.0F, 1.0F) - 1.0F;
+        return t * t * ((overshoot + 1.0F) * t + overshoot) + 1.0F;
+    }
+
+    public void setTab(Tab tab) {
+        if (this.currentTab != tab) {
+            this.currentTab = tab;
+            this.screenOpenTime = System.currentTimeMillis();
+            this.targetScrollY = 0.0F;
+            this.cardHoverAnim.clear();
+        }
     }
 
     private void renderDesktopCards(III custom, int mx, int my, float top, float h) {
@@ -592,47 +594,57 @@ public class IOSDesktopScreen extends Screen {
         }
 
         // Layout parameters
+        float cardW = 340.0F;
+        float cardH = 76.0F;
+        float gap = 16.0F;
         float padX = 24.0F;
-        float totalW = this.width - padX * 2.0F;
-        int cols = Math.max(2, Math.min(4, (int) (totalW / 260.0F)));
-        float gap = 14.0F;
-        float cardW = (totalW - gap * (cols - 1)) / cols;
-        float cardH = 82.0F;
+        float availW = this.width - padX * 2.0F;
+        int cols = Math.max(1, Math.min(3, (int) ((availW + gap) / (cardW + gap))));
+        float gridW = cols * cardW + (cols - 1) * gap;
+        float startX = (this.width - gridW) / 2.0F;
 
         int totalRows = (items.size() + cols - 1) / cols;
         float totalGridH = totalRows * (cardH + gap);
         this.maxScroll = Math.max(0.0F, totalGridH - h + 20.0F);
 
         // Hardware Scissor Viewport
-        iIiiiIiII_Class373.I_method_d5a5ee51(custom.getMatrices(), padX - 4.0F, top, totalW + 8.0F, h);
+        iIiiiIiII_Class373.I_method_d5a5ee51(custom.getMatrices(), padX - 4.0F, top, availW + 8.0F, h);
 
         if (items.isEmpty()) {
-            float emptyW = IIiIiI_Class11.II_field_857c0621.I_method_3a2d5e3(10.0F).I_method_2c375926("Нет доступных миров или серверов");
-            custom.drawText(IIiIiI_Class11.II_field_857c0621.I_method_3a2d5e3(10.0F), "Нет доступных миров или серверов", (this.width - emptyW) / 2.0F, top + h / 2.0F - 10.0F, new ColorRGBA(255.0F, 255.0F, 255.0F, 120.0F));
-            custom.drawText(IIiIiI_Class11.i_field_857c0621.I_method_3a2d5e3(7.5F), "Используйте нижнюю панель для создания мира или добавления сервера", (this.width - 240.0F) / 2.0F, top + h / 2.0F + 8.0F, new ColorRGBA(255.0F, 255.0F, 255.0F, 85.0F));
+            float emptyW = IIiIiI_Class11.II_field_857c0621.I_method_3a2d5e3(10.0F).I_method_2c375926("No worlds or servers available");
+            custom.drawText(IIiIiI_Class11.II_field_857c0621.I_method_3a2d5e3(10.0F), "No worlds or servers available", (this.width - emptyW) / 2.0F, top + h / 2.0F - 10.0F, new ColorRGBA(255.0F, 255.0F, 255.0F, 120.0F));
+            custom.drawText(IIiIiI_Class11.i_field_857c0621.I_method_3a2d5e3(7.5F), "Use the bottom dock to create a world or add a server", (this.width - 240.0F) / 2.0F, top + h / 2.0F + 8.0F, new ColorRGBA(255.0F, 255.0F, 255.0F, 85.0F));
         } else {
             long elapsed = System.currentTimeMillis() - this.screenOpenTime;
             for (int i = 0; i < items.size(); i++) {
                 int col = i % cols;
                 int row = i / cols;
-                float cx = padX + col * (cardW + gap);
+                float cx = startX + col * (cardW + gap);
                 float baseCy = top - this.scrollY + row * (cardH + gap);
 
-                // Cascade pop-in animation per card
-                long delay = 50L + (long)(i * 24L);
-                float cardProgress = MathHelper.clamp((elapsed - delay) / 300.0F, 0.0F, 1.0F);
-                float cardEase = 1.0F - (float)Math.pow(1.0F - cardProgress, 3);
-                float cy = baseCy + (1.0F - cardEase) * 32.0F;
+                // Cascade spring pop-in animation per card with stagger
+                long delay = 35L + (long)(i * 26L);
+                float cardProgress = MathHelper.clamp((elapsed - delay) / 320.0F, 0.0F, 1.0F);
+                if (cardProgress <= 0.0F) continue; // Waiting for stagger delay
+
+                float cardSpring = springEase(cardProgress, 0.82F);
+                float cardAlpha = MathHelper.clamp(cardProgress * 1.6F, 0.0F, 1.0F);
+                float cy = baseCy + (1.0F - cardSpring) * 26.0F;
 
                 if (cy + cardH < top || cy > top + h) {
                     continue; // Culled
                 }
 
+                boolean isCardHov = (mx >= cx && mx <= cx + cardW && my >= cy && my <= cy + cardH);
+                float prevHov = this.cardHoverAnim.getOrDefault(i, 0.0F);
+                float curHov = prevHov + ((isCardHov ? 1.0F : 0.0F) - prevHov) * 0.22F;
+                this.cardHoverAnim.put(i, curHov);
+
                 Object obj = items.get(i);
                 if (obj instanceof WorldItem w) {
-                    this.renderWorldCard(custom, w, cx, cy, cardW, cardH, mx, my);
+                    this.renderWorldCard(custom, w, cx, cy, cardW, cardH, mx, my, curHov, cardSpring, cardAlpha);
                 } else if (obj instanceof ServerItem s) {
-                    this.renderServerCard(custom, s, cx, cy, cardW, cardH, mx, my);
+                    this.renderServerCard(custom, s, cx, cy, cardW, cardH, mx, my, curHov, cardSpring, cardAlpha);
                 }
             }
         }
@@ -640,85 +652,113 @@ public class IOSDesktopScreen extends Screen {
         iIiiiIiII_Class373.I_method_ff80a1df();
     }
 
-    private void renderWorldCard(III custom, WorldItem w, float x, float y, float wCard, float hCard, int mx, int my) {
-        boolean hov = mx >= x && mx <= x + wCard && my >= y && my <= y + hCard;
-        IIiii_Class8 rad = IIiii_Class8.I_method_893b2757(12.0F);
+    private void renderWorldCard(III custom, WorldItem w, float x, float y, float wCard, float hCard, int mx, int my, float curHov, float cardSpring, float cardAlpha) {
+        boolean hov = curHov > 0.05F;
+        IIiii_Class8 rad = IIiii_Class8.I_method_893b2757(16.0F);
+        ColorRGBA theme = IiiiiIIIi_Class242.I_method_7df8e08e();
 
-        float drawY = y;
+        float drawY = y - 5.5F * curHov;
 
-        // Atmospheric drop shadow & hover glow (no position jumping!)
-        if (hov) {
-            custom.drawShadow(x, drawY, wCard, hCard, 10.0F, rad, IiiiiIIIi_Class242.I_method_7df8e08e().withAlpha(65.0F));
-        } else {
-            custom.drawShadow(x, drawY, wCard, hCard, 6.0F, rad, new ColorRGBA(0.0F, 0.0F, 0.0F, 40.0F));
-        }
+        custom.getMatrices().push();
+        float midX = x + wCard / 2.0F;
+        float midY = drawY + hCard / 2.0F;
+        float cardScale = (0.92F + 0.08F * cardSpring) * (1.0F + 0.034F * curHov);
+        custom.getMatrices().translate(midX, midY, 0.0F);
+        custom.getMatrices().scale(cardScale, cardScale, 1.0F);
+        custom.getMatrices().translate(-midX, -midY, 0.0F);
 
-        // Card glass background
-        ColorRGBA bg = hov ? new ColorRGBA(28.0F, 34.0F, 48.0F, 225.0F) : new ColorRGBA(18.0F, 22.0F, 32.0F, 175.0F);
+        // Atmospheric drop shadow & hover glow with smooth expansion
+        custom.drawShadow(x, drawY, wCard, hCard, 10.0F, rad, new ColorRGBA(0.0F, 0.0F, 0.0F, 35.0F * cardAlpha));
+
+        // Card glass background: rgba(20, 24, 35, 0.7)
+        ColorRGBA bg = new ColorRGBA(
+            (int) (20.0F + 10.0F * curHov),
+            (int) (24.0F + 12.0F * curHov),
+            (int) (35.0F + 18.0F * curHov),
+            (int) ((180.0F + 45.0F * curHov) * cardAlpha)
+        );
         custom.drawRoundedRect(x, drawY, wCard, hCard, rad, bg);
-        custom.drawRoundedBorder(x, drawY, wCard, hCard, 0.8F, rad, hov ? IiiiiIIIi_Class242.I_method_7df8e08e().withAlpha(190.0F) : new ColorRGBA(255.0F, 255.0F, 255.0F, 24.0F));
+        // Dynamic glowing border on hover
+        ColorRGBA border = new ColorRGBA(255.0F, 255.0F, 255.0F, (20.0F + 35.0F * curHov) * cardAlpha);
+        custom.drawRoundedBorder(x, drawY, wCard, hCard, 0.6F, rad, border);
 
-        // Squircle Icon (Singleplayer Earth / World Screenshot Icon)
-        float iconSize = 46.0F;
-        float iconX = x + 10.0F;
+        // Squircle Icon: 52x52px with 12px rounding
+        float iconSize = 52.0F;
+        float iconX = x + 12.0F;
         float iconY = drawY + (hCard - iconSize) / 2.0F;
         IIiii_Class8 iconRad = IIiii_Class8.I_method_893b2757(12.0F);
 
         w.loadIconTexture();
         if (w.iconTextureId != null) {
-            custom.drawRoundedTexture(w.iconTextureId, iconX, iconY, iconSize, iconSize, iconRad, ColorRGBA.WHITE);
-            custom.drawRoundedBorder(iconX, iconY, iconSize, iconSize, 1.0F, iconRad, hov ? IiiiiIIIi_Class242.I_method_7df8e08e() : new ColorRGBA(255.0F, 255.0F, 255.0F, 30.0F));
+            custom.drawRoundedTexture(w.iconTextureId, iconX, iconY, iconSize, iconSize, iconRad, ColorRGBA.WHITE.withAlpha(255.0F * cardAlpha));
+            custom.drawRoundedBorder(iconX, iconY, iconSize, iconSize, 0.8F, iconRad, hov ? theme.withAlpha(255.0F * cardAlpha) : new ColorRGBA(255.0F, 255.0F, 255.0F, 30.0F * cardAlpha));
         } else {
             // Vibrant grass green gradient for worlds without screenshot
-            custom.drawRoundedRect(iconX, iconY, iconSize, iconSize, iconRad, new ColorRGBA(40.0F, 120.0F, 70.0F, 220.0F));
-            custom.drawRoundedBorder(iconX, iconY, iconSize, iconSize, 0.8F, iconRad, new ColorRGBA(120.0F, 240.0F, 160.0F, 180.0F));
-            custom.drawIcon("world", iconX + (iconSize - 22.0F) / 2.0F, iconY + (iconSize - 22.0F) / 2.0F, 22.0F, ColorRGBA.WHITE);
+            custom.drawRoundedRect(iconX, iconY, iconSize, iconSize, iconRad, new ColorRGBA(40.0F, 120.0F, 70.0F, 220.0F * cardAlpha));
+            custom.drawRoundedBorder(iconX, iconY, iconSize, iconSize, 0.8F, iconRad, new ColorRGBA(120.0F, 240.0F, 160.0F, 180.0F * cardAlpha));
+            custom.drawIcon("logo", iconX + (iconSize - 20.0F) / 2.0F, iconY + (iconSize - 20.0F) / 2.0F, 20.0F, ColorRGBA.WHITE.withAlpha(255.0F * cardAlpha));
         }
 
         // World Info Text
-        float textX = iconX + iconSize + 10.0F;
+        float textX = iconX + iconSize + 12.0F;
         String title = w.displayName;
-        custom.drawText(IIiIiI_Class11.II_field_857c0621.I_method_3a2d5e3(8.5F), title, textX, drawY + 10.0F, ColorRGBA.WHITE);
+        custom.drawText(IIiIiI_Class11.II_field_857c0621.I_method_3a2d5e3(9.0F), title, textX, drawY + 13.0F, ColorRGBA.WHITE.withAlpha(255.0F * cardAlpha));
 
-        // Subtitle & Mode Badge
-        ColorRGBA modeColor = w.hardcore ? new ColorRGBA(240.0F, 70.0F, 70.0F, 255.0F) : new ColorRGBA(90.0F, 210.0F, 140.0F, 255.0F);
-        String modeName = w.hardcore ? "Хардкор" : "Одиночный мир";
-        custom.drawText(IIiIiI_Class11.i_field_857c0621.I_method_3a2d5e3(6.5F), modeName, textX, drawY + 26.0F, modeColor);
+        // Subtitle & Mode (#8E95A5)
+        String dateStr = w.lastPlayed > 0 ? DATE_FORMAT.format(new Date(w.lastPlayed)) : "Never";
+        custom.drawText(IIiIiI_Class11.i_field_857c0621.I_method_3a2d5e3(7.0F), dateStr + " • " + w.version, textX, drawY + 30.0F, new ColorRGBA(142.0F, 149.0F, 165.0F, 255.0F * cardAlpha));
 
-        // Last played date
-        String dateStr = w.lastPlayed > 0 ? DATE_FORMAT.format(new Date(w.lastPlayed)) : "Никогда";
-        custom.drawText(IIiIiI_Class11.i_field_857c0621.I_method_3a2d5e3(6.5F), dateStr + " • " + w.version, textX, drawY + 39.0F, new ColorRGBA(255.0F, 255.0F, 255.0F, 125.0F));
+        // Subtle muted mode info (#8E95A5)
+        float statusY = drawY + 47.0F;
+        ColorRGBA mutedCol = new ColorRGBA(142.0F, 149.0F, 165.0F, 200.0F * cardAlpha);
+        String modeName = w.hardcore ? "Hardcore" : "Singleplayer";
+        custom.drawText(IIiIiI_Class11.i_field_857c0621.I_method_3a2d5e3(6.5F), modeName, textX, statusY, mutedCol);
 
-        // Quick Launch Action Button (Play)
-        float btnW = 60.0F;
-        float btnH = 24.0F;
-        float btnX = x + wCard - btnW - 12.0F;
+        // Quick Launch Capsule Button: 64x26px, cleanly inside card
+        float btnW = 64.0F;
+        float btnH = 26.0F;
+        float btnX = x + wCard - btnW - 18.0F;
         float btnY = drawY + (hCard - btnH) / 2.0F;
         boolean bHov = mx >= btnX && mx <= btnX + btnW && my >= btnY && my <= btnY + btnH;
-        this.renderActionButton(custom, btnX, btnY, btnW, btnH, "Играть", bHov, new ColorRGBA(34.0F, 197.0F, 94.0F, 240.0F));
+        boolean isRu = IiIiIIII_Class81.I_method_21a4cfeb() == IiIIiiii_Class80.i_field_3f56db61;
+        this.renderActionButton(custom, btnX, btnY, btnW, btnH, isRu ? "Играть" : "Play", bHov, theme.withAlpha(255.0F * cardAlpha));
+
+        custom.getMatrices().pop();
     }
 
-    private void renderServerCard(III custom, ServerItem s, float x, float y, float wCard, float hCard, int mx, int my) {
-        boolean hov = mx >= x && mx <= x + wCard && my >= y && my <= y + hCard;
-        IIiii_Class8 rad = IIiii_Class8.I_method_893b2757(12.0F);
+    private void renderServerCard(III custom, ServerItem s, float x, float y, float wCard, float hCard, int mx, int my, float curHov, float cardSpring, float cardAlpha) {
+        boolean hov = curHov > 0.05F;
+        IIiii_Class8 rad = IIiii_Class8.I_method_893b2757(16.0F);
+        ColorRGBA theme = IiiiiIIIi_Class242.I_method_7df8e08e();
 
-        float drawY = y;
+        float drawY = y - 5.5F * curHov;
 
-        // Atmospheric drop shadow & hover glow (no position jumping!)
-        if (hov) {
-            custom.drawShadow(x, drawY, wCard, hCard, 10.0F, rad, IiiiiIIIi_Class242.I_method_7df8e08e().withAlpha(65.0F));
-        } else {
-            custom.drawShadow(x, drawY, wCard, hCard, 6.0F, rad, new ColorRGBA(0.0F, 0.0F, 0.0F, 40.0F));
-        }
+        custom.getMatrices().push();
+        float midX = x + wCard / 2.0F;
+        float midY = drawY + hCard / 2.0F;
+        float cardScale = (0.92F + 0.08F * cardSpring) * (1.0F + 0.034F * curHov);
+        custom.getMatrices().translate(midX, midY, 0.0F);
+        custom.getMatrices().scale(cardScale, cardScale, 1.0F);
+        custom.getMatrices().translate(-midX, -midY, 0.0F);
 
-        // Card glass background
-        ColorRGBA bg = hov ? new ColorRGBA(28.0F, 34.0F, 48.0F, 205.0F) : new ColorRGBA(18.0F, 22.0F, 32.0F, 175.0F);
+        // Atmospheric drop shadow & hover glow with smooth expansion
+        custom.drawShadow(x, drawY, wCard, hCard, 10.0F, rad, new ColorRGBA(0.0F, 0.0F, 0.0F, 35.0F * cardAlpha));
+
+        // Card glass background: rgba(20, 24, 35, 0.7)
+        ColorRGBA bg = new ColorRGBA(
+            (int) (20.0F + 10.0F * curHov),
+            (int) (24.0F + 12.0F * curHov),
+            (int) (35.0F + 18.0F * curHov),
+            (int) ((180.0F + 45.0F * curHov) * cardAlpha)
+        );
         custom.drawRoundedRect(x, drawY, wCard, hCard, rad, bg);
-        custom.drawRoundedBorder(x, drawY, wCard, hCard, 0.8F, rad, hov ? IiiiiIIIi_Class242.I_method_7df8e08e().withAlpha(190.0F) : new ColorRGBA(255.0F, 255.0F, 255.0F, 24.0F));
+        // Dynamic glowing border on hover
+        ColorRGBA border = new ColorRGBA(255.0F, 255.0F, 255.0F, (20.0F + 35.0F * curHov) * cardAlpha);
+        custom.drawRoundedBorder(x, drawY, wCard, hCard, 0.6F, rad, border);
 
-        // Squircle Icon (Multiplayer Server / Network Favicon)
-        float iconSize = 46.0F;
-        float iconX = x + 10.0F;
+        // Squircle Icon: 52x52px with 12px rounding
+        float iconSize = 52.0F;
+        float iconX = x + 12.0F;
         float iconY = drawY + (hCard - iconSize) / 2.0F;
         IIiii_Class8 iconRad = IIiii_Class8.I_method_893b2757(12.0F);
 
@@ -727,60 +767,65 @@ public class IOSDesktopScreen extends Screen {
 
         if (s.faviconTextureId != null) {
             // Fill the rounded squircle with the real server favicon
-            custom.drawRoundedTexture(s.faviconTextureId, iconX, iconY, iconSize, iconSize, iconRad, ColorRGBA.WHITE);
-            custom.drawRoundedBorder(iconX, iconY, iconSize, iconSize, 1.0F, iconRad, hov ? IiiiiIIIi_Class242.I_method_7df8e08e() : new ColorRGBA(255.0F, 255.0F, 255.0F, 30.0F));
+            custom.drawRoundedTexture(s.faviconTextureId, iconX, iconY, iconSize, iconSize, iconRad, ColorRGBA.WHITE.withAlpha(255.0F * cardAlpha));
+            custom.drawRoundedBorder(iconX, iconY, iconSize, iconSize, 0.8F, iconRad, hov ? theme.withAlpha(255.0F * cardAlpha) : new ColorRGBA(255.0F, 255.0F, 255.0F, 30.0F * cardAlpha));
         } else {
             // Beautiful fallback monogram initial letter
-            custom.drawRoundedRect(iconX, iconY, iconSize, iconSize, iconRad, new ColorRGBA(32.0F, 42.0F, 64.0F, 220.0F));
-            custom.drawRoundedBorder(iconX, iconY, iconSize, iconSize, 0.8F, iconRad, hov ? IiiiiIIIi_Class242.I_method_7df8e08e() : new ColorRGBA(90.0F, 190.0F, 255.0F, 140.0F));
+            custom.drawRoundedRect(iconX, iconY, iconSize, iconSize, iconRad, new ColorRGBA(32.0F, 42.0F, 64.0F, 220.0F * cardAlpha));
+            custom.drawRoundedBorder(iconX, iconY, iconSize, iconSize, 0.8F, iconRad, hov ? theme.withAlpha(255.0F * cardAlpha) : new ColorRGBA(90.0F, 190.0F, 255.0F, 140.0F * cardAlpha));
             String initial = s.name.trim().isEmpty() ? "S" : s.name.trim().substring(0, 1).toUpperCase();
             IIiIIi_Class10 letterFont = IIiIiI_Class11.II_field_857c0621.I_method_3a2d5e3(16.0F);
             float lw = letterFont.I_method_2c375926(initial);
-            custom.drawText(letterFont, initial, iconX + (iconSize - lw) / 2.0F, iconY + (iconSize - 16.0F) / 2.0F + 1.0F, ColorRGBA.WHITE);
+            custom.drawText(letterFont, initial, iconX + (iconSize - lw) / 2.0F, iconY + (iconSize - 16.0F) / 2.0F + 1.0F, ColorRGBA.WHITE.withAlpha(255.0F * cardAlpha));
         }
 
         // Server Info Text
-        float textX = iconX + iconSize + 10.0F;
-        custom.drawText(IIiIiI_Class11.II_field_857c0621.I_method_3a2d5e3(8.5F), s.name, textX, drawY + 10.0F, ColorRGBA.WHITE);
+        float textX = iconX + iconSize + 12.0F;
+        custom.drawText(IIiIiI_Class11.II_field_857c0621.I_method_3a2d5e3(9.0F), s.name, textX, drawY + 13.0F, ColorRGBA.WHITE.withAlpha(255.0F * cardAlpha));
 
-        // Server Address
-        custom.drawText(IIiIiI_Class11.i_field_857c0621.I_method_3a2d5e3(6.5F), s.address, textX, drawY + 26.0F, new ColorRGBA(180.0F, 210.0F, 255.0F, 200.0F));
+        // Server Address (#8E95A5)
+        custom.drawText(IIiIiI_Class11.i_field_857c0621.I_method_3a2d5e3(7.0F), s.address, textX, drawY + 30.0F, new ColorRGBA(142.0F, 149.0F, 165.0F, 255.0F * cardAlpha));
 
-        // Ping badge & players count
+        // Ping badge & players count with indicator dot
         String statusText;
         ColorRGBA statusCol;
         if (!s.pinged) {
-            statusText = "Подключение...";
+            statusText = "Connecting...";
             statusCol = new ColorRGBA(255.0F, 255.0F, 255.0F, 140.0F);
         } else if (s.online) {
-            statusCol = new ColorRGBA(80.0F, 225.0F, 130.0F, 255.0F);
+            statusCol = new ColorRGBA(74.0F, 222.0F, 128.0F, 255.0F);
             if (!s.playerCount.isEmpty()) {
-                statusText = s.playerCount + " игроков" + (s.ping > 0 ? " • " + s.ping + " ms" : "");
+                statusText = s.playerCount + " players" + (s.ping > 0 ? " • " + s.ping + " ms" : "");
             } else if (s.ping > 0) {
-                statusText = s.ping + " ms • Онлайн";
+                statusText = s.ping + " ms • Online";
             } else {
-                statusText = "Онлайн";
+                statusText = "Online";
             }
         } else {
-            statusText = "Офлайн";
-            statusCol = new ColorRGBA(240.0F, 70.0F, 70.0F, 255.0F);
+            statusText = "Offline";
+            statusCol = new ColorRGBA(248.0F, 113.0F, 113.0F, 255.0F);
         }
 
-        custom.drawText(IIiIiI_Class11.i_field_857c0621.I_method_3a2d5e3(6.5F), statusText, textX, drawY + 39.0F, statusCol);
+        float statusY = drawY + 47.0F;
+        ColorRGBA mutedSrvCol = new ColorRGBA(142.0F, 149.0F, 165.0F, 200.0F * cardAlpha);
+        custom.drawText(IIiIiI_Class11.i_field_857c0621.I_method_3a2d5e3(6.5F), statusText, textX, statusY, mutedSrvCol);
 
-        // Quick Launch Action Button (Connect)
-        float btnW = 60.0F;
-        float btnH = 24.0F;
-        float btnX = x + wCard - btnW - 12.0F;
+        // Quick Launch Capsule Button: 64x26px, cleanly inside card
+        float btnW = 64.0F;
+        float btnH = 26.0F;
+        float btnX = x + wCard - btnW - 18.0F;
         float btnY = drawY + (hCard - btnH) / 2.0F;
         boolean bHov = mx >= btnX && mx <= btnX + btnW && my >= btnY && my <= btnY + btnH;
-        this.renderActionButton(custom, btnX, btnY, btnW, btnH, "Войти", bHov, new ColorRGBA(37.0F, 115.0F, 245.0F, 240.0F));
+        boolean isRu = IiIiIIII_Class81.I_method_21a4cfeb() == IiIIiiii_Class80.i_field_3f56db61;
+        this.renderActionButton(custom, btnX, btnY, btnW, btnH, isRu ? "Войти" : "Connect", bHov, theme.withAlpha(255.0F * cardAlpha));
+
+        custom.getMatrices().pop();
     }
 
     private void renderDock(III custom, int mx, int my) {
         long elapsed = System.currentTimeMillis() - this.screenOpenTime;
-        float dockEnter = MathHelper.clamp((elapsed - 60L) / 380.0F, 0.0F, 1.0F);
-        float dockEase = 1.0F - (float)Math.pow(1.0F - dockEnter, 3);
+        float dockEnter = MathHelper.clamp((elapsed - 50L) / 360.0F, 0.0F, 1.0F);
+        float dockEase = springEase(dockEnter, 0.70F);
 
         float dockW = Math.min(480.0F, this.width - 40.0F);
         float dockH = 40.0F;
@@ -793,7 +838,7 @@ public class IOSDesktopScreen extends Screen {
         custom.drawRoundedBorder(dockX, dockY, dockW, dockH, 0.8F, dRad, new ColorRGBA(255.0F, 255.0F, 255.0F, 36.0F));
 
         // 5 Action Pills
-        String[] actions = {"+ Создать мир", "+ Сервер", "Прямое подключение", "Обновить", "Назад"};
+        String[] actions = {"+ New World", "+ Add Server", "Direct Connect", "Refresh", "Back"};
         float pillW = (dockW - 16.0F) / actions.length;
 
         for (int i = 0; i < actions.length; i++) {
@@ -803,28 +848,49 @@ public class IOSDesktopScreen extends Screen {
             float ph = dockH - 8.0F;
             IIiii_Class8 pRad = IIiii_Class8.I_method_893b2757(ph / 2.0F);
 
+            float pcx = px + pw / 2.0F;
+            float pcy = py + ph / 2.0F;
+            float dist = (float)Math.hypot(mx - pcx, my - pcy);
+            float proximity = (my >= dockY - 12.0F && my <= dockY + dockH + 12.0F)
+                ? Math.max(0.0F, 1.0F - dist / 85.0F)
+                : 0.0F;
+
             boolean pHov = mx >= px && mx <= px + pw && my >= py && my <= py + ph;
             boolean isMouseDown = GLFW.glfwGetMouseButton(MinecraftClient.getInstance().getWindow().getHandle(), 0) == 1;
             boolean pressed = pHov && isMouseDown;
-            float scale = pressed ? 0.94F : (pHov ? 1.04F : 1.0F);
+
+            float targetHov = pHov ? 1.0F : (proximity * 0.42F);
+            this.dockPillHover[i] += (targetHov - this.dockPillHover[i]) * 0.25F;
+            float hAnim = this.dockPillHover[i];
+
+            float scale = pressed ? 0.92F : (1.0F + 0.10F * hAnim);
+            float drawPy = py - 6.0F * hAnim;
 
             custom.getMatrices().push();
-            float pcx = px + pw / 2.0F;
-            float pcy = py + ph / 2.0F;
-            custom.getMatrices().translate(pcx, pcy, 0.0F);
+            custom.getMatrices().translate(pcx, drawPy + ph / 2.0F, 0.0F);
             custom.getMatrices().scale(scale, scale, 1.0F);
-            custom.getMatrices().translate(-pcx, -pcy, 0.0F);
+            custom.getMatrices().translate(-pcx, -(drawPy + ph / 2.0F), 0.0F);
 
-            if (pHov) {
-                custom.drawShadow(px, py, pw, ph, 8.0F, pRad, IiiiiIIIi_Class242.I_method_7df8e08e().withAlpha(pressed ? 130.0F : 90.0F));
+            if (hAnim > 0.01F) {
+                custom.drawShadow(px, drawPy, pw, ph, 10.0F, pRad, IiiiiIIIi_Class242.I_method_7df8e08e().withAlpha(95.0F * hAnim));
             }
 
-            ColorRGBA pBg = pHov ? new ColorRGBA(55.0F, 64.0F, 90.0F, pressed ? 255.0F : 220.0F) : new ColorRGBA(28.0F, 32.0F, 46.0F, 160.0F);
-            custom.drawRoundedRect(px, py, pw, ph, pRad, pBg);
-            custom.drawRoundedBorder(px, py, pw, ph, 0.7F, pRad, pHov ? IiiiiIIIi_Class242.I_method_7df8e08e() : new ColorRGBA(255.0F, 255.0F, 255.0F, 20.0F));
+            ColorRGBA pBg = new ColorRGBA(
+                (int) (28.0F + 28.0F * hAnim),
+                (int) (32.0F + 32.0F * hAnim),
+                (int) (46.0F + 44.0F * hAnim),
+                (int) (165.0F + 65.0F * hAnim)
+            );
+            custom.drawRoundedRect(px, drawPy, pw, ph, pRad, pBg);
+            custom.drawRoundedBorder(px, drawPy, pw, ph, 0.7F, pRad, IiiiiIIIi_Class242.I_method_7df8e08e().withAlpha(25.0F + 180.0F * hAnim));
 
+            String[] pillIcons = {"hud/world", "hud/player", "play", "search", "back"};
+            float iconSz = 11.0F;
             float tw = IIiIiI_Class11.II_field_857c0621.I_method_3a2d5e3(6.5F).I_method_2c375926(actions[i]);
-            custom.drawText(IIiIiI_Class11.II_field_857c0621.I_method_3a2d5e3(6.5F), actions[i], px + (pw - tw) / 2.0F, py + (ph - 6.5F) / 2.0F, pHov ? ColorRGBA.WHITE : new ColorRGBA(255.0F, 255.0F, 255.0F, 185.0F));
+            float totalW = iconSz + 4.0F + tw;
+            float startContentX = px + (pw - totalW) / 2.0F;
+            custom.drawIcon(pillIcons[i], startContentX, drawPy + (ph - iconSz) / 2.0F, iconSz, ColorRGBA.WHITE);
+            custom.drawText(IIiIiI_Class11.II_field_857c0621.I_method_3a2d5e3(6.5F), actions[i], startContentX + iconSz + 4.0F, drawPy + (ph - 6.5F) / 2.0F, hAnim > 0.5F ? ColorRGBA.WHITE : new ColorRGBA(255.0F, 255.0F, 255.0F, 185.0F));
 
             custom.getMatrices().pop();
         }
@@ -961,17 +1027,19 @@ public class IOSDesktopScreen extends Screen {
                 }
             }
 
+            float cardW = 340.0F;
+            float cardH = 76.0F;
+            float gap = 16.0F;
             float padX = 24.0F;
-            float totalW = this.width - padX * 2.0F;
-            int cols = Math.max(2, Math.min(4, (int) (totalW / 260.0F)));
-            float gap = 14.0F;
-            float cardW = (totalW - gap * (cols - 1)) / cols;
-            float cardH = 82.0F;
+            float availW = this.width - padX * 2.0F;
+            int cols = Math.max(1, Math.min(3, (int) ((availW + gap) / (cardW + gap))));
+            float gridW = cols * cardW + (cols - 1) * gap;
+            float startX = (this.width - gridW) / 2.0F;
 
             for (int i = 0; i < items.size(); i++) {
                 int col = i % cols;
                 int row = i / cols;
-                float cx = padX + col * (cardW + gap);
+                float cx = startX + col * (cardW + gap);
                 float cy = contentTop - this.scrollY + row * (cardH + gap);
 
                 if (mx >= cx && mx <= cx + cardW && my >= cy && my <= cy + cardH) {

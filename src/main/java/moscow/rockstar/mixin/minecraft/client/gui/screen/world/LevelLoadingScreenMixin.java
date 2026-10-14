@@ -27,21 +27,6 @@ public abstract class LevelLoadingScreenMixin extends Screen {
 
     @Inject(method = "render", at = @At("HEAD"), cancellable = true)
     private void rockstar$renderCustomLoading(DrawContext context, int mouseX, int mouseY, float delta, CallbackInfo ci) {
-        ci.cancel();
-
-        III custom = III.I_method_5728d20f(context, mouseX, mouseY, delta);
-        float progress = 0.0F;
-        if (this.progressProvider != null) {
-            progress = this.progressProvider.getProgressPercentage() / 100.0F;
-        }
-
-        WorldLoadingScreenHelper.renderLoadingScreen(
-            custom,
-            this.width,
-            this.height,
-            progress,
-            "Генерация мира",
-            "Подготовка местности и чанков"
-        );
+        // Custom loading screen removed - vanilla loading screen preserved
     }
 }

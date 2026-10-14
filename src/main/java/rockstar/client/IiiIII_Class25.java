@@ -26,6 +26,11 @@ public class IiiIII_Class25 {
         if (iIiIiIIiI_Class83.isEnabled() && iIiIiIIiI_Class83.IiiI_method_969a7093().isSelected() && (string = soundInstance.getId().getPath()).contains("lava")) {
             callbackInfo.cancel();
         }
+        SoundReducerModule soundReducer = RockstarClient.getInstance().getModuleManager().getModule(SoundReducerModule.class);
+        if (soundReducer != null && soundReducer.isEnabled() && soundReducer.shouldMute(soundInstance)) {
+            callbackInfo.cancel();
+            return;
+        }
         RockstarClient.getInstance().I_method_7897deab().I_method_e7f802ad(new SoundEvent(soundInstance));
     }
 }

@@ -19,6 +19,15 @@ public abstract class SelectWorldScreenMixin extends Screen {
         super(title);
     }
 
+    @Inject(method = "init", at = @At("HEAD"), cancellable = true)
+    private void rockstar$openDesktopForWorlds(CallbackInfo ci) {
+        if (this.client != null) {
+            ci.cancel();
+            this.client.setScreen(new rockstar.client.IOSDesktopScreen(null, rockstar.client.IOSDesktopScreen.Tab.WORLDS));
+            return;
+        }
+    }
+
     @Inject(method = "init", at = @At("TAIL"))
     private void rockstar$repositionSelectWorldButtons(CallbackInfo ci) {
         if (this.client == null) return;

@@ -141,6 +141,14 @@ extends AbstractSetting {
         return this.Ii_field_46;
     }
 
+    public float getValue() {
+        return this.Ii_method_a20abcd2();
+    }
+
+    public void setValue(float val) {
+        this.I_method_a1eda161(val);
+    }
+
     @Generated
     public IIiiIiiii_Class112<Float> I_method_43ef3335() {
         return this.I_field_8548a68c;

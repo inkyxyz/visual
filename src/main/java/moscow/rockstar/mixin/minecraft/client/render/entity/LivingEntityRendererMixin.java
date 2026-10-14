@@ -43,6 +43,7 @@ import rockstar.client.iIiIiiiII_Class349;
 import rockstar.client.iiIIiIiII_Class405;
 import rockstar.client.HitColorModule;
 import rockstar.client.EzzVisualModule;
+import rockstar.client.ChamsModule;
 
 @Mixin({LivingEntityRenderer.class})
 public abstract class LivingEntityRendererMixin<T extends LivingEntity, S extends LivingEntityRenderState, M extends EntityModel<? super S>> {
@@ -263,6 +264,15 @@ public abstract class LivingEntityRendererMixin<T extends LivingEntity, S extend
          }
       }
 
+      ChamsModule chams = RockstarClient.getInstance().getModuleManager().getModule(ChamsModule.class);
+      if (chams != null && chams.isEnabled() && var11 instanceof LivingEntity && var11 != MinecraftClient.getInstance().player) {
+         ColorRGBA col = chams.getVisibleColor();
+         if (col != null) {
+            var1.render(var2, var3, var4, 15728880, col.getRGB());
+            return false;
+         }
+      }
+
       if (iIIIIIiI_Class131.I_field_5a) {
          iIIIIIiI_Class131 var19 = IiiiiiiI_Class127.I_method_e1e653cb().I_method_b8f96026(iIIIIIiI_Class131.class);
          if (var19 != null && var19.I_method_d2b4487e(var11)) {
@@ -282,8 +292,14 @@ public abstract class LivingEntityRendererMixin<T extends LivingEntity, S extend
       at = {@At("RETURN")}
    )
    private RenderLayer getRenderPlayer(RenderLayer var1, S var2, boolean var3, boolean var4, boolean var5) {
-      iIIIIIiI_Class131 var6 = IiiiiiiI_Class127.I_method_e1e653cb().I_method_b8f96026(iIIIIIiI_Class131.class);
+      ChamsModule chams = RockstarClient.getInstance().getModuleManager().getModule(ChamsModule.class);
       Entity var7 = ((iIiIiiiII_Class349)var2).rockstar$getEntity();
+      if (chams != null && chams.isEnabled() && var7 instanceof LivingEntity && var7 != MinecraftClient.getInstance().player) {
+         if (chams.isThroughWalls()) {
+            return GlowRenderLayers.get(this.method_3885(var2));
+         }
+      }
+      iIIIIIiI_Class131 var6 = IiiiiiiI_Class127.I_method_e1e653cb().I_method_b8f96026(iIIIIIiI_Class131.class);
       if (var6 != null && var6.I_method_d2b4487e(var7) && iIIIIIiI_Class131.I_field_5a) {
          ColorRGBA var8 = var6.I_method_6ef746e9(var7);
          return var8 == null ? var1 : GlowRenderLayers.get(this.method_3885(var2));
@@ -301,6 +317,10 @@ public abstract class LivingEntityRendererMixin<T extends LivingEntity, S extend
       index = 2
    )
    private int forceModelFullbright(int var1) {
+      ChamsModule chams = RockstarClient.getInstance().getModuleManager().getModule(ChamsModule.class);
+      if (chams != null && chams.isEnabled() && this.currentEntity instanceof LivingEntity && this.currentEntity != MinecraftClient.getInstance().player) {
+         return 15728880;
+      }
       iIIIIIiI_Class131 var2 = IiiiiiiI_Class127.I_method_e1e653cb().I_method_b8f96026(iIIIIIiI_Class131.class);
       return var2 != null && var2.I_method_d2b4487e(this.currentEntity) && iIIIIIiI_Class131.I_field_5a ? 15728880 : var1;
    }

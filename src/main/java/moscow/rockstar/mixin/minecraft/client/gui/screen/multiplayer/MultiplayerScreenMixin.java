@@ -36,6 +36,15 @@ extends Screen {
         super(text);
     }
 
+    @Inject(method = {"init"}, at = {@At("HEAD")}, cancellable = true)
+    private void rockstar$openDesktopForServers(CallbackInfo ci) {
+        if (this.client != null) {
+            ci.cancel();
+            this.client.setScreen(new rockstar.client.IOSDesktopScreen(null, rockstar.client.IOSDesktopScreen.Tab.SERVERS));
+            return;
+        }
+    }
+
     @Inject(method={"init"}, at={@At(value="TAIL")})
     private void rockstar$syncPinnedServer(CallbackInfo callbackInfo) {
         if (this.client == null || RockstarClient.I_field_502d1741.i_method_e8604970()) {

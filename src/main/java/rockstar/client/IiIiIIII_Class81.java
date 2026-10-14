@@ -88,7 +88,41 @@ public final class IiIiIIII_Class81 {
             return string2;
         }
         String string3 = IiIiIIIi_Class82.I_method_865ff82a(string);
-        return string3 != null ? string3 : string;
+        if (string3 != null) {
+            return string3;
+        }
+        return formatFallbackKey(string);
+    }
+
+    public static String formatFallbackKey(String string) {
+        if (string == null) return "";
+        if (string.startsWith("modules.settings.")) {
+            String rest = string.substring("modules.settings.".length());
+            int dot = rest.indexOf('.');
+            String key = (dot != -1) ? rest.substring(dot + 1) : rest;
+            return prettifyKey(key);
+        } else if (string.startsWith("modules.descriptions.")) {
+            String rest = string.substring("modules.descriptions.".length());
+            return prettifyKey(rest);
+        } else if (string.startsWith("modules.") || string.contains(".")) {
+            int lastDot = string.lastIndexOf('.');
+            String key = (lastDot != -1) ? string.substring(lastDot + 1) : string;
+            return prettifyKey(key);
+        }
+        return string;
+    }
+
+    private static String prettifyKey(String key) {
+        if (key == null || key.isEmpty()) return "";
+        String[] words = key.replace('_', ' ').replace('-', ' ').split("\\s+");
+        StringBuilder sb = new StringBuilder();
+        for (String w : words) {
+            if (w.isEmpty()) continue;
+            sb.append(Character.toUpperCase(w.charAt(0)));
+            if (w.length() > 1) sb.append(w.substring(1));
+            sb.append(" ");
+        }
+        return sb.toString().trim();
     }
 
     @Compile
@@ -132,7 +166,7 @@ public final class IiIiIIII_Class81 {
     }
 
     static {
-        i_field_3f56db61 = I_field_3f56db61 = IiIIiiii_Class80.i_field_3f56db61;
+        i_field_3f56db61 = I_field_3f56db61 = IiIIiiii_Class80.I_field_3f56db61;
         I_field_a567c40b = new HashMap<String, String>();
         i_field_a567c40b = new HashMap<String, String>();
     }

@@ -29,7 +29,7 @@ import rockstar.client.iii_Class8;
 
 public class ColorSetting
 extends AbstractSetting {
-    private ColorRGBA I_field_d0c8ec5;
+    private ColorRGBA I_field_d0c8ec5 = new ColorRGBA(255.0f, 255.0f, 255.0f, 255.0f);
     private boolean I_field_5a = true;
     private transient iIii_Class12 I_field_faf968e1;
 
@@ -61,6 +61,9 @@ extends AbstractSetting {
 
     @Override
     public JsonElement toJson() {
+        if (this.I_field_d0c8ec5 == null) {
+            this.I_field_d0c8ec5 = new ColorRGBA(255.0f, 255.0f, 255.0f, 255.0f);
+        }
         JsonObject jsonObject = new JsonObject();
         jsonObject.addProperty("r", (Number)Float.valueOf(this.I_field_d0c8ec5.getRed()));
         jsonObject.addProperty("g", (Number)Float.valueOf(this.I_field_d0c8ec5.getGreen()));

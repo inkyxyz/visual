@@ -16,6 +16,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import pyrock.utility.render.ColorRGBA;
 import pyrock.utility.render.CustomDrawContext;
+import rockstar.client.III;
 import rockstar.client.IIiIIi_Class10;
 import rockstar.client.IIiIiI_Class11;
 import rockstar.client.IIiii_Class8;

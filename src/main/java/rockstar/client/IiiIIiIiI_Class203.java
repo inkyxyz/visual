@@ -30,7 +30,7 @@ public class IiiIIiIiI_Class203 extends Rect {
         float scale = 1.0F + 0.08F * this.smoothHover;
 
         float iconSize = 16.0F * scale;
-        float ix = this.x + (this.width - iconSize) / 2.0F;
+        float ix = this.x + 18.0F;
         float iy = this.y + (this.height - iconSize) / 2.0F;
 
         boolean isQuit = this.I_field_523beb0a.toLowerCase().contains("quit");
@@ -170,6 +170,17 @@ public class IiiIIiIiI_Class203 extends Rect {
             iII.drawRoundedRect(-thickness / 2.0F, -armLen / 2.0F, thickness, armLen, capRad, col);
 
             matrices.pop();
+        } else if (lower.contains("desktop")) {
+            // Minimalist Desktop / Monitor Icon
+            float monW = size * 0.76F;
+            float monH = size * 0.50F;
+            float monX = cx - monW / 2.0F;
+            float monY = cy - size * 0.35F;
+            iII.drawRoundedBorder(monX, monY, monW, monH, 1.2F, IIiii_Class8.I_method_893b2757(2.5F), col);
+            // Stand stem & base
+            iII.drawRect(cx - 1.0F, monY + monH, 2.0F, size * 0.16F, col);
+            float baseW = size * 0.44F;
+            iII.drawRoundedRect(cx - baseW / 2.0F, monY + monH + size * 0.14F, baseW, 1.5F, IIiii_Class8.I_method_893b2757(0.7F), col);
         } else {
             iII.drawTexture(RockstarClient.id(path), x, y, size, size, col);
         }
@@ -188,25 +199,22 @@ public class IiiIIiIiI_Class203 extends Rect {
         boolean isQuit = this.I_field_523beb0a.toLowerCase().contains("quit");
 
         if (isQuit) {
-            // Red Frosted Glass Exit Button (Стильный крестик с красным стеклом)
+            // Red Frosted Glass Exit Button
             if (hover > 0.01F) {
                 iII.drawBlurredRect(this.x - 3.0F, this.y - 3.0F, this.width + 6.0F, this.height + 6.0F, 12.0F, IIiii_Class8.I_method_893b2757((this.width + 6.0F) / 2.0F), new ColorRGBA(255.0F, 35.0F, 60.0F, 140.0F * hover * alpha));
             }
             iII.drawBlurredRect(this.x, this.y, this.width, this.height, 8.0F, rad, ColorRGBA.WHITE.withAlpha(35.0F * alpha));
 
-            // Translucent red glass fill
             ColorRGBA redGlassFill = bl
                 ? new ColorRGBA(225.0F, 35.0F, 55.0F, (0.42F + 0.38F * hover) * 255.0F * alpha)
                 : new ColorRGBA(210.0F, 32.0F, 50.0F, (0.18F * alpha + 0.15F * hover * alpha) * 255.0F);
             iII.drawRoundedRect(this.x, this.y, this.width, this.height, rad, redGlassFill);
 
-            // Red glass specular border
             ColorRGBA redGlassBorder = bl
                 ? new ColorRGBA(255.0F, 110.0F, 130.0F, 240.0F * alpha)
                 : new ColorRGBA(255.0F, 85.0F, 105.0F, 110.0F * alpha);
             iII.drawRoundedBorder(this.x, this.y, this.width, this.height, 1.2F, rad, redGlassBorder);
         } else {
-            // Frosted Glass Button with soft blur, translucent glass tint, and glass reflection border
             iII.drawBlurredRect(this.x, this.y, this.width, this.height, 8.0F, rad, ColorRGBA.WHITE.withAlpha(35.0F * alpha));
             ColorRGBA glassFill = new ColorRGBA(255.0F, 255.0F, 255.0F, (0.08F * alpha + 0.14F * hover * alpha) * 255.0F);
             iII.drawRoundedRect(this.x, this.y, this.width, this.height, rad, glassFill);
@@ -222,11 +230,29 @@ public class IiiIIiIiI_Class203 extends Rect {
         }
     }
 
-    @Generated
-    public IiiIIiIiI_Class203(String string, float f, Runnable runnable) {
+    private String label = "";
+
+    public IiiIIiIiI_Class203(String string, String label, float f, Runnable runnable) {
         this.I_field_523beb0a = string;
+        this.label = label != null ? label : "";
         this.I_field_46 = f;
         this.I_field_bac0a97e = runnable;
+    }
+
+    public IiiIIiIiI_Class203(String string, float f, Runnable runnable) {
+        this(string, "", f, runnable);
+    }
+
+    public String getLabel() {
+        return this.label;
+    }
+
+    public void setLabel(String label) {
+        this.label = label;
+    }
+
+    public String getIconPath() {
+        return this.I_field_523beb0a;
     }
 
     @Generated

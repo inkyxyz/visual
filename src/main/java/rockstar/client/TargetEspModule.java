@@ -56,31 +56,11 @@ public class TargetEspModule extends Module {
    private ModeSetting.Nested1_42765c60 modeCardsSequential;
    private ModeSetting.Nested1_42765c60 modeCardsTriple;
    private ModeSetting.Nested1_42765c60 modeCardsTrio;
-   private ModeSetting.Nested1_42765c60 modeCustomImage;
    private SliderSetting cardSpeedSetting;
    private SliderSetting cardScaleSetting;
    private SliderSetting cardCountSetting;
    private BooleanSetting cardFoilSetting;
    private BooleanSetting cardGlowSetting;
-
-   private ModeSetting customImagePreset;
-   private ModeSetting.Nested1_42765c60 presetCrosshair;
-   private ModeSetting.Nested1_42765c60 presetStar;
-   private ModeSetting.Nested1_42765c60 presetHitFlare;
-   private ModeSetting.Nested1_42765c60 presetCyberGlyph;
-   private ModeSetting.Nested1_42765c60 presetExternalFile;
-
-   private ModeSetting customImageMotion;
-   private ModeSetting.Nested1_42765c60 motionBillboard;
-   private ModeSetting.Nested1_42765c60 motionOrbit;
-   private ModeSetting.Nested1_42765c60 motionSatellites;
-   private ModeSetting.Nested1_42765c60 motionCrown;
-
-   private SliderSetting imageScaleSetting;
-   private SliderSetting imageSpeedSetting;
-   private SliderSetting imageOffsetYSetting;
-   private BooleanSetting imagePulseSetting;
-   private BooleanSetting imageGlowSetting;
 
    private ModeSetting cardDeckSetting;
    private ModeSetting.Nested1_42765c60 deckUnoCards;
@@ -110,6 +90,9 @@ public class TargetEspModule extends Module {
    private float Ii_field_46 = 1.0F;
    private LivingEntity I_field_966247a3;
    private long lastAttackTargetTime = 0L;
+   private float animatedHealth = 20.0F;
+   private float lastTargetHealth = 20.0F;
+   private float hitPulseAnim = 0.0F;
    private final IIIiII_Class5 I_field_83b89a01 = new IIIiII_Class5();
    private Vec2f I_field_5bba09cd = Vec2f.ZERO;
    private final IiiiIiIii_Class236 iI_field_dc7facc = new IiiiIiIii_Class236(250L, IiiiIiiII_Class237.IiI_field_dd60aac);
@@ -129,6 +112,39 @@ public class TargetEspModule extends Module {
    private final IiIIIiII_Class69<AfterAttackEvent> afterAttackListener = var1 -> this.lockTarget(var1.getEntity());
    private final IiIIIiII_Class69<PostAttackEvent> postAttackListener = var1 -> this.lockTarget(var1.getEntity());
    private final IiIIIiII_Class69<AttackEvent> attackListener = var1 -> this.lockTarget(var1.getEntity());
+
+   private void renderHitRipple(MatrixStack var1, LivingEntity target) {
+      Camera cam = I_field_3a9bda27.gameRenderer.getCamera();
+      Identifier bloom = RockstarClient.id("textures/bloom.png");
+      float progress = 1.0F - this.hitPulseAnim;
+      float rippleRadius = target.getWidth() * (1.1F + progress * 1.6F);
+      float rippleAlpha = (1.0F - progress) * 0.60F * this.I_field_dc7facc.I_method_6ac4da6f();
+      ColorRGBA hitColor = new ColorRGBA(255.0F, 65.0F, 65.0F, rippleAlpha * 255.0F);
+
+      var1.push();
+      iIiiiIIiI_Class371.I_method_7d461059(var1, this.I_method_acb0d958(target));
+      RenderSystem.setShaderTexture(0, bloom);
+      RenderSystem.setShader(ShaderProgramKeys.POSITION_TEX_COLOR);
+      BufferBuilder buf = RenderSystem.renderThreadTesselator().begin(DrawMode.QUADS, VertexFormats.POSITION_TEXTURE_COLOR);
+
+      float yOffset = target.getHeight() * (0.2F + progress * 0.6F);
+      for (int deg = 0; deg < 360; deg += 12) {
+         double rad = Math.toRadians(deg);
+         float rx = (float)Math.cos(rad) * rippleRadius;
+         float rz = (float)Math.sin(rad) * rippleRadius;
+         float sz = 0.45F * (1.0F - progress * 0.5F);
+
+         var1.push();
+         var1.translate(rx, yOffset, rz);
+         var1.multiply(cam.getRotation());
+         iIiiIIiii_Class360.I_method_a9f124df(var1, buf, -sz * 0.5F, -sz * 0.5F, 0.0F, sz, sz, hitColor);
+         var1.pop();
+      }
+
+      BuiltBuffer built = buf.endNullable();
+      if (built != null) BufferRenderer.drawWithGlobalProgram(built);
+      var1.pop();
+   }
 
    private final IiIIIiII_Class69<Render3DEvent> I_field_3d936f41 = var1 -> {
       if (IiiiiiiII_Class253.i_method_1cc4aa23()) {
@@ -186,6 +202,17 @@ public class TargetEspModule extends Module {
          }
 
          if (this.I_field_966247a3 != null && this.I_field_dc7facc.I_method_6ac4da6f() != 0.0F) {
+            float targetHp = this.I_field_966247a3.getHealth();
+            if (targetHp < this.lastTargetHealth || this.I_field_966247a3.hurtTime > 0) {
+               this.hitPulseAnim = 1.0F;
+            }
+            this.lastTargetHealth = targetHp;
+            this.animatedHealth += (targetHp - this.animatedHealth) * 0.15F;
+            if (this.hitPulseAnim > 0.005F) {
+               this.hitPulseAnim -= 0.04F;
+            } else {
+               this.hitPulseAnim = 0.0F;
+            }
             this.II_field_dc7facc.I_method_edd72835(this.I_field_966247a3.hurtTime > 0);
             this.i_method_ca75e9ff(var1);
             MatrixStack var7 = var1.getMatrices();
@@ -196,10 +223,14 @@ public class TargetEspModule extends Module {
             RenderSystem.depthMask(false);
             RenderSystem.enableDepthTest();
             RenderSystem.depthFunc(515);
-            this.Ii_field_46 = 1.0F;
+            this.Ii_field_46 = 1.0F + this.hitPulseAnim * 0.35F;
             var7.push();
             this.I_method_469aa82c(var7, this.I_field_966247a3);
             var7.pop();
+
+            if (this.hitPulseAnim > 0.01F) {
+               this.renderHitRipple(var7, this.I_field_966247a3);
+            }
 
             RenderSystem.depthMask(true);
             RenderSystem.setShaderTexture(0, 0);
@@ -220,10 +251,6 @@ public class TargetEspModule extends Module {
           || (this.modeCardsTrio != null && this.modeCardsTrio.isSelected());
    }
 
-   private boolean isCustomImageMode() {
-      return this.modeCustomImage != null && this.modeCustomImage.isSelected();
-   }
-
    @Compile(
       obfuscation = 4
    )
@@ -236,41 +263,6 @@ public class TargetEspModule extends Module {
       this.modeCardsSequential = new ModeSetting.Nested1_42765c60(this.I_field_bbe33e6c, "Cards Sequential");
       this.modeCardsTriple = new ModeSetting.Nested1_42765c60(this.I_field_bbe33e6c, "Cards Triple");
       this.modeCardsTrio = new ModeSetting.Nested1_42765c60(this.I_field_bbe33e6c, "Cards Trio");
-      this.modeCustomImage = new ModeSetting.Nested1_42765c60(this.I_field_bbe33e6c, "Своя картинка");
-
-      this.customImagePreset = new ModeSetting(this, "Image Preset", () -> !this.isCustomImageMode());
-      this.presetCrosshair = new ModeSetting.Nested1_42765c60(this.customImagePreset, "Crosshair Marker").select();
-      this.presetStar = new ModeSetting.Nested1_42765c60(this.customImagePreset, "Agravity Star");
-      this.presetHitFlare = new ModeSetting.Nested1_42765c60(this.customImagePreset, "Hit Flare");
-      this.presetCyberGlyph = new ModeSetting.Nested1_42765c60(this.customImagePreset, "Cyber Glyph");
-      this.presetExternalFile = new ModeSetting.Nested1_42765c60(this.customImagePreset, "Custom File (.png)");
-
-      this.customImageMotion = new ModeSetting(this, "Motion Style", () -> !this.isCustomImageMode());
-      this.motionBillboard = new ModeSetting.Nested1_42765c60(this.customImageMotion, "Billboard Float").select();
-      this.motionOrbit = new ModeSetting.Nested1_42765c60(this.customImageMotion, "Orbiting Ring");
-      this.motionSatellites = new ModeSetting.Nested1_42765c60(this.customImageMotion, "Quad Satellites");
-      this.motionCrown = new ModeSetting.Nested1_42765c60(this.customImageMotion, "Halo Crown");
-
-      this.imageScaleSetting = new SliderSetting(this, "Image Scale", () -> !this.isCustomImageMode())
-         .I_method_c8c9a7d7(0.3F)
-         .i_method_65e2aff7(2.5F)
-         .II_method_b0f56334(0.1F)
-         .Ii_method_4e0e6b54(1.0F);
-
-      this.imageSpeedSetting = new SliderSetting(this, "Rotate Speed", () -> !this.isCustomImageMode())
-         .I_method_c8c9a7d7(0.0F)
-         .i_method_65e2aff7(5.0F)
-         .II_method_b0f56334(0.1F)
-         .Ii_method_4e0e6b54(1.5F);
-
-      this.imageOffsetYSetting = new SliderSetting(this, "Height Offset", () -> !this.isCustomImageMode())
-         .I_method_c8c9a7d7(0.0F)
-         .i_method_65e2aff7(2.5F)
-         .II_method_b0f56334(0.1F)
-         .Ii_method_4e0e6b54(0.8F);
-
-      this.imagePulseSetting = new BooleanSetting(this, "Pulse on Damage", () -> !this.isCustomImageMode()).I_method_decd82b5();
-      this.imageGlowSetting = new BooleanSetting(this, "Glow Backdrop", () -> !this.isCustomImageMode()).I_method_decd82b5();
 
       this.cardSpeedSetting = new SliderSetting(this, "Card Speed", () -> !this.isCardMode())
          .I_method_c8c9a7d7(0.5F)
@@ -370,8 +362,6 @@ public class TargetEspModule extends Module {
             this.Ii_method_e0011269(var1, var2); // Crystals
          } else if (this.II_field_500d0627 != null && this.II_field_500d0627.isSelected()) {
             this.II_method_f085da49(var1, var2); // Circle
-         } else if (this.modeCustomImage != null && this.modeCustomImage.isSelected()) {
-            this.renderCustomImageEsp(var1, var2);
          } else {
             this.renderJelloEsp(var1, var2); // Jello
          }
@@ -924,195 +914,7 @@ public class TargetEspModule extends Module {
       buf.vertex(mat, -hw * 0.65F, 0.0F, -0.002F).color(backGold);
    }
 
-   private static Identifier customDynamicTextureId = null;
-   private static long lastCustomFileCheck = 0L;
 
-   private Identifier getActiveCustomTexture() {
-      if (this.customImagePreset != null && this.customImagePreset.isSelected("Custom File (.png)")) {
-         if (System.currentTimeMillis() - lastCustomFileCheck > 2500L) {
-            lastCustomFileCheck = System.currentTimeMillis();
-            File[] searchFiles = new File[] {
-               new File("custom_target.png"),
-               new File("rockstar/custom_target.png"),
-               new File("agravity/custom_target.png"),
-               new File("target.png")
-            };
-            for (File f : searchFiles) {
-               if (f.exists() && f.isFile()) {
-                  try (FileInputStream fis = new FileInputStream(f)) {
-                     NativeImage nativeImage = NativeImage.read(fis);
-                     if (customDynamicTextureId != null) {
-                        I_field_3a9bda27.getTextureManager().destroyTexture(customDynamicTextureId);
-                     }
-                     customDynamicTextureId = RockstarClient.id("custom_target_esp_" + System.currentTimeMillis());
-                     I_field_3a9bda27.getTextureManager().registerTexture(customDynamicTextureId, new NativeImageBackedTexture(nativeImage));
-                     return customDynamicTextureId;
-                  } catch (Throwable ignored) {}
-               }
-            }
-         }
-         if (customDynamicTextureId != null) return customDynamicTextureId;
-         return RockstarClient.id("textures/target_marker.png");
-      }
-      if (this.customImagePreset != null) {
-         if (this.customImagePreset.isSelected("Agravity Star")) return RockstarClient.id("textures/bloom.png");
-         if (this.customImagePreset.isSelected("Hit Flare")) return RockstarClient.id("textures/hit.png");
-         if (this.customImagePreset.isSelected("Cyber Glyph")) return RockstarClient.id("textures/glowing.png");
-      }
-      return RockstarClient.id("textures/target_marker.png");
-   }
-
-   private void renderCustomImageEsp(MatrixStack var1, LivingEntity var2) {
-      Camera cam = I_field_3a9bda27.gameRenderer.getCamera();
-      ColorRGBA col = this.II_field_ba20ca4c.i_method_9b12da03() ? IiiiiIIIi_Class242.i_method_5dfec6e() : this.I_field_bbd4b66c.I_method_bde5f08e();
-      float animAlpha = this.I_field_dc7facc.I_method_6ac4da6f();
-      if (animAlpha <= 0.01F) return;
-
-      Identifier tex = this.getActiveCustomTexture();
-      Identifier bloomTex = RockstarClient.id("textures/bloom.png");
-
-      float scale = (this.imageScaleSetting != null) ? this.imageScaleSetting.Ii_method_a20abcd2() : 1.0F;
-      float speed = (this.imageSpeedSetting != null) ? this.imageSpeedSetting.Ii_method_a20abcd2() : 1.5F;
-      float offsetY = (this.imageOffsetYSetting != null) ? this.imageOffsetYSetting.Ii_method_a20abcd2() : 0.8F;
-
-      float pulse = 1.0F;
-      if (this.imagePulseSetting != null && this.imagePulseSetting.i_method_9b12da03() && var2.hurtTime > 0) {
-         pulse += (var2.hurtTime / 10.0F) * 0.35F;
-      }
-      scale *= pulse;
-
-      long time = System.currentTimeMillis();
-      float rot = (time * 0.1F * speed) % 360.0F;
-      float bob = (float)Math.sin(time * 0.0035F) * 0.12F;
-
-      Vec3d targetPos = this.I_method_acb0d958(var2);
-      var1.push();
-      iIiiiIIiI_Class371.I_method_7d461059(var1, targetPos);
-
-      boolean glow = this.imageGlowSetting != null && this.imageGlowSetting.i_method_9b12da03();
-
-      if (this.motionBillboard != null && this.motionBillboard.isSelected()) {
-         float y = var2.getHeight() + offsetY + bob;
-         var1.push();
-         var1.translate(0.0, y, 0.0);
-         var1.multiply(cam.getRotation());
-         if (speed > 0.01F) {
-            var1.multiply(RotationAxis.POSITIVE_Z.rotationDegrees(rot));
-         }
-
-         float sz = 0.85F * scale;
-
-         if (glow) {
-            RenderSystem.setShaderTexture(0, bloomTex);
-            RenderSystem.setShader(ShaderProgramKeys.POSITION_TEX_COLOR);
-            BufferBuilder b = RenderSystem.renderThreadTesselator().begin(DrawMode.QUADS, VertexFormats.POSITION_TEXTURE_COLOR);
-            float gsz = sz * 1.6F;
-            iIiiIIiii_Class360.I_method_a9f124df(var1, b, -gsz * 0.5F, -gsz * 0.5F, 0.0, gsz, gsz, col.withAlpha(col.getAlpha() * 0.4F * animAlpha));
-            BuiltBuffer bb = b.endNullable();
-            if (bb != null) BufferRenderer.drawWithGlobalProgram(bb);
-         }
-
-         RenderSystem.setShaderTexture(0, tex);
-         RenderSystem.setShader(ShaderProgramKeys.POSITION_TEX_COLOR);
-         BufferBuilder buf = RenderSystem.renderThreadTesselator().begin(DrawMode.QUADS, VertexFormats.POSITION_TEXTURE_COLOR);
-         iIiiIIiii_Class360.I_method_a9f124df(var1, buf, -sz * 0.5F, -sz * 0.5F, 0.0, sz, sz, col.withAlpha(col.getAlpha() * animAlpha));
-         BuiltBuffer built = buf.endNullable();
-         if (built != null) BufferRenderer.drawWithGlobalProgram(built);
-
-         var1.pop();
-      } else if (this.motionOrbit != null && this.motionOrbit.isSelected()) {
-         float radius = var2.getWidth() * 1.4F;
-         float yBase = var2.getHeight() * 0.5F + offsetY * 0.5F;
-         int count = 3;
-
-         for (int i = 0; i < count; i++) {
-            double angle = Math.toRadians(rot + i * (360.0F / count));
-            float ox = (float)Math.cos(angle) * radius;
-            float oz = (float)Math.sin(angle) * radius;
-            float oy = yBase + (float)Math.sin(angle * 2.0 + time * 0.002) * 0.2F;
-
-            var1.push();
-            var1.translate(ox, oy, oz);
-            var1.multiply(cam.getRotation());
-            var1.multiply(RotationAxis.POSITIVE_Z.rotationDegrees(-rot * 0.5F));
-
-            float sz = 0.65F * scale;
-
-            if (glow) {
-               RenderSystem.setShaderTexture(0, bloomTex);
-               RenderSystem.setShader(ShaderProgramKeys.POSITION_TEX_COLOR);
-               BufferBuilder b = RenderSystem.renderThreadTesselator().begin(DrawMode.QUADS, VertexFormats.POSITION_TEXTURE_COLOR);
-               float gsz = sz * 1.5F;
-               iIiiIIiii_Class360.I_method_a9f124df(var1, b, -gsz * 0.5F, -gsz * 0.5F, 0.0, gsz, gsz, col.withAlpha(col.getAlpha() * 0.35F * animAlpha));
-               BuiltBuffer bb = b.endNullable();
-               if (bb != null) BufferRenderer.drawWithGlobalProgram(bb);
-            }
-
-            RenderSystem.setShaderTexture(0, tex);
-            RenderSystem.setShader(ShaderProgramKeys.POSITION_TEX_COLOR);
-            BufferBuilder buf = RenderSystem.renderThreadTesselator().begin(DrawMode.QUADS, VertexFormats.POSITION_TEXTURE_COLOR);
-            iIiiIIiii_Class360.I_method_a9f124df(var1, buf, -sz * 0.5F, -sz * 0.5F, 0.0, sz, sz, col.withAlpha(col.getAlpha() * animAlpha));
-            BuiltBuffer built = buf.endNullable();
-            if (built != null) BufferRenderer.drawWithGlobalProgram(built);
-
-            var1.pop();
-         }
-      } else if (this.motionSatellites != null && this.motionSatellites.isSelected()) {
-         float radius = var2.getWidth() * 1.6F;
-         float yMid = var2.getHeight() * 0.5F + offsetY * 0.4F;
-
-         for (int i = 0; i < 4; i++) {
-            double angle = Math.toRadians(rot + i * 90.0F);
-            float ox = (float)Math.cos(angle) * radius;
-            float oz = (float)Math.sin(angle) * radius;
-            float oy = yMid + (float)Math.cos(angle) * 0.35F;
-
-            var1.push();
-            var1.translate(ox, oy, oz);
-            var1.multiply(cam.getRotation());
-
-            float sz = 0.55F * scale;
-
-            RenderSystem.setShaderTexture(0, tex);
-            RenderSystem.setShader(ShaderProgramKeys.POSITION_TEX_COLOR);
-            BufferBuilder buf = RenderSystem.renderThreadTesselator().begin(DrawMode.QUADS, VertexFormats.POSITION_TEXTURE_COLOR);
-            iIiiIIiii_Class360.I_method_a9f124df(var1, buf, -sz * 0.5F, -sz * 0.5F, 0.0, sz, sz, col.withAlpha(col.getAlpha() * animAlpha));
-            BuiltBuffer built = buf.endNullable();
-            if (built != null) BufferRenderer.drawWithGlobalProgram(built);
-
-            var1.pop();
-         }
-      } else {
-         float y = var2.getHeight() + 0.35F + offsetY * 0.5F + bob * 0.5F;
-         var1.push();
-         var1.translate(0.0, y, 0.0);
-         var1.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(rot));
-         var1.multiply(RotationAxis.POSITIVE_X.rotationDegrees(90.0F));
-
-         float sz = 1.1F * scale;
-
-         if (glow) {
-            RenderSystem.setShaderTexture(0, bloomTex);
-            RenderSystem.setShader(ShaderProgramKeys.POSITION_TEX_COLOR);
-            BufferBuilder b = RenderSystem.renderThreadTesselator().begin(DrawMode.QUADS, VertexFormats.POSITION_TEXTURE_COLOR);
-            float gsz = sz * 1.4F;
-            iIiiIIiii_Class360.I_method_a9f124df(var1, b, -gsz * 0.5F, -gsz * 0.5F, 0.0, gsz, gsz, col.withAlpha(col.getAlpha() * 0.35F * animAlpha));
-            BuiltBuffer bb = b.endNullable();
-            if (bb != null) BufferRenderer.drawWithGlobalProgram(bb);
-         }
-
-         RenderSystem.setShaderTexture(0, tex);
-         RenderSystem.setShader(ShaderProgramKeys.POSITION_TEX_COLOR);
-         BufferBuilder buf = RenderSystem.renderThreadTesselator().begin(DrawMode.QUADS, VertexFormats.POSITION_TEXTURE_COLOR);
-         iIiiIIiii_Class360.I_method_a9f124df(var1, buf, -sz * 0.5F, -sz * 0.5F, 0.0, sz, sz, col.withAlpha(col.getAlpha() * animAlpha));
-         BuiltBuffer built = buf.endNullable();
-         if (built != null) BufferRenderer.drawWithGlobalProgram(built);
-
-         var1.pop();
-      }
-
-      var1.pop();
-   }
 
    @Override
    public void II_method_6642fd22() {

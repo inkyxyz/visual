@@ -83,4 +83,15 @@ public class EscapeMenuConfig {
             e.printStackTrace();
         }
     }
+
+    public void cycleScope() {
+        if ("Все".equals(alertScope)) {
+            alertScope = "Украина";
+        } else if ("Украина".equals(alertScope)) {
+            alertScope = "Россия";
+        } else {
+            alertScope = "Все";
+        }
+        this.save();
+    }
 }

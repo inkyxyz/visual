@@ -124,7 +124,7 @@ extends Module {
             .I_method_c8c9a7d7(0.2F)
             .i_method_65e2aff7(1.0F)
             .II_method_b0f56334(0.05F)
-            .Ii_method_4e0e6b54(0.85F);
+            .Ii_method_4e0e6b54(0.55F);
         this.blurStrength = new SliderSetting(this, "Blur Strength")
             .I_method_c8c9a7d7(5.0F)
             .i_method_65e2aff7(50.0F)
@@ -150,12 +150,12 @@ extends Module {
         new ModeSetting.Nested1_42765c60(this.fontSetting, "JetBrains");
         new ModeSetting.Nested1_42765c60(this.fontSetting, "Light");
 
-        this.menuObjectSetting = new ModeSetting(this, "Объект в меню");
-        new ModeSetting.Nested1_42765c60(this.menuObjectSetting, "Кристалл").select();
-        new ModeSetting.Nested1_42765c60(this.menuObjectSetting, "Сфера");
-        new ModeSetting.Nested1_42765c60(this.menuObjectSetting, "Кольца");
-        new ModeSetting.Nested1_42765c60(this.menuObjectSetting, "Черная Дыра");
-        new ModeSetting.Nested1_42765c60(this.menuObjectSetting, "Выключено");
+        this.menuObjectSetting = new ModeSetting(this, "Menu 3D Object");
+        new ModeSetting.Nested1_42765c60(this.menuObjectSetting, "Crystal").select();
+        new ModeSetting.Nested1_42765c60(this.menuObjectSetting, "Sphere");
+        new ModeSetting.Nested1_42765c60(this.menuObjectSetting, "Rings");
+        new ModeSetting.Nested1_42765c60(this.menuObjectSetting, "Black Hole");
+        new ModeSetting.Nested1_42765c60(this.menuObjectSetting, "Disabled");
 
         this.hitSoundsSetting = new BooleanSetting(this, "Hit Sounds") {
             @Override
@@ -190,7 +190,7 @@ extends Module {
         if (mod != null && mod.menuObjectSetting != null && mod.menuObjectSetting.i_method_f85f3850() != null) {
             return mod.menuObjectSetting.i_method_f85f3850().getName();
         }
-        return "Кристалл";
+        return "Crystal";
     }
 
     public static void cycleMenuObject() {

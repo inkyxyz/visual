@@ -2,6 +2,7 @@ package rockstar.client;
 
 import globals.client.WorldKey;
 import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
@@ -86,6 +87,7 @@ public class IiiIIiIii_Class204 extends ii_Class4 implements iIIiIIiIi_Class294 
    private float dropX = -1.0F;
    private int selectedButtonIndex = 0;
    private float dropHoverAnim = 0.0F;
+   private final float[] btnHoverAnim = new float[5];
 
    private float spinVelocityX = 0.0F;
    private float spinVelocityY = 0.0F;
@@ -219,13 +221,11 @@ public class IiiIIiIii_Class204 extends ii_Class4 implements iIIiIIiIi_Class294 
       this.shatterFragments.clear();
 
       I_field_7865b31.clear();
-      I_field_7865b31.add(new IiiIIiIiI_Class203(var1 + "single.png", 12.0F, () -> I_field_3a9bda27.setScreen(new IOSDesktopScreen(this, IOSDesktopScreen.Tab.WORLDS))));
-      I_field_7865b31.add(new IiiIIiIiI_Class203(var1 + "multi.png", 12.0F, () -> I_field_3a9bda27.setScreen(new IOSDesktopScreen(this, IOSDesktopScreen.Tab.SERVERS))));
-      I_field_7865b31.add(new IiiIIiIiI_Class203(var1 + "alt.png", 12.0F, () -> I_field_3a9bda27.setScreen(new AltManagerScreen(this))));
-      I_field_7865b31.add(
-         new IiiIIiIiI_Class203(var1 + "settings.png", 12.0F, () -> I_field_3a9bda27.setScreen(new OptionsScreen(this, I_field_3a9bda27.options)))
-      );
-      I_field_7865b31.add(new IiiIIiIiI_Class203(var1 + "quit.png", 14.0F, () -> {
+      I_field_7865b31.add(new IiiIIiIiI_Class203(var1 + "single.png", "Singleplayer", 14.0F, () -> I_field_3a9bda27.setScreen(new IOSDesktopScreen(this, IOSDesktopScreen.Tab.WORLDS))));
+      I_field_7865b31.add(new IiiIIiIiI_Class203(var1 + "multi.png", "Multiplayer", 14.0F, () -> I_field_3a9bda27.setScreen(new IOSDesktopScreen(this, IOSDesktopScreen.Tab.SERVERS))));
+      I_field_7865b31.add(new IiiIIiIiI_Class203("alt", "Alt Manager", 14.0F, () -> I_field_3a9bda27.setScreen(new AltManagerScreen(this))));
+      I_field_7865b31.add(new IiiIIiIiI_Class203(var1 + "settings.png", "Settings", 14.0F, () -> I_field_3a9bda27.setScreen(new OptionsScreen(this, I_field_3a9bda27.options))));
+      I_field_7865b31.add(new IiiIIiIiI_Class203(var1 + "quit.png", "Quit Game", 14.0F, () -> {
          if (RockstarClient.getInstance().getModuleManager().getModule(SoundsModule.class).Ii_method_54c1f4f3().isSelected()) {
             iiIIiiiIi_Class414.iI_method_8d7ec562();
          }
@@ -345,127 +345,91 @@ public class IiiIIiIii_Class204 extends ii_Class4 implements iIIiIIiIi_Class294 
       float easeAssemble = (float)(1.0 - Math.pow(1.0 - this.assembleProgress, 3));
       float assembleSlideY = (1.0F - easeAssemble) * (this.height * 0.40F);
 
-      // Breathtaking 3D Sacred Cyber-Core & Gyroscope Orbiting Scene
-      float sceneCY = Math.max(180.0F, this.height * 0.58F) + assembleSlideY * 0.5F;
-      this.render3DScene(var1, this.width / 2.0F, sceneCY, var11, (float)((var9 % 10000000L) / 1000.0), this.i_field_46, this.II_field_46, wallAccent, var5 * easeAssemble);
+      // Breathtaking 3D Sacred Cyber-Core & Gyroscope Orbiting Scene (Shifted to Center-Right)
+      float sceneCY = Math.max(180.0F, this.height * 0.50F);
+      float sceneCX = Math.max(this.width * 0.65F, this.width - 320.0F);
+      this.render3DScene(var1, sceneCX, sceneCY, var11, (float)((var9 % 10000000L) / 1000.0), this.i_field_46, this.II_field_46, wallAccent, var5 * easeAssemble);
 
-      float var21 = Math.min(220.0F, this.height * 0.45F);
-      var1.drawRoundedRect(
-         0.0F,
-         this.height - var21,
-         this.width,
-         var21,
-         IIiii_Class8.I_field_2d98a52c,
-         new IiiII_Class13(new ColorRGBA(0.0F, 0.0F, 0.0F, 0.0F), new ColorRGBA(0.0F, 0.0F, 0.0F, (int)(90.0F * var5)))
-      );
-      float btnSize = 34.0F;
-      float btnGap = 7.0F;
-      float barPadX = 6.0F;
-      float barPadY = 5.0F;
-      float totalBtnsW = I_field_7865b31.size() * btnSize + Math.max(0, I_field_7865b31.size() - 1) * btnGap;
-      float barW = totalBtnsW + barPadX * 2.0F;
-      float barH = btnSize + barPadY * 2.0F;
-      float barX = this.width / 2.0F - barW / 2.0F;
+      int mouseX = var1.I_method_b1c3e152();
+      int mouseY = var1.i_method_b1d26d32();
 
       if (var35 > 0.01F) {
-         float slideUp = (1.0F - var35) * 80.0F + assembleSlideY;
-         float barY = 48.0F - slideUp;
-         float barRadius = barH / 2.0F;
-         float clockY = barY + barH + 14.0F;
+         // Top-left watermark pill removed per user request
 
-         if (this.i_field_991c1e8c.I_method_58432069(250L)) {
-            double var22 = I_field_3a9bda27.getWindow().getScaleFactor();
-            float var24 = clockY + 16.0F;
-            ColorRGBA var25 = ColorRGBA.fromPixel(this.width / 2.0F * (float)var22, I_field_3a9bda27.getWindow().getHeight() - var24 * (float)var22);
-            this.Ii_field_5a = (var25.getRed() + var25.getGreen() + var25.getBlue()) / 3.0F > 120.0F;
-            this.i_field_991c1e8c.I_method_23e11e3f();
+         // Circular glass action buttons on Right (Wallpaper, Alt Manager, Settings)
+         float topBarY = 16.0F;
+         float iconBtnSz = 32.0F;
+         float iconBtnGap = 8.0F;
+         IIiii_Class8 icRad = IIiii_Class8.I_method_893b2757(iconBtnSz / 2.0F);
+         String[] topActions = {"hud/world", "hud/player", "setting"};
+         for (int i = 0; i < 3; i++) {
+            float ix = this.width - 24.0F - (3 - i) * (iconBtnSz + iconBtnGap);
+            float iy = topBarY;
+            boolean iHov = mouseX >= ix && mouseX <= ix + iconBtnSz && mouseY >= iy && mouseY <= iy + iconBtnSz;
+            var1.drawRoundedRect(ix, iy, iconBtnSz, iconBtnSz, icRad, iHov ? new ColorRGBA(36.0F, 44.0F, 65.0F, 230.0F * var35) : new ColorRGBA(20.0F, 24.0F, 35.0F, 180.0F * var35));
+            var1.drawRoundedBorder(ix, iy, iconBtnSz, iconBtnSz, 0.6F, icRad, iHov ? wallAccent.withAlpha(180.0F * var35) : new ColorRGBA(255.0F, 255.0F, 255.0F, 25.0F * var35));
+            var1.drawIcon(topActions[i], ix + (iconBtnSz - 16.0F) / 2.0F, iy + (iconBtnSz - 16.0F) / 2.0F, 16.0F, ColorRGBA.WHITE.withAlpha(220.0F * var35));
          }
 
-         // Ethereal breathing aurora bloom behind the liquid glass capsule
-         float glowPulse = (float) Math.sin(var9 * 0.002) * 0.5F + 0.5F;
-         var1.drawBlurredRect(barX - 35.0F, barY - 14.0F, barW + 70.0F, barH + 34.0F, 36.0F, IIiii_Class8.I_method_893b2757(barRadius + 18.0F), wallAccent.withAlpha((34.0F + 18.0F * glowPulse) * var35));
-
-         // Unified Liquid Glass capsule bar adapted to active wallpaper (smooth circle power 2.0F)
-         if (InterfaceModule.IiI_method_c4cbfac3()) {
-            var1.drawLiquidGlass(barX, barY, barW, barH, 2.0F, 0.10F, IIiii_Class8.I_method_893b2757(barRadius), ColorRGBA.WHITE.withAlpha(255.0F * var35));
-            var1.drawRoundedRect(barX, barY, barW, barH, IIiii_Class8.I_method_893b2757(barRadius), new ColorRGBA(22.0F, 22.0F, 26.0F, 120.0F * var35));
-            var1.drawRoundedBorder(barX, barY, barW, barH, 1.2F, IIiii_Class8.I_method_893b2757(barRadius), wallAccent.withAlpha(70.0F * var35));
-         } else {
-            var1.drawRoundedRect(barX, barY, barW, barH, IIiii_Class8.I_method_893b2757(barRadius), new ColorRGBA(18.0F, 18.0F, 22.0F, 180.0F * var35));
-            var1.drawRoundedBorder(barX, barY, barW, barH, 1.2F, IIiii_Class8.I_method_893b2757(barRadius), wallAccent.withAlpha(50.0F * var35));
-         }
-
-         // Dynamic diagonal specular gleam across the liquid glass bar
-         float sweepT = ((var9 % 4500L) / 4500.0F) * 1.6F - 0.3F;
-         float sweepX = barX + barW * sweepT;
-         if (sweepX >= barX - 10.0F && sweepX <= barX + barW) {
-            float gleamW = 32.0F;
-            var1.drawBlurredRect(Math.max(barX, sweepX), barY, Math.min(gleamW, barX + barW - sweepX), barH, 8.0F, IIiii_Class8.I_method_893b2757(barRadius), ColorRGBA.WHITE.withAlpha(26.0F * var35));
-         }
-
-         int mouseX = var1.I_method_b1c3e152();
-         int mouseY = var1.i_method_b1d26d32();
-         boolean anyHovered = false;
+         // 2. Navigation Menu: Vertical stack of 5 capsules (width: 250px, height: 38px, radius: 19px)
+         float menuW = 250.0F;
+         float menuH = 38.0F;
+         float menuGap = 10.0F;
+         float totalMenuH = I_field_7865b31.size() * menuH + Math.max(0, I_field_7865b31.size() - 1) * menuGap;
+         float menuX = Math.max(36.0F, this.width * 0.08F);
+         float menuY = (this.height - totalMenuH) / 2.0F + assembleSlideY * 0.25F;
+         IIiii_Class8 menuRad = IIiii_Class8.I_method_893b2757(19.0F);
 
          for (int i = 0; i < I_field_7865b31.size(); i++) {
-            float bx = barX + barPadX + i * (btnSize + btnGap);
-            float by = barY + barPadY;
             IiiIIiIiI_Class203 btn = I_field_7865b31.get(i);
-            btn.set(bx, by, btnSize, btnSize);
-            if (var35 > 0.85F && btn.hovered(mouseX, mouseY)) {
-               this.selectedButtonIndex = i;
-               anyHovered = true;
+            float by = menuY + i * (menuH + menuGap);
+            boolean hov = var35 > 0.85F && mouseX >= menuX && mouseX <= menuX + menuW && mouseY >= by && mouseY <= by + menuH;
+
+            if (hov) {
+               btnHoverAnim[i] += (1.0F - btnHoverAnim[i]) * Math.min(1.0F, var11 * 14.0F);
                iIIIiIIiI_Class275.I_method_e7d43867(iIIIiIIIi_Class274.i_field_aa52e62c);
+            } else {
+               btnHoverAnim[i] += (0.0F - btnHoverAnim[i]) * Math.min(1.0F, var11 * 14.0F);
+            }
+
+            float shiftX = 4.0F * btnHoverAnim[i];
+            float bx = menuX + shiftX;
+            btn.set(bx, by, menuW, menuH);
+
+            boolean isQuit = i == I_field_7865b31.size() - 1;
+            ColorRGBA accent = isQuit ? new ColorRGBA(239.0F, 68.0F, 68.0F, 255.0F) : wallAccent;
+
+            // Hover drop glow
+            if (btnHoverAnim[i] > 0.01F) {
+               var1.drawShadow(bx, by, menuW, menuH, 12.0F, menuRad, accent.withAlpha(90.0F * btnHoverAnim[i] * var35));
+            }
+
+            // Glass background
+            ColorRGBA bg = hov
+               ? (isQuit ? new ColorRGBA(65.0F, 20.0F, 25.0F, 225.0F * var35) : new ColorRGBA(28.0F, 34.0F, 50.0F, 225.0F * var35))
+               : new ColorRGBA(18.0F, 22.0F, 34.0F, 185.0F * var35);
+            var1.drawRoundedRect(bx, by, menuW, menuH, menuRad, bg);
+
+            // Border glow
+            ColorRGBA border = hov
+               ? accent.withAlpha(200.0F * var35)
+               : new ColorRGBA(255.0F, 255.0F, 255.0F, 24.0F * var35);
+            var1.drawRoundedBorder(bx, by, menuW, menuH, 0.7F, menuRad, border);
+
+            // Icon on left
+            float iconX = bx + 16.0F;
+            float iconY = by + (menuH - 16.0F) / 2.0F;
+            btn.renderIcon(var1, var35, hov);
+
+            // Button label text on right
+            if (var4 != null) {
+               String lbl = btn.getLabel();
+               ColorRGBA textCol = hov ? ColorRGBA.WHITE : new ColorRGBA(235.0F, 242.0F, 255.0F, 225.0F * var35);
+               var1.drawText(var4, lbl, bx + 44.0F, by + (menuH - 8.5F) / 2.0F, textCol);
             }
          }
 
-         float targetX = barX + barPadX + this.selectedButtonIndex * (btnSize + btnGap);
-         if (this.dropX < 0.0F) {
-            this.dropX = targetX;
-         } else {
-            this.dropX += (targetX - this.dropX) * Math.min(1.0F, var11 * 14.0F);
-         }
-         this.dropHoverAnim += ((anyHovered ? 1.0F : 0.35F) - this.dropHoverAnim) * Math.min(1.0F, var11 * 10.0F);
-
-         float dropY = barY + barPadY;
-         float dropSize = btnSize;
-         float dropRadius = dropSize / 2.0F;
-
-         boolean isQuitSelected = (this.selectedButtonIndex == I_field_7865b31.size() - 1);
-         ColorRGBA currentDropAccent = isQuitSelected ? new ColorRGBA(255.0F, 50.0F, 75.0F, 255.0F) : wallAccent;
-
-         // Animated liquid glass droplet wrapping around active button tinted by active wallpaper (power 2.0F)
-         if (InterfaceModule.IiI_method_c4cbfac3()) {
-            var1.drawLiquidGlass(this.dropX, dropY, dropSize, dropSize, 2.0F, 0.18F, IIiii_Class8.I_method_893b2757(dropRadius), ColorRGBA.WHITE.withAlpha(255.0F * var35 * this.dropHoverAnim));
-         }
-         var1.drawRoundedRect(this.dropX, dropY, dropSize, dropSize, IIiii_Class8.I_method_893b2757(dropRadius), currentDropAccent.withAlpha(35.0F * var35 * this.dropHoverAnim));
-         var1.drawRoundedBorder(this.dropX, dropY, dropSize, dropSize, 1.5F, IIiii_Class8.I_method_893b2757(dropRadius), currentDropAccent.withAlpha(190.0F * var35 * this.dropHoverAnim));
-
-         for (int i = 0; i < I_field_7865b31.size(); i++) {
-            IiiIIiIiI_Class203 btn = I_field_7865b31.get(i);
-            btn.renderIcon(var1, var35, (i == this.selectedButtonIndex || btn.hovered(mouseX, mouseY)) && var35 > 0.85F);
-         }
-
-         // Technological cyber time display directly below the capsule bubble (only time)
-         IIiIIi_Class10 techClockFont = IIiIiI_Class11.I_field_857c0621.I_method_3a2d5e3(36.0F);
-         String timeStr = iIIIIiIiI_Class267.i_method_8e352841();
-         String[] timeParts = timeStr.split(":");
-         String hourStr = timeParts.length > 0 ? timeParts[0] : timeStr;
-         String minStr = timeParts.length > 1 ? timeParts[1] : "";
-
-         float hourW = techClockFont.I_method_2c375926(hourStr);
-         float colonW = techClockFont.I_method_2c375926(":");
-         float minW = techClockFont.I_method_2c375926(minStr);
-         float timeTotalW = hourW + colonW + minW;
-         float timeStartX = this.width / 2.0F - timeTotalW / 2.0F;
-
-         boolean colonBlink = (System.currentTimeMillis() % 1000L) < 500L;
-         ColorRGBA colonColor = colonBlink ? wallAccent.withAlpha(255.0F * var35) : wallAccent.withAlpha(70.0F * var35);
-         ColorRGBA digitsColor = (this.Ii_field_5a ? new ColorRGBA(24.0F, 24.0F, 28.0F, 245.0F * var35) : new ColorRGBA(255.0F, 255.0F, 255.0F, 245.0F * var35));
-
-         var1.drawText(techClockFont, hourStr, timeStartX, clockY, digitsColor);
-         var1.drawText(techClockFont, ":", timeStartX + hourW, clockY, colonColor);
-         var1.drawText(techClockFont, minStr, timeStartX + hourW + colonW, clockY, digitsColor);
+         // Player profile and bottom watermark removed per user request
       } else {
          for (IiiIIiIiI_Class203 btn : I_field_7865b31) {
             btn.set(-9999.0F, -9999.0F, 0.0F, 0.0F);
@@ -477,7 +441,6 @@ public class IiiIIiIii_Class204 extends ii_Class4 implements iIIiIIiIi_Class294 
       }
 
       I_method_f0183f35().I_method_1146ee07(var1, this.width, this.height);
-      I_method_f0183b55().I_method_3e377827(var1, this.width, this.height, var5, 1.0F);
 
       if (triggerReturnAnimation) {
          if (returnAnimStartTime == 0L) {
@@ -587,8 +550,27 @@ public class IiiIIiIii_Class204 extends ii_Class4 implements iIIiIIiIi_Class294 
                }
             }
 
-            float sceneCX = this.width / 2.0F;
-            float sceneCY = Math.max(180.0F, this.height * 0.58F);
+            // Check top action icons (Wallpaper, Alt Manager, Settings)
+            float iconBtnSz = 32.0F;
+            float iconBtnGap = 8.0F;
+            float topBarY = 16.0F;
+            for (int i = 0; i < 3; i++) {
+               float ix = this.width - 24.0F - (3 - i) * (iconBtnSz + iconBtnGap);
+               float iy = topBarY;
+               if (var1 >= ix && var1 <= ix + iconBtnSz && var3 >= iy && var3 <= iy + iconBtnSz) {
+                  if (i == 0) {
+                     I_method_f0183f35().I_method_2d8cb61f();
+                  } else if (i == 1) {
+                     I_field_3a9bda27.setScreen(new AltManagerScreen(this));
+                  } else if (i == 2) {
+                     I_field_3a9bda27.setScreen(new OptionsScreen(this, I_field_3a9bda27.options));
+                  }
+                  return;
+               }
+            }
+
+            float sceneCY = Math.max(180.0F, this.height * 0.50F);
+            float sceneCX = Math.max(this.width * 0.65F, this.width - 320.0F);
             if (Math.hypot(var1 - sceneCX, var3 - sceneCY) < 130.0) {
                this.spinVelocityY += 620.0F;
                this.spinVelocityX += (float)(Math.random() - 0.5) * 350.0F;
@@ -704,7 +686,7 @@ public class IiiIIiIii_Class204 extends ii_Class4 implements iIIiIIiIi_Class294 
    private void render3DScene(III var1, float cx, float cy, float dt, float timeSec, float mouseXOffset, float mouseYOffset, ColorRGBA wallAccent, float alpha) {
       if (alpha <= 0.01F) return;
       String objType = InterfaceModule.getMenuObjectType();
-      if ("Выключено".equalsIgnoreCase(objType)) return;
+      if ("Disabled".equalsIgnoreCase(objType) || "Выключено".equalsIgnoreCase(objType)) return;
 
       // Update interactive torque & squish physics
       this.objectYaw += (24.0F + this.spinVelocityY) * dt;
